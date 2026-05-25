@@ -7,7 +7,8 @@ export async function middleware(request: NextRequest) {
     |--------------------------------------------------------------------------
     */
 
-  const token = request.cookies.get("token")?.value;
+  // Dans middleware.ts, changez cette ligne :
+const token = request.cookies.get("auth_token")?.value; // Mettez "auth_token" ici
 
   const pathname = request.nextUrl.pathname;
 
@@ -51,10 +52,9 @@ export async function middleware(request: NextRequest) {
     |--------------------------------------------------------------------------
     */
 
-  if (isPublicRoute && token) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
+  // /if (isPublicRoute && token) {
+  //   return NextResponse.redirect(new URL("/dashboard", request.url));
+  // }
   /*
     |--------------------------------------------------------------------------
     | 6. VALIDATION OPTIONNELLE DU TOKEN

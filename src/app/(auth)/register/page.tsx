@@ -1,320 +1,211 @@
-"use client";
-import { useState, useRef, ChangeEvent } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
-import { useAuth } from "@/hooks/useAuth";
+'use client';
 
-// ── Constantes avatar ────────────────────────────────────────────────────────
-const MAX_SIZE_MB = 2;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+import { useState } from 'react';
+import Link from 'next/link';
+import { Mail, Lock, Phone, Eye, EyeOff, ArrowRight, UserPlus } from 'lucide-react';
+import { useAuth } from "@/hooks/useAuth";
 
 export default function RegisterPage() {
   const { register, isLoading } = useAuth();
+  const [firstname, setFirstname] = useState("");
+  const [lastname, setLastname] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [form, setForm] = useState({
-    firstname: "",
-    lastname: "",
-    email: "",
-    password: "",
-    password_confirmation: "",
-    phone: "",
-    avatar: "", // URL base64 envoyée au backend
-  });
-
-  // Avatar — état local UI
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [avatarError, setAvatarError] = useState<string>("");
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // ── Helpers ──────────────────────────────────────────────────────────────
-
-  const processFile = (file: File) => {
-    setAvatarError("");
-
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      setAvatarError("Format non supporté. Utilisez JPG, PNG ou WEBP.");
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    if (password !== passwordConfirmation) {
+      setError("Les mots de passe ne correspondent pas.");
       return;
     }
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setAvatarError(`Fichier trop lourd. Maximum ${MAX_SIZE_MB} Mo.`);
+    if (password.length < 8) {
+      setError("Le mot de passe doit comporter au moins 8 caractères.");
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      setAvatarPreview(base64);
-      setForm((prev) => ({ ...prev, avatar: base64 }));
-    };
-    reader.readAsDataURL(file);
+    try {
+      await register({
+        firstname,
+        lastname,
+        email,
+        phone: phone || undefined,
+        password,
+        password_confirmation: passwordConfirmation,
+      });
+    } catch (registerError: unknown) {
+      setError(
+        registerError instanceof Error
+          ? registerError.message
+          : "Erreur lors de l'inscription.",
+      );
+    }
   };
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) processFile(file);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) processFile(file);
-  };
-
-  const handleRemoveAvatar = () => {
-    setAvatarPreview(null);
-    setAvatarError("");
-    setForm((prev) => ({ ...prev, avatar: "" }));
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const set = (field: string) => (e: ChangeEvent<HTMLInputElement>) =>
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await register(form);
-  };
-
-  // ── Rendu ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl shadow-emerald-100/50 p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-emerald-500 rounded-2xl mb-4 shadow-lg shadow-emerald-200">
-              <svg
-                className="w-7 h-7 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                />
-              </svg>
+    <div 
+      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+      style={{ backgroundImage: "url('/images/maison.png')" }}
+    >
+      {/* Dégradé : vert foncé en bas → transparent en haut */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#006c49] via-[#006c49]/70 to-transparent"></div>
+
+      {/* Contenu centré */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-8 transition-all duration-300 border border-white/20">
+          {/* Avatar */}
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-full flex items-center justify-center shadow-md">
+              <UserPlus className="w-10 h-10 text-emerald-700" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Créer un compte
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">
-              Rejoignez-nous en quelques secondes
-            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* ── Avatar ──────────────────────────────────────────────── */}
-            <div className="flex flex-col items-center gap-3 mb-2">
-              {/* Aperçu ou zone de dépôt */}
-              {avatarPreview ? (
-                <div className="relative group">
-                  <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-emerald-200 shadow-lg">
-                    <Image
-                      src={avatarPreview}
-                      alt="Aperçu avatar"
-                      width={96}
-                      height={96}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  {/* Overlay modification au survol */}
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
-                  >
-                    <svg
-                      className="w-6 h-6 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                      />
-                    </svg>
-                  </button>
-                  {/* Bouton supprimer */}
-                  <button
-                    type="button"
-                    onClick={handleRemoveAvatar}
-                    className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md transition"
-                    title="Supprimer la photo"
-                  >
-                    <svg
-                      className="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={3}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              ) : (
-                // Zone drag & drop
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragging(true);
-                  }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={handleDrop}
-                  className={`
-                    w-24 h-24 rounded-full border-2 border-dashed cursor-pointer
-                    flex flex-col items-center justify-center transition-all
-                    ${
-                      isDragging
-                        ? "border-emerald-500 bg-emerald-50 scale-105"
-                        : "border-gray-300 bg-gray-50 hover:border-emerald-400 hover:bg-emerald-50"
-                    }
-                  `}
-                >
-                  <svg
-                    className="w-7 h-7 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  <span className="text-xs text-gray-400 mt-1">Photo</span>
-                </div>
-              )}
+          {/* Titres */}
+          <h2 className="text-2xl font-bold text-center text-gray-900">Créer un compte</h2>
+          <p className="text-sm text-center text-gray-500 mb-8">Rejoignez la révolution agricole technologique</p>
 
-              {/* Label + instruction */}
-              <div className="text-center">
-                <p className="text-sm font-medium text-gray-700">
-                  Photo de profil{" "}
-                  <span className="text-gray-400 font-normal">(optionnel)</span>
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  JPG, PNG, WEBP — max {MAX_SIZE_MB} Mo
-                </p>
+          {/* Formulaire */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                <input
+                  type="text"
+                  value={lastname}
+                  onChange={(e) => setLastname(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  placeholder="Doe"
+                  required
+                />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                <input
+                  type="text"
+                  value={firstname}
+                  onChange={(e) => setFirstname(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  placeholder="John"
+                  required
+                />
+              </div>
+            </div>
 
-              {/* Bouton choisir (si pas de preview) */}
-              {!avatarPreview && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                    placeholder="6 XX XX XX XX"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                    placeholder="john@agritech.com"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  placeholder="••••••••"
+                  required
+                />
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-xs text-emerald-600 font-semibold hover:underline"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  Choisir une photo
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
-              )}
-
-              {/* Erreur avatar */}
-              {avatarError && (
-                <p className="text-xs text-red-500 flex items-center gap-1">
-                  <span>⚠</span> {avatarError}
-                </p>
-              )}
+              </div>
             </div>
 
-            {/* Input fichier caché */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-
-            {/* ── Champs texte ─────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="Prénom"
-                placeholder="Jean"
-                value={form.firstname}
-                onChange={set("firstname")}
-                required
-              />
-              <Input
-                label="Nom"
-                placeholder="Dupont"
-                value={form.lastname}
-                onChange={set("lastname")}
-                required
-              />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirmer le mot de passe</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={passwordConfirmation}
+                  onChange={(e) => setPasswordConfirmation(e.target.value)}
+                  className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
-            <Input
-              label="Email"
-              type="email"
-              placeholder="vous@exemple.com"
-              value={form.email}
-              onChange={set("email")}
-              required
-            />
+            {error && (
+              <div className="text-red-600 text-sm text-center bg-red-50 p-2 rounded-lg">
+                {error}
+              </div>
+            )}
 
-            <Input
-              label="Téléphone (optionnel)"
-              type="tel"
-              placeholder="+237600000000"
-              value={form.phone}
-              onChange={set("phone")}
-            />
-
-            <Input
-              label="Mot de passe"
-              type="password"
-              placeholder="Min. 8 caractères"
-              value={form.password}
-              onChange={set("password")}
-              required
-            />
-
-            <Input
-              label="Confirmer le mot de passe"
-              type="password"
-              placeholder="••••••••"
-              value={form.password_confirmation}
-              onChange={set("password_confirmation")}
-              required
-            />
-
-            <Button
+            <button
               type="submit"
-              isLoading={isLoading}
-              fullWidth
-              className="bg-emerald-500 hover:bg-emerald-600 mt-2"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              Créer mon compte
-            </Button>
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Création...
+                </>
+              ) : (
+                <>
+                  Valider <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Déjà un compte ?{" "}
+          {/* Lien vers connexion */}
+          <div className="mt-8 text-center border-t border-gray-100 pt-6">
+            <p className="text-sm text-gray-500">Se connecter si déjà inscrit ?</p>
             <Link
               href="/login"
-              className="text-blue-600 font-semibold hover:underline"
+              className="inline-block mt-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
             >
-              Se connecter
+              Page de connexion
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </div>
