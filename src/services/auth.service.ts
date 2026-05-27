@@ -28,6 +28,7 @@ export interface RegisterData {
   password: string;
   password_confirmation: string;
   phone?: string;
+  gender?: string;  
 }
 
 export interface LoginData {
