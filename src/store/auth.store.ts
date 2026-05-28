@@ -5,8 +5,12 @@ import { User } from "@/services/auth.service";
 interface AuthState {
   user: User | null;
   isLoading: boolean;
+  isHydrated: boolean;
+
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
+  setHydrated: (hydrated: boolean) => void;
+
   reset: () => void;
 }
 
@@ -15,13 +19,30 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       isLoading: false,
+      isHydrated: false,
+
       setUser: (user) => set({ user }),
       setLoading: (isLoading) => set({ isLoading }),
-      reset: () => set({ user: null, isLoading: false }),
+
+      setHydrated: (isHydrated) => set({ isHydrated }),
+
+      reset: () =>
+        set({
+          user: null,
+          isLoading: false,
+        }),
     }),
     {
-      name: "auth-storage", // clé dans localStorage
-      partialize: (state) => ({ user: state.user }), // ne persiste que le user
+      name: "auth-storage",
+
+      partialize: (state) => ({
+        user: state.user,
+      }),
+
+      onRehydrateStorage: () => (state) => {
+        // 🔥 appelé quand le localStorage est rechargé
+        state?.setHydrated(true);
+      },
     },
   ),
 );

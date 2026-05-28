@@ -65,7 +65,7 @@ export function useAuth() {
         const res = await authService.verifyEmail(code);
         setUser(res.user);
         toast.success("Email vérifié avec succès !");
-        router.push("/dashboard");
+        router.push("/login");
       } catch (error: unknown) {
         toast.error(error instanceof Error ? error.message : "Code invalide");
       } finally {

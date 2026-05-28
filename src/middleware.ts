@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
     |--------------------------------------------------------------------------
     */
 
-  const token = request.cookies.get("token")?.value;
+  const token = request.cookies.get("auth_token")?.value;
 
   const pathname = request.nextUrl.pathname;
 
@@ -51,9 +51,9 @@ export async function middleware(request: NextRequest) {
     |--------------------------------------------------------------------------
     */
 
-  if (isPublicRoute && token) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
+  // if (isPublicRoute && token) {
+  //   return NextResponse.redirect(new URL( request.url));
+  // }
 
   /*
     |--------------------------------------------------------------------------
