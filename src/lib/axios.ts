@@ -1,31 +1,38 @@
 import axios from "axios";
-import Cookies from "js-cookie";
+import { tokenService } from "@/lib/auth-token";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
+    Authorization: "Bearer " + tokenService.get(),
   },
 });
 
-// Injecte automatiquement le token dans chaque requête
+// REQUEST INTERCEPTOR
 api.interceptors.request.use((config) => {
-  const token = Cookies.get("auth_token");
+  const token = tokenService.get();
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
-// Redirige vers /login si le token est expiré (401)
+// RESPONSE INTERCEPTOR
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      Cookies.remove("auth_token");
-      window.location.href = "/login";
+      tokenService.remove();
+
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
     }
+
     return Promise.reject(error);
   },
 );
