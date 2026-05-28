@@ -1,14 +1,28 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Leaf, ArrowRight, RotateCcw } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { authService } from '@/services/auth.service';
 
 export default function VerifyEmailPage() {
+  const router = useRouter();
+  const { user } = useAuth(); // récupère l'utilisateur connecté
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
   const [timer, setTimer] = useState(59);
   const [resending, setResending] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Auto-submit quand les 6 chiffres sont remplis
+  const filled = otp.filter(Boolean).length;
+  useEffect(() => {
+    if (filled === 6 && !loading && !error) {
+      handleSubmit(new Event('submit') as any);
+    }
+  }, [filled]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
@@ -24,6 +38,7 @@ export default function VerifyEmailPage() {
     `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
   const handleChange = (index: number, value: string) => {
+    setError(null); // efface l'erreur dès que l'utilisateur modifie un chiffre
     if (value.length > 1) {
       const digits = value.replace(/\D/g, '').slice(0, 6).split('');
       const newOtp = [...otp];
@@ -54,25 +69,46 @@ export default function VerifyEmailPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp.join('').length < 6) return;
+    const code = otp.join('');
+    if (code.length !== 6) return;
     setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
+    setError(null);
+    try {
+      const response = await authService.verifyEmail(code);
+      if (response.success) {
+        router.push('/dashboard');
+      } else {
+        setError(response.message || 'Code invalide ou expiré. Veuillez réessayer.');
+        // On ne vide pas l'OTP pour permettre à l'utilisateur de corriger
+      }
+    } catch (err) {
+      setError('Erreur de connexion. Vérifiez votre code.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setResending(true);
-    setOtp(Array(6).fill(''));
-    setTimeout(() => { setResending(false); setTimer(59); inputRefs.current[0]?.focus(); }, 1000);
+    try {
+      await authService.resendVerificationCode();
+      setError(null);
+      setOtp(Array(6).fill(''));
+      setTimer(59);
+      inputRefs.current[0]?.focus();
+    } catch (err) {
+      setError('Impossible de renvoyer le code. Réessayez plus tard.');
+    } finally {
+      setResending(false);
+    }
   };
-
-  const filled = otp.filter(Boolean).length;
 
   return (
     <div
       className="min-h-screen flex flex-col"
       style={{ background: 'linear-gradient(160deg, #e8faf2 0%, #f0fdf8 50%, #e2f8ee 100%)' }}
     >
-      {/* ── HEADER ── */}
+      {/* HEADER */}
       <header className="px-8 pt-8 pb-0">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#059669' }}>
@@ -82,7 +118,7 @@ export default function VerifyEmailPage() {
         </div>
       </header>
 
-      {/* ── CENTRE : CARTE OTP ── */}
+      {/* CENTRE : CARTE OTP */}
       <div className="flex-grow flex items-center justify-center px-5 py-12">
         <div
           className="w-full max-w-[440px] rounded-3xl p-8"
@@ -108,16 +144,15 @@ export default function VerifyEmailPage() {
             </div>
           </div>
 
-          {/* Titre */}
+          {/* Titre modifié */}
           <div className="text-center mb-7">
-            <h2 className="text-[24px] font-bold" style={{ color: '#042f20' }}>Vérification OTP</h2>
+            <h2 className="text-[24px] font-bold" style={{ color: '#042f20' }}>Vérification de l'email</h2>
             <p className="text-[14px] mt-2 leading-relaxed" style={{ color: '#5a8a72' }}>
               Nous avons envoyé un code à 6 chiffres à votre adresse e-mail
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-
             {/* Cases OTP */}
             <div className="flex justify-between gap-2">
               {otp.map((digit, idx) => (
@@ -163,11 +198,11 @@ export default function VerifyEmailPage() {
               <p className="text-[12px] text-right" style={{ color: '#8ab89e' }}>{filled}/6 chiffres</p>
             </div>
 
-            {/* Email + timer */}
+            {/* Email dynamique + timer */}
             <div className="rounded-xl px-4 py-3 text-center" style={{ background: '#f0fdf8', border: '1px solid #d4edd9' }}>
               <p className="text-[13px]" style={{ color: '#4a8069' }}>
                 Code envoyé à{' '}
-                <span className="font-semibold" style={{ color: '#059669' }}>exemple@email.com</span>
+                <span className="font-semibold" style={{ color: '#059669' }}>{user?.email || 'exemple@email.com'}</span>
               </p>
               <div className="flex items-center justify-center gap-3 mt-2">
                 <button
@@ -187,7 +222,17 @@ export default function VerifyEmailPage() {
               </div>
             </div>
 
-            {/* Bouton */}
+            {/* Message d'erreur */}
+            {error && (
+              <div
+                className="text-center text-sm py-2 rounded-lg"
+                style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca' }}
+              >
+                {error}
+              </div>
+            )}
+
+            {/* Bouton (toujours présent, mais auto-submit déjà actif) */}
             <button
               type="submit"
               disabled={loading || filled < 6}
@@ -208,15 +253,19 @@ export default function VerifyEmailPage() {
               )}
             </button>
 
-            {/* Retour */}
-            <a href="/login" className="block text-center text-[13px] font-medium" style={{ color: '#8ab89e' }}>
+            {/* Lien retour plus foncé et avec soulignement au survol */}
+            <a
+              href="/login"
+              className="block text-center text-[13px] font-medium transition-all hover:underline"
+              style={{ color: '#4a8069' }}
+            >
               ← Retour à la connexion
             </a>
           </form>
         </div>
       </div>
 
-      {/* ── FOOTER ── */}
+      {/* FOOTER */}
       <footer className="py-5 text-center" style={{ borderTop: '1px solid rgba(0,120,70,0.08)' }}>
         <p className="text-[12px]" style={{ color: '#8ab89e' }}>
           © 2024 AgriTech Smart Systems — Precision for a sustainable future.

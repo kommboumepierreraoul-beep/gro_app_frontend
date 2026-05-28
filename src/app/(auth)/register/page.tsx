@@ -17,6 +17,14 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    firstname?: string;
+    lastname?: string;
+    email?: string;
+    password?: string;
+    passwordConfirmation?: string;
+    gender?: string;
+  }>({});
   const [touched, setTouched] = useState({
     firstname: false,
     lastname: false,
@@ -26,6 +34,7 @@ export default function RegisterPage() {
     gender: false,
   });
 
+  // Validations (inchangées)
   const validateName = (name: string) => !name.trim() ? "Ce champ est obligatoire." : "";
   const validateEmail = (email: string) => {
     if (!email.trim()) return "L'email est obligatoire.";
@@ -45,14 +54,16 @@ export default function RegisterPage() {
   const validateGender = (g: string) => !g ? "Veuillez choisir un sexe." : "";
 
   const isFormValid = () => {
-    return (
-      validateName(firstname) === "" &&
-      validateName(lastname) === "" &&
-      validateEmail(email) === "" &&
-      validatePassword(password) === "" &&
-      validatePasswordConfirmation(password, passwordConfirmation) === "" &&
-      validateGender(gender) === ""
-    );
+    const errors = {
+      firstname: validateName(firstname),
+      lastname: validateName(lastname),
+      email: validateEmail(email),
+      password: validatePassword(password),
+      passwordConfirmation: validatePasswordConfirmation(password, passwordConfirmation),
+      gender: validateGender(gender),
+    };
+    setFieldErrors(errors);
+    return Object.values(errors).every(e => e === "");
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -65,9 +76,8 @@ export default function RegisterPage() {
       passwordConfirmation: true,
       gender: true,
     });
-
     if (!isFormValid()) return;
-
+    setError(null);
     try {
       await register({
         firstname,
@@ -87,12 +97,22 @@ export default function RegisterPage() {
     }
   };
 
-  const getFirstnameError = () => touched.firstname ? validateName(firstname) : "";
-  const getLastnameError = () => touched.lastname ? validateName(lastname) : "";
-  const getEmailError = () => touched.email ? validateEmail(email) : "";
-  const getPasswordError = () => touched.password ? validatePassword(password) : "";
-  const getConfirmError = () => touched.passwordConfirmation ? validatePasswordConfirmation(password, passwordConfirmation) : "";
-  const getGenderError = () => touched.gender ? validateGender(gender) : "";
+  const getFirstnameError = () => (touched.firstname ? validateName(firstname) : fieldErrors.firstname);
+  const getLastnameError = () => (touched.lastname ? validateName(lastname) : fieldErrors.lastname);
+  const getEmailError = () => (touched.email ? validateEmail(email) : fieldErrors.email);
+  const getPasswordError = () => (touched.password ? validatePassword(password) : fieldErrors.password);
+  const getConfirmError = () => (touched.passwordConfirmation ? validatePasswordConfirmation(password, passwordConfirmation) : fieldErrors.passwordConfirmation);
+  const getGenderError = () => (touched.gender ? validateGender(gender) : fieldErrors.gender);
+
+  // Composant message d'erreur moderne
+  const ErrorMessage = ({ message }: { message: string }) => (
+    <div className="flex items-center gap-1.5 mt-1.5 text-red-600 text-xs transition-all duration-200">
+      <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>{message}</span>
+    </div>
+  );
 
   return (
     <div 
@@ -100,7 +120,6 @@ export default function RegisterPage() {
       style={{ backgroundImage: "url('/images/maison.png')" }}
     >
       <div className="absolute inset-0 bg-gradient-to-t from-[#006c49] via-[#006c49]/70 to-transparent"></div>
-
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-lg bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-8 transition-all duration-300 border border-white/20">
           <div className="flex justify-center mb-6">
@@ -125,7 +144,7 @@ export default function RegisterPage() {
                   placeholder="Doe"
                   required
                 />
-                {getLastnameError() && <p className="text-red-500 text-xs mt-1">{getLastnameError()}</p>}
+                {getLastnameError() && <ErrorMessage message={getLastnameError()!} />}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
@@ -138,7 +157,7 @@ export default function RegisterPage() {
                   placeholder="John"
                   required
                 />
-                {getFirstnameError() && <p className="text-red-500 text-xs mt-1">{getFirstnameError()}</p>}
+                {getFirstnameError() && <ErrorMessage message={getFirstnameError()!} />}
               </div>
             </div>
 
@@ -170,11 +189,11 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
-                {getEmailError() && <p className="text-red-500 text-xs mt-1">{getEmailError()}</p>}
+                {getEmailError() && <ErrorMessage message={getEmailError()!} />}
               </div>
             </div>
 
-            {/* Champ Sexe modernisé */}
+            {/* Sexe */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Sexe</label>
               <div className="relative">
@@ -186,20 +205,20 @@ export default function RegisterPage() {
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 appearance-none focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all cursor-pointer"
                 >
                   <option value="">Choisir...</option>
-                  <option value="Homme">Homme</option>
-                  <option value="Femme">Femme</option>
-                  <option value="Autre">Autre</option>
+                  <option value="male">male</option>
+                  <option value="female">female</option>
+      
                 </select>
-                {/* Flèche personnalisée */}
                 <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
               </div>
-              {getGenderError() && <p className="text-red-500 text-xs mt-1">{getGenderError()}</p>}
+              {getGenderError() && <ErrorMessage message={getGenderError()!} />}
             </div>
 
+            {/* Mot de passe */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
               <div className="relative">
@@ -221,9 +240,10 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {getPasswordError() && <p className="text-red-500 text-xs mt-1">{getPasswordError()}</p>}
+              {getPasswordError() && <ErrorMessage message={getPasswordError()!} />}
             </div>
 
+            {/* Confirmation mot de passe */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Confirmer le mot de passe</label>
               <div className="relative">
@@ -245,12 +265,16 @@ export default function RegisterPage() {
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {getConfirmError() && <p className="text-red-500 text-xs mt-1">{getConfirmError()}</p>}
+              {getConfirmError() && <ErrorMessage message={getConfirmError()!} />}
             </div>
 
+            {/* Erreur globale */}
             {error && (
-              <div className="text-red-600 text-sm text-center bg-red-50 p-2 rounded-lg">
-                {error}
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{error}</span>
               </div>
             )}
 
