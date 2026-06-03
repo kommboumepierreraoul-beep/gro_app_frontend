@@ -1,0 +1,380 @@
+// src/app/edit-product/[id]/page.tsx
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import api from '@/lib/axios';
+import toast from 'react-hot-toast';
+
+export default function EditProductPage() {
+  const router = useRouter();
+  const { id } = useParams();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    category_id: '',
+    description: '',
+    price: '',
+    stock: '',
+    images: [] as string[],
+  });
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+
+  // Charger le produit existant
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const res = await api.get(`/marketplace/products/${id}`);
+        const p = res.data.data;
+        setForm({
+          name: p.name,
+          category_id: p.category_id?.toString() || '',
+          description: p.description || '',
+          price: p.price.toString(),
+          stock: p.stock?.toString() || '0',
+          images: p.images || [],
+        });
+      } catch (err) {
+        toast.error('Erreur lors du chargement du produit');
+        router.push('/my-shop');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (id) fetchProduct();
+  }, [id, router]);
+
+  const setField = (field: string, value: any) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setImageFiles((prev) => [...prev, ...files]);
+    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    setForm((prev) => ({ ...prev, images: [...prev.images, ...newPreviews] }));
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = form.images.filter((_, i) => i !== index);
+    setForm((prev) => ({ ...prev, images: newImages }));
+    const newFiles = imageFiles.filter((_, i) => i !== index);
+    setImageFiles(newFiles);
+  };
+
+  // Calcul du score de qualité
+  const listingQuality = Math.min(
+    100,
+    (form.name ? 30 : 0) +
+      (form.description && form.description.length > 50 ? 30 : form.description ? 15 : 0) +
+      (form.images.length * 10) +
+      (form.price && form.stock ? 10 : 0)
+  );
+
+  const getQualityLabel = () => {
+    if (listingQuality >= 80) return { label: 'Excellent', color: '#10b981' };
+    if (listingQuality >= 50) return { label: 'Bon', color: '#f59e0b' };
+    return { label: 'À améliorer', color: '#ef4444' };
+  };
+  const quality = getQualityLabel();
+
+  const handleSubmit = async () => {
+    if (!form.name || !form.category_id || !form.price) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+    setIsSubmitting(true);
+    const formData = new FormData();
+    formData.append('name', form.name);
+    formData.append('category_id', form.category_id);
+    formData.append('description', form.description);
+    formData.append('price', form.price);
+    formData.append('stock', form.stock);
+    for (const file of imageFiles) {
+      formData.append('images[]', file);
+    }
+    formData.append('existing_images', JSON.stringify(form.images));
+    formData.append('_method', 'PUT');
+
+    try {
+      await api.post(`/marketplace/products/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      toast.success('Produit mis à jour avec succès !');
+      router.push('/my-shop');
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur lors de la mise à jour');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50/40 via-white to-emerald-50/30 flex items-center justify-center">
+        <div className="text-emerald-700 text-lg">Chargement du produit...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50/40 via-white to-emerald-50/30">
+      {/* Header identique à AddProductPage */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="w-10 h-10 rounded-xl border border-emerald-200 bg-white/60 hover:bg-emerald-50 flex items-center justify-center transition"
+            >
+              <span className="material-symbols-outlined text-emerald-700">arrow_back</span>
+            </button>
+            <div>
+              <p className="uppercase tracking-[3px] text-[11px] text-emerald-600 font-bold">Seller Center</p>
+              <h1 className="text-xl font-black text-gray-800">Modifier le produit</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="h-10 px-6 rounded-xl bg-emerald-700 text-white font-medium text-sm shadow-md hover:bg-emerald-800 disabled:opacity-60 transition"
+            >
+              {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        {/* Hero section */}
+        <div className="mb-10 text-center md:text-left md:flex md:items-center md:justify-between gap-6">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-800">Modifier un produit</h2>
+            <p className="text-emerald-600 text-sm mt-1">Mettez à jour les informations ci-dessous</p>
+          </div>
+          <div className="flex items-center gap-4 mt-4 md:mt-0">
+            <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-full">
+              <span className="material-symbols-outlined text-emerald-600 text-base">inventory_2</span>
+              <span className="text-sm font-medium text-emerald-800">Stock: {form.stock || 0} unités</span>
+            </div>
+            <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-full">
+              <span className="material-symbols-outlined text-emerald-600 text-base">photo_library</span>
+              <span className="text-sm font-medium text-emerald-800">{form.images.length} image(s)</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Colonne principale */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Carte Informations produit */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl border border-emerald-100/60 shadow-sm p-6 transition hover:shadow-md">
+              <h3 className="text-lg font-black text-gray-800 mb-1">Informations produit</h3>
+              <p className="text-sm text-gray-500 mb-6">Détails essentiels pour les acheteurs</p>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom du produit *</label>
+                  <input
+                    value={form.name}
+                    onChange={(e) => setField('name', e.target.value)}
+                    placeholder="Ex: Engrais bio NPK 25kg"
+                    className="w-full h-12 rounded-xl border border-emerald-200 bg-white/80 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition"
+                  />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie *</label>
+                    <select
+                      value={form.category_id}
+                      onChange={(e) => setField('category_id', e.target.value)}
+                      className="w-full h-12 rounded-xl border border-emerald-200 bg-white/80 px-4 focus:ring-2 focus:ring-emerald-500/30"
+                    >
+                      <option value="">Sélectionner</option>
+                      <option value="1">Semences</option>
+                      <option value="2">Engrais</option>
+                      <option value="3">Outils</option>
+                      <option value="4">Machines</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Prix (FCFA) *</label>
+                    <input
+                      type="number"
+                      value={form.price}
+                      onChange={(e) => setField('price', e.target.value)}
+                      placeholder="0"
+                      className="w-full h-12 rounded-xl border border-emerald-200 bg-white/80 px-4 focus:ring-2 focus:ring-emerald-500/30"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                  <textarea
+                    rows={4}
+                    value={form.description}
+                    onChange={(e) => setField('description', e.target.value)}
+                    placeholder="Décrivez votre produit (bénéfices, usage, qualité)..."
+                    className="w-full rounded-xl border border-emerald-200 bg-white/80 p-4 focus:ring-2 focus:ring-emerald-500/30 resize-none"
+                  />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantité en stock</label>
+                    <input
+                      type="number"
+                      value={form.stock}
+                      onChange={(e) => setField('stock', e.target.value)}
+                      placeholder="0"
+                      className="w-full h-12 rounded-xl border border-emerald-200 bg-white/80 px-4"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Poids (kg)</label>
+                    <input type="text" placeholder="Optionnel" className="w-full h-12 rounded-xl border border-emerald-200 bg-white/80 px-4" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Galerie média */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl border border-emerald-100/60 shadow-sm p-6">
+              <h3 className="text-lg font-black text-gray-800 mb-1">Médias</h3>
+              <p className="text-sm text-gray-500 mb-6">Ajoutez ou modifiez les photos du produit (max 10MB chacune)</p>
+
+              <div className="border-2 border-dashed border-emerald-200 rounded-2xl p-8 text-center hover:border-emerald-400 transition bg-emerald-50/30">
+                <span className="material-symbols-outlined text-5xl text-emerald-400">cloud_upload</span>
+                <p className="mt-2 text-sm text-gray-500">Glissez ou cliquez pour ajouter des images</p>
+                <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="mt-3 mx-auto block text-sm" />
+              </div>
+
+              {form.images.length > 0 && (
+                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {form.images.map((img, idx) => (
+                    <div key={idx} className="group relative rounded-xl overflow-hidden border border-emerald-100 shadow-sm">
+                      <img src={img} className="w-full h-36 object-cover group-hover:scale-105 transition duration-300" alt={`preview-${idx}`} />
+                      <button
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 shadow flex items-center justify-center hover:bg-red-100 transition"
+                      >
+                        <span className="material-symbols-outlined text-red-500 text-sm">delete</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Score qualité dynamique */}
+            <div className="bg-white rounded-2xl border border-emerald-100 p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-emerald-700">auto_awesome</span>
+                </div>
+                <h3 className="font-bold text-gray-800">Score de qualité</h3>
+              </div>
+              <div className="relative w-32 h-32 mx-auto mb-4">
+                <svg className="w-32 h-32 transform -rotate-90">
+                  <circle cx="64" cy="64" r="56" stroke="#e2e8f0" strokeWidth="12" fill="none" />
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="56"
+                    stroke={quality.color}
+                    strokeWidth="12"
+                    fill="none"
+                    strokeDasharray={2 * Math.PI * 56}
+                    strokeDashoffset={2 * Math.PI * 56 * (1 - listingQuality / 100)}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-black text-gray-800">{listingQuality}%</span>
+                  <span className="text-xs text-gray-500">Qualité</span>
+                </div>
+              </div>
+              <div className="text-center mt-2">
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: `${quality.color}10`, color: quality.color }}>
+                  {quality.label}
+                </span>
+              </div>
+              <div className="mt-5 space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span>Nom</span>
+                  <span>{form.name ? '✅' : '❌'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Description</span>
+                  <span>{form.description?.length > 50 ? '✅' : form.description ? '⚠️' : '❌'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Images</span>
+                  <span>{form.images.length > 0 ? '✅' : '❌'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Prix / Stock</span>
+                  <span>{form.price && form.stock ? '✅' : '⚠️'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Aperçu produit */}
+            <div className="bg-white rounded-2xl border border-emerald-100 p-6 shadow-sm">
+              <h3 className="font-bold text-gray-800 mb-3">Aperçu</h3>
+              <div className="rounded-xl overflow-hidden border border-emerald-100">
+                <img
+                  src={form.images[0] || 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400'}
+                  className="w-full h-40 object-cover"
+                  alt="aperçu"
+                />
+                <div className="p-4">
+                  <h4 className="font-bold text-gray-800">{form.name || 'Nom du produit'}</h4>
+                  <p className="text-gray-500 text-sm mt-1 line-clamp-2">{form.description || 'Description...'}</p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-xl font-black text-emerald-700">{form.price ? `${form.price} FCFA` : '0 FCFA'}</span>
+                    <span className="text-xs text-gray-400">Stock: {form.stock || 0}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Profil vendeur (exemple) */}
+            <div className="bg-gradient-to-r from-emerald-800 to-emerald-900 rounded-2xl p-5 text-white">
+              <div className="flex items-center gap-3">
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop" className="w-12 h-12 rounded-full border-2 border-emerald-400 object-cover" alt="vendeur" />
+                <div>
+                  <h4 className="font-bold">Agri Supplier Pro</h4>
+                  <p className="text-emerald-200 text-xs">Vendeur vérifié</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 mt-5 text-center">
+                <div>
+                  <p className="text-emerald-300 text-xs">Ventes</p>
+                  <p className="font-black">12.4K</p>
+                </div>
+                <div>
+                  <p className="text-emerald-300 text-xs">Note</p>
+                  <p className="font-black">4.9★</p>
+                </div>
+                <div>
+                  <p className="text-emerald-300 text-xs">Confiance</p>
+                  <p className="font-black">98%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
