@@ -11,7 +11,7 @@ export default function NotificationPreferencesPage() {
     comments: true,
   });
 
-  const handleToggle = (key: string) => {
+  const handleToggle = (key: string ) => {
     setPreferences({
       ...preferences,
       [key]: !preferences[key],
