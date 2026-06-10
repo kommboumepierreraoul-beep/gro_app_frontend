@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationService } from "@/services/community/notification.service";
-import { useCommunityStore } from "@/store/community.store";
+import { useCommunityStore } from "@/stores/community.store";
 
 export function useNotifications() {
   const queryClient = useQueryClient();

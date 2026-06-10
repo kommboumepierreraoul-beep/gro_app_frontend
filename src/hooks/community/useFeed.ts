@@ -11,38 +11,34 @@ import { Post } from "@/types/community.types";
 export function useFeed() {
   const queryClient = useQueryClient();
 
-  // ─────────────────────────────
-  // FEED QUERY
-  // ─────────────────────────────
+  // ── Feed ──────────────────────────────────────────────────────────────────
   const feedQuery = useInfiniteQuery({
     queryKey: ["feed"],
     queryFn: ({ pageParam = 1 }) => postService.getFeed(pageParam as number),
-
-    // 🟡 FIX IMPORTANT : sécurisation des pages (évite undefined)
     getNextPageParam: (lastPage: any) =>
       lastPage.data.current_page < lastPage.data.last_page
         ? lastPage.data.current_page + 1
         : undefined,
-
     initialPageParam: 1,
   });
 
-  // 🟡 FIX IMPORTANT : sécurisation du data.data
   const allPosts =
     feedQuery.data?.pages.flatMap((p: any) => p.data?.data ?? []) ?? [];
 
-  // ─────────────────────────────
-  // CREATE POST
-  // ─────────────────────────────
+  // ── Create post ───────────────────────────────────────────────────────────
   const createPost = useMutation({
-    // 🔴 FIX CRITIQUE : on reçoit un OBJECT (content + media)
-    mutationFn: (data: { content: string; type?: "text" | "image" | "video" | "announcement"; media?: File[] }) =>
-      postService.createPost(data),
+    mutationFn: async (data: {
+      content?: string; // ← optionnel
+      type?: "text" | "image" | "video" | "pdf" | "announcement"; // ← + pdf
+      media?: File[];
+      shared_post_id?: number;
+    }) => {
+      return postService.createPost(data);
+    },
 
     onSuccess: (res: any) => {
       queryClient.setQueryData(["feed"], (old: any) => {
         if (!old) return old;
-
         return {
           ...old,
           pages: old.pages.map((page: any, i: number) =>
@@ -51,7 +47,6 @@ export function useFeed() {
                   ...page,
                   data: {
                     ...page.data,
-                    // 🟡 FIX : injection du nouveau post en haut
                     data: [res.data, ...page.data.data],
                   },
                 }
@@ -59,63 +54,62 @@ export function useFeed() {
           ),
         };
       });
-
       toast.success("Publication créée !");
     },
 
-    onError: () => {
+    onError: (error: any) => {
+      console.error("❌ [useFeed] createPost onError:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       toast.error("Erreur lors de la publication");
     },
   });
 
-  // ─────────────────────────────
-  // DELETE POST
-  // ─────────────────────────────
+  // ── Delete post ───────────────────────────────────────────────────────────
   const deletePost = useMutation({
     mutationFn: (id: number | string) => postService.deletePost(id),
 
     onSuccess: (_, id) => {
       queryClient.setQueryData(["feed"], (old: any) => {
         if (!old) return old;
-
         return {
           ...old,
           pages: old.pages.map((page: any) => ({
             ...page,
             data: {
               ...page.data,
-              // 🟡 FIX : suppression du post
               data: page.data.data.filter((p: Post) => p.id !== id),
             },
           })),
         };
       });
-
       toast.success("Publication supprimée");
+    },
+
+    onError: (error: any) => {
+      console.error("❌ [useFeed] deletePost error:", error);
+      toast.error("Erreur lors de la suppression");
     },
   });
 
-  // ─────────────────────────────
-  // LIKE POST (optimistic update)
-  // ─────────────────────────────
+  // ── Like post (optimistic) ────────────────────────────────────────────────
   const likePost = useMutation({
     mutationFn: (id: number | string) => postService.toggleLike(id),
 
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["feed"] });
-
       const previous = queryClient.getQueryData(["feed"]);
 
       queryClient.setQueryData(["feed"], (old: any) => {
         if (!old) return old;
-
         return {
           ...old,
           pages: old.pages.map((page: any) => ({
             ...page,
             data: {
               ...page.data,
-              // 🟡 FIX : toggle like optimiste
               data: page.data.data.map((p: any) =>
                 p.id === id
                   ? {
@@ -135,10 +129,8 @@ export function useFeed() {
       return { previous };
     },
 
-    onError: (_, __, ctx: any) => {
-      if (ctx?.previous) {
-        queryClient.setQueryData(["feed"], ctx.previous);
-      }
+    onError: (error: any, _, ctx: any) => {
+      if (ctx?.previous) queryClient.setQueryData(["feed"], ctx.previous);
       toast.error("Erreur lors du like.");
     },
   });
@@ -149,7 +141,6 @@ export function useFeed() {
     fetchNextPage: feedQuery.fetchNextPage,
     hasNextPage: feedQuery.hasNextPage,
     isFetchingNextPage: feedQuery.isFetchingNextPage,
-
     createPost,
     deletePost,
     likePost,
