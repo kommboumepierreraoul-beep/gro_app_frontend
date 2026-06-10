@@ -2,9 +2,10 @@
 import api from "@/lib/axios";
 
 export interface CreatePostData {
-  content: string;
-  type?: "text" | "image" | "video" | "announcement";
+  content?: string;
+  type?: "text" | "image" | "video" | "pdf" | "shared" | "announcement";
   media?: File[];
+  shared_post_id?: number;
 }
 
 class PostService {
@@ -27,21 +28,82 @@ class PostService {
       throw error;
     }
   }
+
+  async getUserPosts(userId: string | number, page: number = 1) {
+    try {
+      const response = await api.get(`/community/posts/user/${userId}`, {
+        params: { page },
+      });
+      return response.data?.data ?? response.data;
+    } catch (error) {
+      console.error("Error fetching user posts:", error);
+      throw error;
+    }
+  }
+
+  async getUserSharedPosts(userId: string | number, page: number = 1) {
+    try {
+      const response = await api.get(`/community/posts/user/${userId}/shared`, {
+        params: { page },
+      });
+      return response.data?.data ?? response.data;
+    } catch (error) {
+      console.error("Error fetching user shared posts:", error);
+      throw error;
+    }
+  }
+
+  async getUserLikedPosts(userId: string | number, page: number = 1) {
+    try {
+      const response = await api.get(`/community/posts/user/${userId}/liked`, {
+        params: { page },
+      });
+      return response.data?.data ?? response.data;
+    } catch (error) {
+      console.error("Error fetching user liked posts:", error);
+      throw error;
+    }
+  }
+
   async createPost(data: CreatePostData) {
     const formData = new FormData();
 
-    formData.append("content", data.content);
-    formData.append("type", data.type ?? "text");
-
-    if (data.media?.length) {
-      data.media.forEach((file) => {
-        formData.append("media", file);
-      });
+    // ✅ N'envoyer content que s'il est non vide
+    // Laravel reçoit le champ comme absent → nullable passe
+    if (data.content && data.content.trim().length > 0) {
+      formData.append("content", data.content.trim());
+    } else {
+      // Envoyer une chaîne vide explicite pour que Laravel
+      // le traite comme nullable et non comme "missing"
+      formData.append("content", "");
     }
 
-    const response = await api.post("/community/posts", formData);
+    formData.append("type", data.type ?? "text");
 
-    return response.data;
+    if (data.shared_post_id) {
+      formData.append("shared_post_id", String(data.shared_post_id));
+    }
+
+   if (data.media && data.media.length > 0) {
+     data.media.forEach((file) => {
+       formData.append("media[]", file); // ← [] obligatoire pour PHP
+     });
+   }
+
+    try {
+      const response = await api.post("/community/posts", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Response data:", error.response?.data);
+      if (error.response?.data?.errors) {
+        Object.entries(error.response.data.errors).forEach(([key, val]) => {
+          console.error(`  - ${key}:`, val);
+        });
+      }
+      throw error;
+    }
   }
 
   async deletePost(postId: string | number) {
@@ -85,6 +147,18 @@ class PostService {
     } catch (error) {
       console.error("Error fetching comments:", error);
       throw error;
+    }
+  }
+
+  async searchPosts(query: string, page: number = 1) {
+    try {
+      const response = await api.get(`/community/posts/search`, {
+        params: { q: query, page },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error searching posts:", error);
+      return { data: [] };
     }
   }
 }

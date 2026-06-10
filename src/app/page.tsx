@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import LoginPage from "./(auth)/login/page";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthStore } from "@/stores/auth.store";
 import { Loader2, LucideLoader } from "lucide-react";
 
 export default function Home() {

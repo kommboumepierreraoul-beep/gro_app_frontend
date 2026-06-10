@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function prroxy(request: NextRequest) {
   /*
     |--------------------------------------------------------------------------
     | 1. RECUPERER LES INFOS
@@ -88,3 +88,7 @@ export const config = {
     "/register",
   ],
 };
+
+export default function proxy(request: NextRequest) {
+  return NextResponse.next();
+}

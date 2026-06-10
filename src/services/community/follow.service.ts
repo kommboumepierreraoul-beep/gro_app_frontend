@@ -2,7 +2,7 @@ import api from "@/lib/axios";
 
 class FollowService {
   // Get user followers
-  async getFollowers(userId: string | number) {
+  async getFollowers(userId: number) {
     try {
       const response = await api.get(`/community/users/${userId}/followers`);
       return response.data;

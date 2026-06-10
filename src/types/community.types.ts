@@ -21,13 +21,14 @@ export interface CommunityUser {
   created_at: string;
 }
 
-export type PostType = "text" | "image" | "video" | "announcement" | "shared";
+export type PostType = "text" | "image" | "video" | "pdf" | "announcement" | "shared";
 
 export interface Post {
   id: number;
   content: string;
   type: PostType;
   media_urls: string[];
+  pdf_files?: string[];
   author: Pick<
     CommunityUser,
     "id" | "firstname" | "lastname" | "avatar" | "headline" | "role"
@@ -113,6 +114,7 @@ export type AnnouncementCategory =
   | "other";
 
 export interface Announcement {
+  [x: string]: import("react/jsx-runtime").JSX.Element;
   id: number;
   title: string;
   content: string;
@@ -133,3 +135,4 @@ export interface Paginated<T> {
   total: number;
   next_page_url: string | null;
 }
+
