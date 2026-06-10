@@ -1,8 +1,7 @@
-// src/app/edit-product/[id]/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 
@@ -16,16 +15,14 @@ interface Shop {
   id: number;
   name: string;
   logo: string | null;
-  total_sales?: number;
-  rating?: number;
-  reliability?: number;
+  total_sales?: number;      // ventes totales (si fourni par backend)
+  rating?: number;           // note moyenne
+  reliability?: number;      // taux de fiabilité
 }
 
-export default function EditProductPage() {
+export default function AddProductPage() {
   const router = useRouter();
-  const { id } = useParams();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [shop, setShop] = useState<Shop | null>(null);
   const [form, setForm] = useState({
@@ -69,7 +66,7 @@ export default function EditProductPage() {
         });
       } catch (error) {
         console.error('Erreur chargement boutique', error);
-        // Fallback
+        // En cas d'erreur, on utilise des valeurs par défaut (pas de blocage)
         setShop({
           id: 0,
           name: 'Ma boutique',
@@ -83,50 +80,60 @@ export default function EditProductPage() {
     fetchShop();
   }, []);
 
-  // Charger le produit existant
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const res = await api.get(`/marketplace/products/${id}`);
-        const p = res.data.data;
-        setForm({
-          name: p.name || '',
-          category_id: p.category_id?.toString() || '',
-          description: p.description || '',
-          price: p.price?.toString() || '',
-          stock: p.stock?.toString() || '0',
-          images: p.images || [],
-        });
-      } catch (err) {
-        toast.error('Erreur lors du chargement du produit');
-        router.push('/my-shop');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    if (id) fetchProduct();
-  }, [id, router]);
-
   const setField = (field: string, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm(prev => ({ ...prev, [field]: value }));
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    setImageFiles((prev) => [...prev, ...files]);
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setForm((prev) => ({ ...prev, images: [...prev.images, ...newPreviews] }));
+    const newFiles = [...imageFiles, ...files];
+    setImageFiles(newFiles);
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    setForm(prev => ({ ...prev, images: newPreviews }));
   };
 
   const removeImage = (index: number) => {
     const newImages = form.images.filter((_, i) => i !== index);
-    setForm((prev) => ({ ...prev, images: newImages }));
+    setForm(prev => ({ ...prev, images: newImages }));
     const newFiles = imageFiles.filter((_, i) => i !== index);
     setImageFiles(newFiles);
   };
 
-  // Calcul du score de qualité
+  const handleDraft = () => {
+    localStorage.setItem('productDraft', JSON.stringify(form));
+    toast.success('Brouillon sauvegardé');
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name || !form.category_id || !form.price || !form.stock) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append('name', form.name);
+    formData.append('category_id', form.category_id);
+    formData.append('description', form.description);
+    formData.append('price', form.price);
+    formData.append('stock', form.stock);
+    for (const file of imageFiles) {
+      formData.append('images[]', file);
+    }
+
+    try {
+      await api.post('/marketplace/products', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      toast.success('Produit publié avec succès !');
+      router.push('/marketplace');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur lors de la publication');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const listingQuality = Math.min(
     100,
     (form.name ? 30 : 0) +
@@ -140,47 +147,8 @@ export default function EditProductPage() {
     if (listingQuality >= 50) return { label: 'Bon', color: '#f59e0b' };
     return { label: 'À améliorer', color: '#ef4444' };
   };
+
   const quality = getQualityLabel();
-
-  const handleSubmit = async () => {
-    if (!form.name || !form.category_id || !form.price) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-    setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append('name', form.name);
-    formData.append('category_id', form.category_id);
-    formData.append('description', form.description);
-    formData.append('price', form.price);
-    formData.append('stock', form.stock);
-    for (const file of imageFiles) {
-      formData.append('images[]', file);
-    }
-    formData.append('existing_images', JSON.stringify(form.images));
-    formData.append('_method', 'PUT');
-
-    try {
-      await api.post(`/marketplace/products/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      toast.success('Produit mis à jour avec succès !');
-      router.push('/my-shop');
-      router.refresh();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erreur lors de la mise à jour');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-200/50 flex items-center justify-center">
-        <div className="text-emerald-700 text-lg">Chargement du produit...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-200/50">
@@ -195,16 +163,22 @@ export default function EditProductPage() {
             </button>
             <div>
               <p className="uppercase tracking-[3px] text-[11px] text-emerald-600 font-bold">Seller Center</p>
-              <h1 className="text-xl font-black text-gray-800">Modifier le produit</h1>
+              <h1 className="text-xl font-black text-gray-800">Nouveau produit</h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <button
+              onClick={handleDraft}
+              className="h-10 px-5 rounded-xl border border-emerald-200 bg-white text-emerald-700 font-medium text-sm hover:bg-emerald-50 transition"
+            >
+              Sauvegarder
+            </button>
+            <button
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isLoading}
               className="h-10 px-6 rounded-xl bg-emerald-700 text-white font-medium text-sm shadow-md hover:bg-emerald-800 disabled:opacity-60 transition"
             >
-              {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
+              {isLoading ? 'Publication...' : 'Publier'}
             </button>
           </div>
         </div>
@@ -213,8 +187,8 @@ export default function EditProductPage() {
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="mb-10 text-center md:text-left md:flex md:items-center md:justify-between gap-6">
           <div>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-800">Modifier un produit</h2>
-            <p className="text-emerald-600 text-sm mt-1">Mettez à jour les informations ci-dessous</p>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-800">Créer un produit</h2>
+            <p className="text-emerald-600 text-sm mt-1">Remplissez les informations ci-dessous</p>
           </div>
           <div className="flex items-center gap-4 mt-4 md:mt-0">
             <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-full">
@@ -229,8 +203,8 @@ export default function EditProductPage() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
+          {/* Colonne gauche : formulaire */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Carte Informations produit */}
             <div className="bg-white/90 backdrop-blur-sm rounded-3xl border border-emerald-100/60 shadow-sm p-6 transition hover:shadow-md">
               <h3 className="text-lg font-black text-gray-800 mb-1">Informations produit</h3>
               <p className="text-sm text-gray-500 mb-6">Détails essentiels pour les acheteurs</p>
@@ -307,7 +281,7 @@ export default function EditProductPage() {
             {/* Galerie média */}
             <div className="bg-white/90 backdrop-blur-sm rounded-3xl border border-emerald-100/60 shadow-sm p-6">
               <h3 className="text-lg font-black text-gray-800 mb-1">Médias</h3>
-              <p className="text-sm text-gray-500 mb-6">Ajoutez ou modifiez les photos du produit (max 10MB chacune)</p>
+              <p className="text-sm text-gray-500 mb-6">Ajoutez des photos du produit (max 10MB chacune)</p>
               <div className="border-2 border-dashed border-emerald-200 rounded-2xl p-8 text-center hover:border-emerald-400 transition bg-emerald-50/30">
                 <span className="material-symbols-outlined text-5xl text-emerald-400">cloud_upload</span>
                 <p className="mt-2 text-sm text-gray-500">Glissez ou cliquez pour ajouter des images</p>
@@ -317,7 +291,7 @@ export default function EditProductPage() {
                 <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {form.images.map((img, idx) => (
                     <div key={idx} className="group relative rounded-xl overflow-hidden border border-emerald-100 shadow-sm">
-                      <img src={img} className="w-full h-36 object-cover group-hover:scale-105 transition duration-300" alt={`preview-${idx}`} />
+                      <img src={img} className="w-full h-36 object-cover group-hover:scale-105 transition duration-300" />
                       <button
                         onClick={() => removeImage(idx)}
                         className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 shadow flex items-center justify-center hover:bg-red-100 transition"
@@ -331,14 +305,14 @@ export default function EditProductPage() {
             </div>
           </div>
 
-          {/* Sidebar avec infos boutique dynamiques */}
+          {/* Sidebar droite : infos boutique dynamiques */}
           <div className="space-y-6">
-            {/* Bloc vendeur – données réelles */}
+            {/* Bloc vendeur avec données réelles */}
             {shop && (
               <div className="bg-gradient-to-r from-emerald-800 to-emerald-900 rounded-2xl p-5 text-white">
                 <div className="flex items-center gap-3">
                   {shop.logo ? (
-                    <img src={shop.logo} className="w-12 h-12 rounded-full border-2 border-emerald-400 object-cover" alt="Logo boutique" />
+                    <img src={shop.logo} className="w-12 h-12 rounded-full border-2 border-emerald-400 object-cover" />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center text-white text-lg font-bold">
                       {shop.name.charAt(0).toUpperCase()}
@@ -411,11 +385,7 @@ export default function EditProductPage() {
             <div className="bg-white rounded-2xl border border-emerald-100 p-6 shadow-sm">
               <h3 className="font-bold text-gray-800 mb-3">Aperçu</h3>
               <div className="rounded-xl overflow-hidden border border-emerald-100">
-                <img
-                  src={form.images[0] || 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400'}
-                  className="w-full h-40 object-cover"
-                  alt="aperçu"
-                />
+                <img src={form.images[0] || 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400'} className="w-full h-40 object-cover" />
                 <div className="p-4">
                   <h4 className="font-bold text-gray-800">{form.name || 'Nom du produit'}</h4>
                   <p className="text-gray-500 text-sm mt-1 line-clamp-2">{form.description || 'Description...'}</p>

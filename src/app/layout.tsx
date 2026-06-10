@@ -1,4 +1,5 @@
 import "./globals.css";
+import { CartProvider } from '@/context/CartContext';
 
 export const metadata = {
   title: "Gro App",
@@ -13,16 +14,16 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet" />
-        {/* Police pour les icônes Material Symbols */}
-        <link 
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" 
-          rel="stylesheet" 
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1"
+          rel="stylesheet"
         />
       </head>
-      {/* suppressHydrationWarning évite l’erreur d’hydratation */}
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <CartProvider>
+          {children}
+        </CartProvider>
+      </body>
     </html>
   );
 }

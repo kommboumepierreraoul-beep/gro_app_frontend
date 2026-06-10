@@ -1,0 +1,20 @@
+.glassCard {
+  background: rgba(21, 34, 29, 0.6);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.reflectiveStroke {
+  border: 1px solid transparent;
+  background: linear-gradient(rgba(21, 34, 29, 0.6), rgba(21, 34, 29, 0.6)) padding-box,
+              linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 100%) border-box;
+}
+
+.noScrollbar::-webkit-scrollbar {
+  display: none;
+}
+.noScrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
