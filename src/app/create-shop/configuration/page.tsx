@@ -1,11 +1,21 @@
+// src/app/create-shop/configuration/page.tsx
 'use client';
 
-import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
 import api from '@/lib/axios';
+import toast from 'react-hot-toast';
+import { 
+  ArrowLeft, Store, Palette, Image, MapPin, Phone, Globe, 
+  User, ShieldCheck, Loader2, Sparkles, Heart, Upload, X, AlertCircle, Building2, Navigation
+} from 'lucide-react';
 
 export default function ConfigureShopPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [animate, setAnimate] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: '',
     slug: '',
@@ -16,11 +26,28 @@ export default function ConfigureShopPage() {
   });
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const logoFileRef = useRef<File | null>(null);
   const bannerFileRef = useRef<File | null>(null);
+
+  useEffect(() => {
+    const checkShop = async () => {
+      try {
+        await api.get('/my-shop/profile');
+        router.push('/my-shop'); // ← Redirection vers la page de succès
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          setLoading(false);
+          setTimeout(() => setAnimate(true), 100);
+        } else {
+          setLoading(false);
+          setTimeout(() => setAnimate(true), 100);
+        }
+      }
+    };
+    checkShop();
+  }, [router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.id]: e.target.value });
@@ -46,6 +73,18 @@ export default function ConfigureShopPage() {
     }
   };
 
+  const generateSlug = () => {
+    if (form.name) {
+      const slug = form.name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      setForm(prev => ({ ...prev, slug }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -59,300 +98,253 @@ export default function ConfigureShopPage() {
       formData.append('address', form.address);
       formData.append('city', form.city);
       formData.append('phone', form.phone);
-
       if (logoFileRef.current) formData.append('logo', logoFileRef.current);
       if (bannerFileRef.current) formData.append('banner', bannerFileRef.current);
 
       await api.post('/marketplace/shops', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      // Stocker les infos dans sessionStorage
+sessionStorage.setItem('newShopName', form.name);
+sessionStorage.setItem('newShopLogo', logoPreview || '');
+sessionStorage.setItem('newShopBanner', bannerPreview || '');
+router.push('/shop-created');
 
-      router.push('/my-shop');
+      toast.success('Boutique créée avec succès !');
+       router.push('/shop-created'); // ← Redirection vers la page de succès
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Erreur lors de la création de la boutique.';
       setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#e6fff4] font-sans relative overflow-x-hidden">
-      {/* Éléments décoratifs */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-0 overflow-hidden">
-        <span className="material-symbols-outlined absolute -top-20 -left-20 text-[400px]">eco</span>
-        <span className="material-symbols-outlined absolute top-1/2 -right-40 text-[500px]">potted_plant</span>
-        <span className="material-symbols-outlined absolute -bottom-40 left-1/3 text-[300px]">psychology_alt</span>
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#e6fff4]">
+        <div className="text-[#006c49]">Vérification...</div>
       </div>
+    );
+  }
 
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-[#bbcabf]/30 px-6 py-4 shadow-sm bg-[#e6fff4]/85 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+      {/* Navigation - aucune animation sur la nav */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100/50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => router.back()} className="p-2 hover:bg-[#cff6e6] rounded-full transition-all text-[#002118]">
-              <span className="material-symbols-outlined">arrow_back</span>
+            <button 
+              onClick={() => router.back()} 
+              className="p-2 rounded-full hover:bg-emerald-100 transition-all duration-200 text-emerald-700"
+            >
+              <ArrowLeft size={20} />
             </button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#006c49] rounded-xl flex items-center justify-center text-white shadow-lg shadow-[#006c49]/20">
-                <span className="material-symbols-outlined">agriculture</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <Store size={20} className="text-white" />
               </div>
-              <span className="font-bold text-xl tracking-tight text-[#002118]">AgriConnect</span>
+              <span className="font-bold text-xl bg-gradient-to-r from-emerald-800 to-teal-700 bg-clip-text text-transparent">
+                AgriConnect
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="p-2.5 text-[#3c4a42] hover:bg-[#cff6e6] rounded-full transition-colors relative">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-[#ba1a1a] rounded-full border-2 border-white"></span>
-            </button>
-            <div className="h-8 w-[1px] bg-[#bbcabf]/30 mx-2"></div>
-            <button className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-[#cff6e6] transition-colors">
-              <span className="text-sm font-semibold text-[#002118]">Aide</span>
-              <div className="w-8 h-8 rounded-full bg-[#aeeecb] flex items-center justify-center">
-                <span className="material-symbols-outlined text-sm text-[#316e52]">help</span>
-              </div>
-            </button>
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 px-4 py-2 rounded-full">
+              <ShieldCheck size={16} />
+              <span>Plateforme certifiée</span>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center shadow-md">
+              <User size={16} className="text-white" />
+            </div>
           </div>
         </div>
       </nav>
 
-      <main className="py-10 md:py-16 px-4 max-w-2xl mx-auto relative z-10">
-        {/* En-tête */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#006c49]/10 text-[#006c49] text-xs font-bold uppercase tracking-widest mb-6">
-            <span className="material-symbols-outlined text-sm">storefront</span> Étape finale
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-[#002118] tracking-tight mb-4">
-            Configurez votre vitrine
-          </h1>
-          <p className="text-[#3c4a42] text-lg max-w-lg mx-auto leading-relaxed font-medium">
-            Établissez la présence numérique de votre exploitation. Ces détails permettront aux acheteurs locaux de vous identifier.
-          </p>
+      <main className="relative py-12 md:py-16 px-4">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-1000" />
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-200 text-red-700 rounded-2xl text-sm">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-10">
-          {/* Section Identité visuelle */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-[#006c49]/10 flex items-center justify-center text-[#006c49]">
-                <span className="material-symbols-outlined text-2xl">palette</span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-[#002118]">Identité visuelle</h2>
-                <p className="text-sm text-[#3c4a42]">Définissez l'apparence de votre marque</p>
-              </div>
+        <div className="max-w-4xl mx-auto relative z-10">
+          {/* Header avec animation */}
+          <div className={`text-center mb-12 transition-all duration-700 ease-out ${animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-6 shadow-sm">
+              <Sparkles size={16} />
+              <span>Lancez votre boutique en ligne</span>
             </div>
-            <div className="bg-white rounded-3xl p-6 md:p-10 space-y-8 shadow-lg border border-[#bbcabf]/20">
-              {/* Logo */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-bold text-[#002118]">Logo de la boutique</label>
-                  <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-[#c4ebdb] rounded-full text-[#3c4a42] font-bold">Requis</span>
-                </div>
-                <div className="relative group cursor-pointer aspect-square w-32 mx-auto rounded-full bg-[#d5fcec] border-2 border-dashed border-[#bbcabf]/50 flex flex-col items-center justify-center transition-all hover:border-[#006c49]/40 hover:bg-[#006c49]/5">
-                  {logoPreview ? (
-                    <img src={logoPreview} alt="Logo preview" className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    <>
-                      <span className="material-symbols-outlined text-3xl text-[#6c7a71] group-hover:text-[#006c49] transition-all">add_a_photo</span>
-                      <span className="text-[10px] mt-2 font-bold text-[#6c7a71] tracking-wider">MODIFIER</span>
-                    </>
-                  )}
-                  <input type="file" accept="image/*" onChange={handleLogoChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                </div>
-                <p className="text-center text-xs text-[#3c4a42] font-medium">Format carré recommandé (ex: 500x500px)</p>
-              </div>
-              {/* Bannière */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-bold text-[#002118]">Bannière de couverture</label>
-                  <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-[#c4ebdb] rounded-full text-[#3c4a42] font-bold">Requis</span>
-                </div>
-                <div className="relative group cursor-pointer aspect-[21/9] w-full rounded-xl bg-[#d5fcec] border-2 border-dashed border-[#bbcabf]/50 flex flex-col items-center justify-center transition-all hover:border-[#006c49]/40 hover:bg-[#006c49]/5">
-                  {bannerPreview ? (
-                    <img src={bannerPreview} alt="Banner preview" className="w-full h-full rounded-xl object-cover" />
-                  ) : (
-                    <>
-                      <span className="material-symbols-outlined text-3xl text-[#6c7a71] group-hover:text-[#006c49]">wallpaper</span>
-                      <span className="text-[10px] mt-2 font-bold text-[#6c7a71] tracking-wider uppercase">Ajouter une bannière</span>
-                    </>
-                  )}
-                  <input type="file" accept="image/*" onChange={handleBannerChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Section Détails de l'entreprise */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-[#006c49]/10 flex items-center justify-center text-[#006c49]">
-                <span className="material-symbols-outlined text-2xl">business</span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-[#002118]">Détails de l'entreprise</h2>
-                <p className="text-sm text-[#3c4a42]">Informations générales sur votre activité</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-3xl p-6 md:p-10 space-y-8 shadow-lg border border-[#bbcabf]/20">
-              <div className="space-y-2">
-                <label htmlFor="name" className="block text-sm font-bold text-[#3c4a42] ml-1">Nom de la boutique <span className="text-[#ba1a1a] font-bold">*</span></label>
-                <input
-                  type="text"
-                  id="name"
-                  value={form.name}
-                  onChange={handleInputChange}
-                  placeholder="Ex: Les Vergers d'Occitanie"
-                  className="w-full bg-white border border-[#bbcabf]/50 focus:border-[#006c49] focus:ring-4 focus:ring-[#006c49]/10 rounded-2xl py-4 px-5 text-[#002118] transition-all placeholder:text-[#6c7a71]/60 font-medium"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="slug" className="block text-sm font-bold text-[#3c4a42] ml-1">Adresse URL personnalisée <span className="text-[#ba1a1a] font-bold">*</span></label>
-                <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#3c4a42] font-medium text-sm flex items-center pointer-events-none">
-                    <span className="opacity-50">agriconnect.com/</span>
-                  </div>
-                  <input
-                    type="text"
-                    id="slug"
-                    value={form.slug}
-                    onChange={handleInputChange}
-                    placeholder="nom-boutique"
-                    className="w-full bg-white border border-[#bbcabf]/50 focus:border-[#006c49] focus:ring-4 focus:ring-[#006c49]/10 rounded-2xl py-4 px-5 pl-48 text-[#002118] transition-all placeholder:text-[#6c7a71]/60 font-medium"
-                    required
-                  />
-                </div>
-                <p className="text-[11px] text-[#3c4a42] ml-1 font-medium">C'est le lien direct vers votre profil public.</p>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="description" className="block text-sm font-bold text-[#3c4a42] ml-1">Votre histoire &amp; valeurs <span className="text-[#ba1a1a] font-bold">*</span></label>
-                <textarea
-                  id="description"
-                  rows={5}
-                  value={form.description}
-                  onChange={handleInputChange}
-                  placeholder="Présentez votre savoir-faire, vos méthodes de culture, ou l'origine de vos produits..."
-                  className="w-full bg-white border border-[#bbcabf]/50 focus:border-[#006c49] focus:ring-4 focus:ring-[#006c49]/10 rounded-2xl py-4 px-5 text-[#002118] transition-all placeholder:text-[#6c7a71]/60 font-medium resize-y"
-                  required
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Section Coordonnées */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-[#006c49]/10 flex items-center justify-center text-[#006c49]">
-                <span className="material-symbols-outlined text-2xl">location_on</span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-[#002118]">Coordonnées</h2>
-                <p className="text-sm text-[#3c4a42]">Où vous trouver et vous contacter</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-3xl p-6 md:p-10 space-y-8 shadow-lg border border-[#bbcabf]/20">
-              <div className="space-y-2">
-                <label htmlFor="address" className="block text-sm font-bold text-[#3c4a42] ml-1">Adresse de l'exploitation <span className="text-[#ba1a1a] font-bold">*</span></label>
-                <input
-                  type="text"
-                  id="address"
-                  value={form.address}
-                  onChange={handleInputChange}
-                  placeholder="123 Route des Plaines"
-                  className="w-full bg-white border border-[#bbcabf]/50 focus:border-[#006c49] focus:ring-4 focus:ring-[#006c49]/10 rounded-2xl py-4 px-5 text-[#002118] transition-all placeholder:text-[#6c7a71]/60 font-medium"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label htmlFor="city" className="block text-sm font-bold text-[#3c4a42] ml-1">Ville <span className="text-[#ba1a1a] font-bold">*</span></label>
-                  <input
-                    type="text"
-                    id="city"
-                    value={form.city}
-                    onChange={handleInputChange}
-                    placeholder="Douala"
-                    className="w-full bg-white border border-[#bbcabf]/50 focus:border-[#006c49] focus:ring-4 focus:ring-[#006c49]/10 rounded-2xl py-4 px-5 text-[#002118] transition-all placeholder:text-[#6c7a71]/60 font-medium"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="phone" className="block text-sm font-bold text-[#3c4a42] ml-1">Téléphone direct <span className="text-[#ba1a1a] font-bold">*</span></label>
-                  <div className="flex">
-                    <div className="flex items-center gap-2 bg-[#caf1e1] px-4 rounded-l-xl border-y border-l border-[#bbcabf]/30 text-xs font-bold text-[#3c4a42]">
-                      <span className="w-4 h-3 bg-blue-100 rounded-sm overflow-hidden">
-                        <span className="block h-full w-1/3 bg-blue-700"></span>
-                      </span>
-                      +237
-                    </div>
-                    <input
-                      type="tel"
-                      id="phone"
-                      value={form.phone}
-                      onChange={handleInputChange}
-                      placeholder="6 12 34 56 78"
-                      className="w-full bg-white border border-[#bbcabf]/50 focus:border-[#006c49] focus:ring-4 focus:ring-[#006c49]/10 rounded-2xl py-4 px-5 text-[#002118] transition-all placeholder:text-[#6c7a71]/60 font-medium rounded-l-none"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Actions */}
-          <div className="pt-6 space-y-6">
-            <div className="flex items-start gap-4 p-5 bg-[#006c49]/5 rounded-2xl border border-[#006c49]/10">
-              <span className="material-symbols-outlined text-[#006c49] mt-0.5">verified_user</span>
-              <div>
-                <h4 className="text-sm font-bold text-[#002118]">Vérification de sécurité</h4>
-                <p className="text-xs text-[#3c4a42] mt-1 leading-relaxed">
-                  Pour garantir l'authenticité de notre réseau, votre boutique sera validée par notre équipe sous 24h ouvrées.
-                </p>
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-5 px-8 rounded-2xl bg-gradient-to-r from-[#006c49] to-[#2c694e] text-white font-bold text-xl shadow-xl shadow-[#006c49]/30 hover:shadow-[#006c49]/40 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3 group disabled:opacity-70"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Création en cours...
-                </>
-              ) : (
-                <>
-                  Créer ma boutique
-                  <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                </>
-              )}
-            </button>
-            <p className="text-center text-xs text-[#6c7a71] font-medium max-w-xs mx-auto">
-              En créant votre boutique, vous acceptez nos <a href="#" className="text-[#006c49] font-bold hover:underline">Conditions d'Utilisation Vendeur</a>.
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-emerald-800 to-teal-600 bg-clip-text text-transparent mb-4">
+              Créez votre vitrine
+            </h1>
+            <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+              Rejoignez des milliers d'agriculteurs et vendez vos produits à travers le Cameroun
             </p>
           </div>
-        </form>
 
-        <footer className="mt-16 pb-12 pt-8 border-t border-[#bbcabf]/10 text-center">
-          <p className="text-[#3c4a42] text-sm font-medium">© 2024 AgriConnect Marketplace. Propulsé par AgriGrow.</p>
-        </footer>
+          {/* Message d'erreur (sans animation spécifique) */}
+          {error && (
+            <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm flex items-start gap-3">
+              <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Section Identité visuelle avec animation décalée */}
+            <div className={`transition-all duration-700 delay-100 ease-out ${animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 md:p-8 transition-all duration-300 hover:shadow-2xl">
+                <div className="flex items-center gap-3 mb-6 pb-3 border-b border-emerald-100">
+                  <div className="p-2 bg-emerald-100 rounded-xl">
+                    <Palette size={22} className="text-emerald-700" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">Identité visuelle</h2>
+                    <p className="text-sm text-slate-500">Donnez vie à votre marque</p>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-slate-700">Logo de la boutique</label>
+                    <div className={`relative group cursor-pointer aspect-square max-w-[200px] mx-auto rounded-2xl bg-slate-50 border-2 border-dashed transition-all ${logoPreview ? 'border-emerald-300' : 'border-slate-200 hover:border-emerald-400'}`}>
+                      {logoPreview ? (
+                        <div className="relative w-full h-full">
+                          <img src={logoPreview} alt="Logo preview" className="w-full h-full rounded-2xl object-cover" />
+                          <button type="button" onClick={() => { setLogoPreview(null); logoFileRef.current = null; }} className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600 transition"><X size={14} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full p-6 text-slate-400 group-hover:text-emerald-600 transition">
+                          <Upload size={32} className="mb-2" />
+                          <span className="text-xs font-medium">Cliquez ou glissez</span>
+                          <span className="text-[10px]">PNG, JPG jusqu'à 2MB</span>
+                        </div>
+                      )}
+                      <input type="file" accept="image/*" onChange={handleLogoChange} className="absolute inset-0 opacity-0 cursor-pointer" />
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-slate-700">Bannière de couverture</label>
+                    <div className={`relative group cursor-pointer aspect-[21/9] rounded-xl bg-slate-50 border-2 border-dashed transition-all ${bannerPreview ? 'border-emerald-300' : 'border-slate-200 hover:border-emerald-400'}`}>
+                      {bannerPreview ? (
+                        <div className="relative w-full h-full">
+                          <img src={bannerPreview} alt="Banner preview" className="w-full h-full rounded-xl object-cover" />
+                          <button type="button" onClick={() => { setBannerPreview(null); bannerFileRef.current = null; }} className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600 transition"><X size={14} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full p-4 text-slate-400 group-hover:text-emerald-600 transition">
+                          <Image size={28} className="mb-2" />
+                          <span className="text-xs font-medium">Ajouter une bannière</span>
+                          <span className="text-[10px]">Recommandé 1200x400px</span>
+                        </div>
+                      )}
+                      <input type="file" accept="image/*" onChange={handleBannerChange} className="absolute inset-0 opacity-0 cursor-pointer" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section Informations générales avec animation décalée */}
+            <div className={`transition-all duration-700 delay-200 ease-out ${animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 md:p-8 transition-all duration-300 hover:shadow-2xl">
+                <div className="flex items-center gap-3 mb-6 pb-3 border-b border-emerald-100">
+                  <div className="p-2 bg-emerald-100 rounded-xl">
+                    <Building2 size={22} className="text-emerald-700" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">Informations générales</h2>
+                    <p className="text-sm text-slate-500">Détails de votre activité agricole</p>
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-2">Nom de la boutique <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <Store size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input type="text" id="name" value={form.name} onChange={handleInputChange} onBlur={() => setFocusedField(null)} onFocus={() => setFocusedField('name')} placeholder="Ex: Les Vergers d'Occitanie"
+                        className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-200 ${focusedField === 'name' ? 'border-emerald-400 ring-4 ring-emerald-100' : 'border-slate-200'} bg-white/80 focus:outline-none text-slate-800`} required />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="slug" className="block text-sm font-semibold text-slate-700 mb-2">Adresse URL <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input type="text" id="slug" value={form.slug} onChange={handleInputChange} onBlur={() => setFocusedField(null)} onFocus={() => setFocusedField('slug')} placeholder="nom-boutique"
+                        className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-200 ${focusedField === 'slug' ? 'border-emerald-400 ring-4 ring-emerald-100' : 'border-slate-200'} bg-white/80 focus:outline-none text-slate-800 font-mono text-sm`} required />
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <p className="text-xs text-slate-400">agriconnect.com/{form.slug || 'votre-boutique'}</p>
+                      {form.name && !form.slug && (<button type="button" onClick={generateSlug} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Générer automatiquement</button>)}
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="description" className="block text-sm font-semibold text-slate-700 mb-2">Description <span className="text-red-500">*</span></label>
+                    <textarea id="description" rows={5} value={form.description} onChange={handleInputChange} placeholder="Présentez votre exploitation, vos méthodes de culture, vos valeurs..." className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all duration-200 bg-white/80 resize-y text-slate-800" required />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section Coordonnées avec animation décalée */}
+            <div className={`transition-all duration-700 delay-300 ease-out ${animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 md:p-8 transition-all duration-300 hover:shadow-2xl">
+                <div className="flex items-center gap-3 mb-6 pb-3 border-b border-emerald-100">
+                  <div className="p-2 bg-emerald-100 rounded-xl">
+                    <MapPin size={22} className="text-emerald-700" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">Coordonnées</h2>
+                    <p className="text-sm text-slate-500">Où et comment vous joindre</p>
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div>
+                    <label htmlFor="address" className="block text-sm font-semibold text-slate-700 mb-2">Adresse <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <Navigation size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input type="text" id="address" value={form.address} onChange={handleInputChange} placeholder="123 Route des Plaines" className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-slate-200 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 bg-white/80" required />
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div><label htmlFor="city" className="block text-sm font-semibold text-slate-700 mb-2">Ville <span className="text-red-500">*</span></label><input type="text" id="city" value={form.city} onChange={handleInputChange} placeholder="Douala" className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 bg-white/80" required /></div>
+                    <div><label htmlFor="phone" className="block text-sm font-semibold text-slate-700 mb-2">Téléphone <span className="text-red-500">*</span></label><div className="relative"><Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" /><input type="tel" id="phone" value={form.phone} onChange={handleInputChange} placeholder="6 12 34 56 78" className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-slate-200 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 bg-white/80" required /></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer sécurité avec animation */}
+            <div className={`transition-all duration-700 delay-400 ease-out ${animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-100">
+                <div className="flex flex-wrap gap-6 justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white rounded-full shadow-sm"><ShieldCheck size={20} className="text-emerald-600" /></div>
+                    <div><p className="text-sm font-semibold text-slate-700">Validation en 24h</p><p className="text-xs text-slate-500">Votre boutique sera vérifiée par notre équipe</p></div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white rounded-full shadow-sm"><Heart size={20} className="text-emerald-600" /></div>
+                    <div><p className="text-sm font-semibold text-slate-700">Communauté solidaire</p><p className="text-xs text-slate-500">Rejoignez des milliers d'agriculteurs</p></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bouton de soumission avec animation */}
+            <div className={`transition-all duration-700 delay-500 ease-out ${animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <button type="submit" disabled={isSubmitting} className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-lg shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-3 group disabled:opacity-70 disabled:cursor-not-allowed">
+                {isSubmitting ? (<><Loader2 size={22} className="animate-spin" /> Création en cours...</>) : (<><Sparkles size={20} /> Lancer ma boutique <ArrowLeft size={18} className="rotate-180 group-hover:translate-x-1 transition-transform" /></>)}
+              </button>
+              <p className="text-center text-xs text-slate-400 mt-6">En créant votre boutique, vous acceptez nos <a href="#" className="text-emerald-600 hover:underline font-medium">Conditions d'utilisation</a></p>
+            </div>
+
+          </form>
+
+          <footer className={`mt-16 pt-8 border-t border-emerald-100/50 text-center transition-all duration-700 delay-600 ease-out ${animate ? 'opacity-100' : 'opacity-0'}`}>
+            <p className="text-slate-400 text-sm">© 2024 AgriConnect. Tous droits réservés.</p>
+          </footer>
+        </div>
       </main>
-
-      <style jsx global>{`
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-      `}</style>
     </div>
   );
 }

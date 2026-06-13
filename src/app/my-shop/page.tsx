@@ -1,20 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Menu, Search, Bell, Filter, Plus, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Package, Grid3x3, LayoutList, Store, AlertCircle, Star } from 'lucide-react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
+import VendorLayout from '@/components/layouts/VendorLayout';
 
 interface Product {
   id: number;
   name: string;
   price: number;
-  unit_price?: number;
   stock: number;
   status: string;
   approval_status?: 'pending' | 'approved' | 'rejected';
-  rejection_reason?: string;
   images: string[];
 }
 
@@ -27,7 +26,7 @@ interface Shop {
   reviews_count?: number;
 }
 
-export default function MaBoutique() {
+function MyShopContent() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [shop, setShop] = useState<Shop | null>(null);
@@ -35,24 +34,27 @@ export default function MaBoutique() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'outofstock'>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setError(null);
-        // Récupération parallèle du profil boutique et des produits
         const [shopRes, productsRes] = await Promise.all([
           api.get('/my-shop/profile'),
           api.get('/my-shop/products')
         ]);
-        setShop(shopRes.data.data);
-        setProducts(productsRes.data.data || []);
+        const parse = (d: any) => {
+          if (typeof d === 'string') return JSON.parse(d.replace(/^[^\{\[]+/, ''));
+          return d;
+        };
+        const shopData = parse(shopRes.data)?.data ?? parse(shopRes.data);
+        const productsData = parse(productsRes.data)?.data ?? parse(productsRes.data);
+        setShop(shopData?.id ? shopData : null);
+        setProducts(Array.isArray(productsData) ? productsData : []);
       } catch (err: any) {
-        console.error('Erreur API:', err);
-        const message = err.response?.data?.message || 'Impossible de charger les données';
-        setError(message);
-        toast.error(message);
+        setError(err?.response?.data?.message || 'Erreur de chargement');
+        toast.error('Erreur de chargement');
       } finally {
         setLoading(false);
       }
@@ -60,265 +62,121 @@ export default function MaBoutique() {
     fetchData();
   }, []);
 
-  // Filtrage des produits
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      filterStatus === 'all' ? true
-      : filterStatus === 'active' ? product.status === 'active'
-      : product.status === 'outofstock';
-    return matchesSearch && matchesStatus;
-  });
+  const filtered = products.filter(p => 
+    (filterStatus === 'all' || (filterStatus === 'active' && p.status === 'active') || (filterStatus === 'outofstock' && p.status !== 'active')) &&
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Supprimer ce produit définitivement ?')) return;
+    if (!confirm('Supprimer ce produit ?')) return;
     try {
       await api.delete(`/marketplace/products/${id}`);
       setProducts(prev => prev.filter(p => p.id !== id));
       toast.success('Produit supprimé');
-    } catch (err) {
-      toast.error('Erreur lors de la suppression');
-    }
+    } catch { toast.error('Erreur'); }
   };
 
-  const handleEdit = (id: number) => router.push(`/edit-product/${id}`);
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-emerald-600"></div></div>;
+  if (error) return <div className="bg-white p-6 rounded-xl shadow text-center"><AlertCircle className="mx-auto mb-2 text-red-500"/><p>{error}</p><button onClick={()=>window.location.reload()} className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg">Réessayer</button></div>;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-primary">Chargement de votre boutique...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8">
-        <div className="text-error text-xl mb-4">⚠️ Une erreur est survenue</div>
-        <div className="text-on-surface-variant mb-6">{error}</div>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-2 bg-primary text-on-primary rounded-full"
-        >
-          Réessayer
-        </button>
-      </div>
-    );
-  }
-console.log(shop);
   return (
-    <div className="min-h-screen bg-background text-on-background pb-12">
-      {/* Header fixe */}
-      <header className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 flex justify-between items-center px-6 h-16">
-        <div className="flex items-center gap-4">
-          <Menu className="text-primary cursor-pointer" />
-          <h1 className="font-bold text-primary text-2xl">AgriConnect</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <Bell className="text-primary" />
-          <div className="w-8 h-8 rounded-full bg-primary-container"></div>
-        </div>
-      </header>
-
-      <main className="max-w-[1280px] mx-auto pt-24 px-6 space-y-8">
-        {/* Section Hero avec bannière et logo dynamiques */}
-        <section className="relative h-64 rounded-3xl overflow-hidden shadow-xl">
-      <img
-  src={
-    shop?.banner ||
-    'https://picsum.photos/1920/400?grayscale'
-  }
-  className="w-full h-full object-cover"
-  alt="Bannière boutique"
-/>
-        
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-          <div className="absolute bottom-6 left-6 flex items-end justify-between w-[95%] text-white">
-            <div className="flex items-center gap-4">
-            
-           <img
-  src={
-    shop?.logo ||
-    'https://picsum.photos/96/96?random=1'
-  }
-  className="w-24 h-24 rounded-3xl border-4 border-white shadow-lg object-cover"
-  alt="Logo boutique"
-/>
-               
-              <div>
-                <h2 className="text-3xl font-bold">{shop?.name || 'Ma Boutique'}</h2>
-                <p className="text-sm text-primary-fixed-dim">
-                  ★ {shop?.rating || '4.9'} ({shop?.reviews_count || 124} avis) • Vendeur Premium
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="bg-white/20 backdrop-blur-md px-8 py-3 rounded-full text-center">
-                <p className="font-bold text-xl">{products.length}</p>
-                <p className="text-[10px] uppercase">Produits</p>
-              </div>
-              <div className="bg-white/20 backdrop-blur-md px-8 py-3 rounded-full text-center">
-                <p className="font-bold text-xl">98%</p>
-                <p className="text-[10px] uppercase">Fiabilité</p>
+    <div className="space-y-8">
+      {/* Bannière */}
+      <div className="relative rounded-2xl overflow-hidden shadow-lg">
+        <img src={shop?.banner || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1200'} className="w-full h-48 sm:h-56 object-cover" alt="Bannière" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-5 z-10 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <img src={shop?.logo || `https://ui-avatars.com/api/?background=0D9488&color=fff&name=${shop?.name || 'Boutique'}`} className="w-20 h-20 rounded-xl border-4 border-white shadow-lg object-cover bg-white" alt="Logo" />
+            <div>
+              <h2 className="text-2xl font-bold text-white drop-shadow-md">{shop?.name || 'Ma Boutique'}</h2>
+              <div className="flex items-center gap-3 mt-1 text-sm text-white/90">
+                <div className="flex items-center gap-1"><Star className="w-4 h-4 fill-amber-400 text-amber-400" /><span>{shop?.rating || '4.9'}</span><span className="text-white/70">({shop?.reviews_count || 124} avis)</span></div>
+                <span className="text-white/40">•</span><span className="text-emerald-200">Vendeur vérifié</span>
               </div>
             </div>
           </div>
-        </section>
-
-        {/* Barre de recherche et filtres */}
-        <section className="flex flex-wrap items-center gap-3 bg-transparent p-0 shadow-none">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-4 text-primary" size={20} />
-            <input
-              className="w-full pl-12 pr-4 py-4 bg-surface-container-low rounded-full border-none focus:ring-2 focus:ring-primary-container"
-              placeholder="Rechercher dans mes produits..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex gap-2">
+            <button onClick={() => router.push('/edit-shop')} className="px-4 py-1.5 bg-black/20 backdrop-blur-sm rounded-full text-white text-sm font-medium hover:bg-black/30 transition">Modifier</button>
+            <button onClick={() => router.push('/add-product')} className="px-4 py-1.5 bg-emerald-600 rounded-full text-white text-sm font-medium shadow-lg hover:bg-emerald-700 transition flex items-center gap-1"><Plus className="w-4 h-4"/> Ajouter</button>
           </div>
-          <button className="px-6 py-4 bg-surface-container-high rounded-full text-sm font-medium flex items-center gap-2">
-            <Filter size={18} /> Filtrer
-          </button>
-          <button
-            onClick={() => setFilterStatus('all')}
-            className={`px-6 py-4 rounded-full text-sm font-semibold ${
-              filterStatus === 'all'
-                ? 'bg-primary-container/10 border border-primary-container text-primary'
-                : 'bg-surface-container-low text-on-surface-variant'
-            }`}
-          >
-            Toutes les catégories
-          </button>
-          <button
-            onClick={() => setFilterStatus('active')}
-            className={`px-6 py-4 rounded-full text-sm font-medium ${
-              filterStatus === 'active'
-                ? 'bg-primary-container/10 border border-primary-container text-primary'
-                : 'bg-surface-container-low text-on-surface-variant'
-            }`}
-          >
-            Actifs
-          </button>
-          <button
-            onClick={() => setFilterStatus('outofstock')}
-            className={`px-6 py-4 rounded-full text-sm font-medium ${
-              filterStatus === 'outofstock'
-                ? 'bg-primary-container/10 border border-primary-container text-primary'
-                : 'bg-error-container text-on-error-container'
-            }`}
-          >
-            Rupture
-          </button>
-          <button
-            onClick={() => router.push('/add-product')}
-            className="px-6 py-4 bg-primary text-on-primary rounded-full font-bold flex items-center gap-2 shadow-md hover:scale-105 transition"
-          >
-            <Plus size={18} /> Ajouter
-          </button>
-        </section>
+        </div>
+      </div>
 
-        {/* Grille des produits */}
-        {filteredProducts.length === 0 ? (
-          <div className="text-center py-12 text-on-surface-variant">
-            Aucun produit trouvé. Cliquez sur "Ajouter" pour commencer.
+      {/* Recherche + filtres */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+          <input type="text" placeholder="Rechercher un produit..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent text-sm" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex bg-slate-100 rounded-lg p-1">
+            <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition ${viewMode === 'grid' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'}`}><Grid3x3 className="w-4 h-4"/></button>
+            <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition ${viewMode === 'list' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'}`}><LayoutList className="w-4 h-4"/></button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {filteredProducts.map((p) => (
-              <div
-                key={p.id}
-                className="group bg-surface-container-lowest rounded-[2rem] border border-outline-variant/30 hover:shadow-2xl transition-all duration-300 flex flex-col overflow-hidden"
-              >
-                <div className="relative h-60 w-full rounded-t-[2rem] overflow-hidden">
-                  <img
-                    src={p.images?.[0] || '/placeholder.png'}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    alt={p.name}
-                  />
-                  {/* Badge de statut */}
-                  <span
-                    className={`absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-                      p.status === 'active'
-                        ? 'bg-primary-container text-on-primary-container'
-                        : p.status === 'outofstock'
-                        ? 'bg-error-container text-on-error-container'
-                        : 'bg-tertiary-container text-on-tertiary-container'
-                    }`}
-                  >
-                    {p.status === 'active' ? 'Actif' : p.status === 'outofstock' ? 'Rupture' : 'En attente'}
-                  </span>
-                  
-                  {/* Badge d'approbation */}
-                {/* Badge de statut d'approbation */}
-{(() => {
-  const status = p.approval_status;
-  if (status === 'approved') {
-    return (
-      <span className="absolute top-3 left-40 px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-green-600 text-white shadow-sm">
-        ✓ Vérifié
-      </span>
-    );
-  }
-  if (status === 'pending') {
-    return (
-      <span className="absolute top-3 left-40 px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-500 text-white shadow-sm">
-        ⏱ En attente
-      </span>
-    );
-  }
-  if (status === 'rejected') {
-    return (
-      <span
-        className="absolute top-3 left-40 px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-red-600 text-white shadow-sm"
-        title={p.rejection_reason ? `Rejeté : ${p.rejection_reason}` : 'Produit rejeté'}
-      >
-        ✗ Rejeté
-      </span>
-    );
-  }
-  return (
-    <span className="absolute top-3 left-40 px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-gray-500 text-white shadow-sm">
-      ℹ Statut inconnu
-    </span>
-  );
-})()}
-                  
-                  <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => handleEdit(p.id)}
-                      className="bg-white/80 backdrop-blur-md p-2 rounded-full text-blue-600 hover:bg-white"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(p.id)}
-                      className="bg-white/80 backdrop-blur-md p-2 rounded-full text-red-600 hover:bg-white"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-                <div className="p-3 flex-grow flex flex-col justify-center">
-                  <h3 className="font-bold text-sm leading-tight text-on-surface">{p.name}</h3>
-                  <div className="flex justify-between items-center border-t border-outline-variant/30 mt-2 pt-2">
-                    <div>
-                      <p className="text-[10px] text-outline uppercase">Prix</p>
-                      <p className="text-md font-bold text-primary">
-                        {Math.floor(p.price)} FCFA
-                        {p.unit_price && <span className="text-[10px] font-normal"> / {p.unit_price}</span>}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] text-outline uppercase">Stock</p>
-                      <p className="text-xs font-semibold text-on-surface">{p.stock} unités</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div className="flex gap-2">
+            {[
+              { value: 'all', label: 'Tous' },
+              { value: 'active', label: 'Actifs' },
+              { value: 'outofstock', label: 'Rupture' }
+            ].map((status) => (
+              <button key={status.value} onClick={() => setFilterStatus(status.value as any)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${filterStatus === status.value ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{status.label}</button>
             ))}
           </div>
-        )}
-      </main>
+        </div>
+      </div>
+
+      {/* Grille produits */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 bg-white/60 rounded-2xl border border-dashed border-slate-200">
+          <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500">Aucun produit trouvé</p>
+          <button onClick={() => router.push('/add-product')} className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm inline-flex items-center gap-2 hover:bg-emerald-700 transition"><Plus className="w-4 h-4"/> Ajouter un produit</button>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filtered.map((product) => (
+            <div key={product.id} className="group bg-white rounded-t-xl rounded-b-none shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col transform hover:-translate-y-1">
+              <div className="relative h-52 bg-slate-100 rounded-t-xl overflow-hidden">
+                <img src={product.images?.[0] || '/placeholder.png'} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" alt={product.name} />
+                <div className="absolute top-3 left-3 flex gap-1.5">
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase shadow-sm ${product.status === 'active' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>{product.status === 'active' ? 'Actif' : 'Rupture'}</span>
+                  {product.approval_status === 'approved' && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500 text-white shadow-sm">Vérifié</span>}
+                </div>
+                <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                  <button onClick={() => router.push(`/edit-product/${product.id}`)} className="p-1.5 bg-white rounded-lg shadow-md hover:bg-slate-100 transition"><Edit className="w-4 h-4 text-slate-600" /></button>
+                  <button onClick={() => handleDelete(product.id)} className="p-1.5 bg-white rounded-lg shadow-md hover:bg-red-50 transition"><Trash2 className="w-4 h-4 text-red-500" /></button>
+                </div>
+              </div>
+              <div className="p-5 flex-1 flex flex-col justify-between bg-white">
+                <h3 className="font-semibold text-base text-slate-800 line-clamp-1">{product.name}</h3>
+                <div className="mt-4 flex justify-between items-end">
+                  <div><p className="text-[11px] text-slate-400 uppercase tracking-wide">Prix</p><p className="font-bold text-emerald-600 text-xl">{product.price.toLocaleString()} FCFA</p></div>
+                  <div className="text-right"><p className="text-[11px] text-slate-400 uppercase tracking-wide">Stock</p><p className="text-sm font-medium text-slate-700">{product.stock} unités</p></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((product) => (
+            <div key={product.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition p-4 flex flex-wrap items-center gap-4 border border-slate-100">
+              <img src={product.images?.[0] || '/placeholder.png'} className="w-14 h-14 rounded-lg object-cover" />
+              <div className="flex-1"><h3 className="font-semibold text-slate-800">{product.name}</h3><div className="flex gap-4 mt-1 text-sm"><span className="text-emerald-600 font-bold">{product.price.toLocaleString()} FCFA</span><span className="text-slate-400">Stock: {product.stock}</span></div></div>
+              <div className="flex gap-2"><button onClick={() => router.push(`/edit-product/${product.id}`)} className="p-2 rounded-md hover:bg-slate-100 transition"><Edit className="w-4 h-4"/></button><button onClick={() => handleDelete(product.id)} className="p-2 rounded-md hover:bg-red-50 transition"><Trash2 className="w-4 h-4 text-red-500"/></button></div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function MaBoutique() {
+  return (
+    <VendorLayout>
+      <MyShopContent />
+    </VendorLayout>
   );
 }

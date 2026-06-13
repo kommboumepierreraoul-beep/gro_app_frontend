@@ -1,13 +1,9 @@
+// src/app/admin/sellers/page.tsx
 'use client';
 
+import VendorLayout from '@/components/layouts/VendorLayout';
 import { useState, useEffect } from 'react';
 import {
-  LayoutDashboard,
-  ShoppingCart,
-  Package,
-  MessageSquare,
-  Wallet,
-  Tractor,
   Filter,
   Download,
   ChevronLeft,
@@ -21,94 +17,175 @@ import {
   Phone,
   User,
   Calendar,
-  XCircle, 
+  XCircle,
+  Package,
+  TrendingUp,
+  Eye,
 } from 'lucide-react';
+import api from '@/lib/axios';
+import toast from 'react-hot-toast';
 
 type Order = {
   id: string;
   time: string;
   customer: string;
+  customerEmail?: string;
+  customerPhone?: string;
   address: string;
   phone?: string;
   email?: string;
   products: string[];
   total: string;
-  status: 'nouveau' | 'pret' | 'en_route' | 'refused';
+  status: 'nouveau' | 'en_route' | 'livree' | 'terminee' | 'refused';
+  sellerConfirmed: boolean;
+  clientConfirmed: boolean;
 };
 
-const initialOrders: Order[] = [
-  {
-    id: '8821',
-    time: 'Il y a 2h',
-    customer: 'Jean-Marc Dupuis',
-    address: '12 Rue de la Plaine, 64000 Pau',
-    phone: '+33 6 12 34 56 78',
-    email: 'jeanmarc@example.com',
-    products: ['2x Engrais Bio-NPK (25kg)', '1x Semences Maïs (50kg)'],
-    total: '1 240,00',
-    status: 'nouveau',
-  },
-  {
-    id: '8820',
-    time: 'Il y a 5h',
-    customer: 'Ferme des Horizons',
-    address: 'Route Nationale 7, 26000 Valence',
-    phone: '+33 7 98 76 54 32',
-    email: 'contact@fermehorizons.fr',
-    products: ['10x Filtres à Huile Industriels'],
-    total: '450,00',
-    status: 'pret',
-  },
-  {
-    id: '8819',
-    time: 'Hier, 16:45',
-    customer: 'Cécile Martin',
-    address: '5 Avenue Verte, 33000 Bordeaux',
-    phone: '+33 6 54 32 10 98',
-    email: 'cecile.martin@example.com',
-    products: ['5x Tuyaux Irrigation 20m', '1x Pompe Solaire 12V'],
-    total: '890,50',
-    status: 'pret',
-  },
-];
-
-export default function OrdersPage() {
-  const [mounted, setMounted] = useState(false);
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
+function SellerOrdersContent() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmRefuse, setConfirmRefuse] = useState<string | null>(null);
 
   useEffect(() => {
-    setMounted(true);
+    fetchSellerOrders();
   }, []);
 
-  const handlePrepare = (id: string) => {
-    setOrders(prev =>
-      prev.map(order =>
-        order.id === id && order.status === 'nouveau'
-          ? { ...order, status: 'pret' }
-          : order
-      )
-    );
+  
+  const fetchSellerOrders = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/seller/orders');
+      let rawOrders = response.data.data || response.data || [];
+      if (!Array.isArray(rawOrders)) rawOrders = [];
+
+      const formattedOrders: Order[] = rawOrders.map((order: any) => {
+        let customerName = 'Client';
+        let customerEmail = '';
+        let customerPhone = '';
+
+        if (order.user) {
+          customerName = order.user.name || order.user.first_name || order.user.email || 'Client';
+          customerEmail = order.user.email || '';
+          customerPhone = order.user.phone || '';
+        } else if (order.customer) {
+          customerName = order.customer.name || order.customer.email || 'Client';
+          customerEmail = order.customer.email || '';
+          customerPhone = order.customer.phone || '';
+        } else {
+          customerName = order.client_name || order.customer_name || 'Client';
+          customerEmail = order.client_email || order.email || '';
+          customerPhone = order.client_phone || order.phone || '';
+        }
+
+        if (customerName === 'Client' && customerEmail) {
+          customerName = customerEmail;
+        }
+
+        const backendStatus = order.status?.toLowerCase() || '';
+        let mappedStatus: Order['status'] = 'nouveau';
+        if (backendStatus === 'paid') mappedStatus = 'nouveau';
+        else if (['preparing', 'shipping', 'en_route'].includes(backendStatus)) mappedStatus = 'en_route';
+        else if (backendStatus === 'delivered') mappedStatus = 'livree';
+        else if (backendStatus === 'completed') mappedStatus = 'terminee';
+        else if (backendStatus === 'refused' || backendStatus === 'cancelled') mappedStatus = 'refused';
+
+        return {
+          id: order.id?.toString() || order.order_number || '?',
+          time: formatRelativeTime(order.created_at),
+          customer: customerName,
+          customerEmail,
+          customerPhone,
+          address: order.shipping_address || order.address || 'Adresse non fournie',
+          phone: customerPhone,
+          email: customerEmail,
+          products: (order.items || []).map((item: any) =>
+            `${item.quantity}x ${item.product?.name || item.product_name || 'Produit'}`
+          ),
+          total: formatPrice(order.total_amount || order.total || 0),
+          status: mappedStatus,
+          sellerConfirmed: order.seller_confirmed_delivery || false,
+          clientConfirmed: order.client_confirmed_delivery || false,
+        };
+      });
+
+      setOrders(formattedOrders);
+    } catch (error: any) {
+      console.error('Erreur fetchSellerOrders:', error);
+      toast.error('Impossible de charger les commandes.');
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleShip = (id: string) => {
-    setOrders(prev =>
-      prev.map(order =>
-        order.id === id && order.status === 'pret'
-          ? { ...order, status: 'en_route' }
-          : order
-      )
-    );
+  const formatRelativeTime = (dateStr: string) => {
+    if (!dateStr) return 'Date inconnue';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "À l'instant";
+    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    if (diffHours < 24) return `Il y a ${diffHours}h`;
+    if (diffDays === 1) return 'Hier';
+    return `Il y a ${diffDays} jours`;
   };
 
-  const handleRefuse = (id: string) => {
-    setConfirmRefuse(id);
+  const formatPrice = (amount: number) => {
+    return amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const confirmRefuseOrder = () => {
+  const handlePrepareAndShip = async (id: string) => {
+    await fetchSellerOrders();
+    const order = orders.find(o => o.id === id);
+    if (!order || order.status !== 'nouveau') {
+      toast.error('La commande n’est pas encore prête. Réessayez dans quelques secondes.');
+      return;
+    }
+    try {
+      await api.put(`/seller/orders/${id}/prepare`);
+      await api.put(`/seller/orders/${id}/ship`);
+      toast.success('✅ Commande expédiée (en cours de livraison)');
+      fetchSellerOrders();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Erreur lors de l’expédition');
+    }
+  };
+
+  const handleConfirmDelivery = async (id: string) => {
+    try {
+      const response = await api.post(`/seller/orders/${id}/confirm-delivery`);
+      if (response.data.success) {
+        const order = orders.find(o => o.id === id);
+        if (order?.clientConfirmed) {
+          toast.success('🎉 Livraison confirmée ! Les fonds ont été versés sur votre wallet.');
+        } else {
+          toast.success('📦 Livraison confirmée. En attente de la confirmation du client.');
+        }
+        fetchSellerOrders();
+      } else {
+        toast.error(response.data.message || 'Erreur lors de la confirmation');
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Erreur lors de la confirmation');
+    }
+  };
+
+  const handleRefuse = (id: string) => setConfirmRefuse(id);
+
+  const confirmRefuseOrder = async () => {
     if (confirmRefuse) {
+      try {
+        await api.post(`/orders/${confirmRefuse}/cancel`);
+        toast.success('Commande refusée');
+      } catch (error) {
+        toast.error('Erreur lors du refus');
+      }
       setOrders(prev => prev.filter(order => order.id !== confirmRefuse));
       if (selectedOrder?.id === confirmRefuse) {
         setModalOpen(false);
@@ -118,258 +195,145 @@ export default function OrdersPage() {
     }
   };
 
-  const cancelRefuse = () => {
-    setConfirmRefuse(null);
-  };
-
+  const cancelRefuse = () => setConfirmRefuse(null);
   const openDetails = (order: Order) => {
     setSelectedOrder(order);
     setModalOpen(true);
   };
 
+  const totalRevenue = orders.reduce((sum, o) => sum + parseFloat(o.total), 0);
+  const totalOrders = orders.length;
+
   const stats = [
-    {
-      title: 'À Préparer',
-      value: orders.filter(o => o.status === 'nouveau').length,
-      extra: '+12%',
-      color: 'text-amber-800',
-      bg: 'bg-amber-50',
-      icon: Clock,
-      border: 'border-l-4 border-amber-500',
-    },
-    {
-      title: 'En Route',
-      value: orders.filter(o => o.status === 'en_route').length,
-      extra: '+5%',
-      color: 'text-blue-800',
-      bg: 'bg-blue-50',
-      icon: Truck,
-      border: 'border-l-4 border-blue-500',
-    },
-    {
-      title: 'Livrées (24h)',
-      value: orders.filter(o => o.status === 'pret').length,
-      extra: 'Stable',
-      color: 'text-emerald-800',
-      bg: 'bg-emerald-50',
-      icon: CheckCircle,
-      border: 'border-l-4 border-emerald-500',
-    },
-    {
-      title: 'Commandes actives',
-      value: orders.length,
-      extra: 'Total',
-      color: 'text-purple-800',
-      bg: 'bg-purple-50',
-      icon: Package,
-      border: 'border-l-4 border-purple-500',
-    },
+    { title: 'Commandes totales', value: totalOrders, icon: Package, color: 'emerald', change: '+12%' },
+    { title: 'À expédier', value: orders.filter(o => o.status === 'nouveau').length, icon: Clock, color: 'amber', change: '' },
+    { title: 'En cours', value: orders.filter(o => o.status === 'en_route').length, icon: Truck, color: 'blue', change: '' },
+    { title: 'CA total', value: totalRevenue.toLocaleString(), icon: TrendingUp, color: 'purple', change: '' },
   ];
 
-  if (!mounted) return null;
+  const colorClasses: Record<string, { bg: string; text: string; border: string }> = {
+    emerald: { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-l-emerald-500' },
+    amber: { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-l-amber-500' },
+    blue: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-l-blue-500' },
+    purple: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-l-purple-500' },
+  };
+
+  const statusBadge = (status: Order['status']) => {
+    const config = {
+      nouveau: { label: 'À EXPÉDIER', icon: Clock, color: 'amber' },
+      en_route: { label: 'EN COURS', icon: Truck, color: 'blue' },
+      livree: { label: 'LIVRÉE', icon: CheckCircle, color: 'purple' },
+      terminee: { label: 'TERMINÉE', icon: CheckCircle, color: 'green' },
+      refused: { label: 'REFUSÉE', icon: AlertCircle, color: 'red' },
+    };
+    const c = config[status] || config.nouveau;
+    const Icon = c.icon;
+    const colorMap: Record<string, string> = {
+      amber: 'bg-amber-100 text-amber-800',
+      blue: 'bg-blue-100 text-blue-800',
+      purple: 'bg-purple-100 text-purple-800',
+      green: 'bg-green-100 text-green-800',
+      red: 'bg-red-100 text-red-800',
+    };
+    return (
+      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${colorMap[c.color]}`}>
+        <Icon size={12} /> {c.label}
+      </span>
+    );
+  };
+
+  // Formatage du numéro de commande plus professionnel (ex: #AGRI-1234)
+  const formatOrderNumber = (id: string) => {
+    return `#AGR-${id.slice(-6).padStart(6, '0')}`;
+  };
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100/80 min-h-screen flex">
-      {/* SIDEBAR desktop */}
-      <div className="hidden md:flex w-28 bg-white/80 backdrop-blur-sm border-r border-gray-200 flex-col justify-between shadow-sm">
+    <div className="space-y-6">
+      {/* En-tête */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="h-28 flex items-center justify-center border-b border-gray-100">
-            <Tractor size={48} className="text-emerald-700 drop-shadow-sm" />
-          </div>
-          <nav className="space-y-2 mt-8">
-            {[
-              { icon: LayoutDashboard, label: 'Dashboard', active: false },
-              { icon: ShoppingCart, label: 'Orders', active: true },
-              { icon: Package, label: 'Catalog', active: false },
-              { icon: MessageSquare, label: 'Messages', active: false },
-              { icon: Wallet, label: 'Wallet', active: false },
-            ].map((item, idx) => (
-              <button
-                key={idx}
-                className={`w-full py-5 flex flex-col items-center transition-all duration-200 ${
-                  item.active
-                    ? 'bg-emerald-50 border-r-4 border-emerald-700 text-emerald-700'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
-                }`}
-                title={item.label}
-              >
-                <item.icon size={28} strokeWidth={1.5} />
-                <span className="text-xs font-medium mt-2">{item.label}</span>
-              </button>
-            ))}
-          </nav>
+          <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">Commandes reçues</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Gérez les commandes de vos clients</p>
         </div>
-        <div className="pb-10 flex justify-center">
-          <img
-            src="https://i.pravatar.cc/100?img=12"
-            className="w-14 h-14 rounded-full ring-2 ring-white shadow-md hover:scale-105 transition"
-            alt="profile"
-          />
-        </div>
-      </div>
-
-      {/* Bottom navigation mobile */}
-      <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-around items-center py-3 z-50">
-        {[
-          { icon: LayoutDashboard, label: 'Dashboard' },
-          { icon: ShoppingCart, label: 'Orders', active: true },
-          { icon: Package, label: 'Catalog' },
-          { icon: MessageSquare, label: 'Messages' },
-          { icon: Wallet, label: 'Wallet' },
-        ].map((item, idx) => (
-          <button
-            key={idx}
-            className={`flex flex-col items-center py-1 px-4 rounded-lg transition ${
-              item.active
-                ? 'text-emerald-700 bg-emerald-50'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <item.icon size={24} />
-            <span className="text-xs mt-1">{item.label}</span>
+        <div className="flex gap-2">
+          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow transition">
+            <Filter size={14} /> Filtrer
           </button>
-        ))}
+          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow transition">
+            <Download size={14} /> Exporter
+          </button>
+        </div>
       </div>
 
-      {/* MAIN CONTENT */}
-      <div className="flex-1 p-6 md:p-10 pb-24 md:pb-10 overflow-x-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-          <div>
-            <div className="flex items-center gap-2 text-base text-gray-500">
-              <span>Dashboard</span>
-              <ChevronRight size={18} />
-              <span className="font-semibold text-emerald-800">Commandes</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-emerald-800 to-emerald-600 bg-clip-text text-transparent mt-3">
-              Gestion des Commandes
-            </h1>
-            <p className="text-gray-500 text-base mt-2 max-w-2xl">
-              Visualisez et gérez les commandes entrantes de vos clients.
-            </p>
-          </div>
-          <div className="flex gap-4">
-            <button className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all text-base">
-              <Filter size={20} /> Filtrer
-            </button>
-            <button className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all text-base">
-              <Download size={20} /> Exporter
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {stats.map((stat, idx) => {
-            const Icon = stat.icon;
-            return (
-              <div
-                key={idx}
-                className={`bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 p-6 border border-gray-100 ${stat.border}`}
-              >
-                <div className="flex justify-between items-start">
-                  <div className={`${stat.bg} p-3 rounded-xl`}>
-                    <Icon size={28} className={stat.color} />
-                  </div>
-                  <span className={`text-sm font-semibold ${stat.color} bg-white px-3 py-1 rounded-full shadow-sm`}>
-                    {stat.extra}
-                  </span>
+      {/* Cartes statistiques */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {stats.map((stat, idx) => {
+          const Icon = stat.icon;
+          const colors = colorClasses[stat.color];
+          return (
+            <div key={idx} className={`bg-white rounded-lg shadow-sm border border-gray-100 p-4 ${colors.border}`}>
+              <div className="flex items-center justify-between">
+                <div className={`${colors.bg} p-1.5 rounded-lg`}>
+                  <Icon size={16} className={colors.text} />
                 </div>
-                <div className="mt-5 text-gray-500 text-base font-medium">{stat.title}</div>
-                <div className={`text-4xl font-extrabold mt-2 ${stat.color}`}>{stat.value}</div>
+                {stat.change && <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">{stat.change}</span>}
               </div>
-            );
-          })}
-        </div>
+              <p className="text-xs text-gray-500 mt-2">{stat.title}</p>
+              <p className="text-xl font-bold text-gray-800">{stat.value}</p>
+            </div>
+          );
+        })}
+      </div>
 
-        {/* Tableau */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-[900px] w-full">
-              <thead className="bg-gray-50/80 border-b border-gray-100">
-                <tr className="text-left text-gray-500 text-sm md:text-base">
-                  <th className="px-6 py-4 font-semibold">Commande</th>
-                  <th className="px-6 py-4 font-semibold">Client & Adresse</th>
-                  <th className="px-6 py-4 font-semibold">Produits</th>
-                  <th className="px-6 py-4 font-semibold">Total</th>
-                  <th className="px-6 py-4 font-semibold">Statut</th>
-                  <th className="px-6 py-4 text-right font-semibold">Actions</th>
+      {/* Vue responsive : tableau sur desktop, cartes sur mobile */}
+      {loading ? (
+        <div className="text-center py-12 text-gray-500">Chargement...</div>
+      ) : orders.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">Aucune commande pour le moment.</div>
+      ) : (
+        <>
+          {/* Version desktop (tableau) */}
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr className="text-left text-gray-500">
+                  <th className="px-4 py-3 font-medium">Commande</th>
+                  <th className="px-4 py-3 font-medium">Client</th>
+                  <th className="px-4 py-3 font-medium">Produits</th>
+                  <th className="px-4 py-3 font-medium">Total</th>
+                  <th className="px-4 py-3 font-medium">Statut</th>
+                  <th className="px-4 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {orders.map(order => (
-                  <tr
-                    key={order.id}
-                    className="group hover:bg-emerald-50/30 transition-colors duration-150 cursor-pointer"
-                    onClick={() => openDetails(order)}
-                  >
-                    <td className="px-6 py-5 align-top">
-                      <div className="font-bold text-emerald-800 text-base">#{order.id}</div>
-                      <div className="text-sm text-gray-400 mt-1">{order.time}</div>
+                  <tr key={order.id} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => openDetails(order)}>
+                    <td className="px-4 py-3">
+                      <div className="font-mono font-semibold text-emerald-700 text-xs">{formatOrderNumber(order.id)}</div>
+                      <div className="text-gray-400 text-[10px] mt-0.5">{order.time}</div>
                     </td>
-                    <td className="px-6 py-5 align-top">
-                      <div className="font-semibold text-gray-800 text-base">{order.customer}</div>
-                      <div className="text-sm text-gray-500 italic flex items-center gap-1 mt-1">
-                        <span className="inline-block w-1.5 h-1.5 bg-gray-400 rounded-full" />
-                        {order.address.length > 40 ? order.address.slice(0, 37) + '…' : order.address}
-                      </div>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-800 text-sm">{order.customer}</div>
+                      <div className="text-gray-400 text-[10px] flex items-center gap-1 mt-0.5"><MapPin size={10} /> {order.address.split(',')[0]}</div>
                     </td>
-                    <td className="px-6 py-5 align-top">
-                      <div className="flex flex-wrap gap-2">
-                        {order.products.slice(0, 2).map((p, i) => (
-                          <span key={i} className="bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full">
-                            {p.length > 30 ? p.slice(0, 27) + '…' : p}
-                          </span>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {order.products.slice(0, 1).map((p, i) => (
+                          <span key={i} className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full">{p}</span>
                         ))}
-                        {order.products.length > 2 && (
-                          <span className="text-sm text-gray-500">+{order.products.length - 2}</span>
-                        )}
+                        {order.products.length > 1 && <span className="text-gray-400 text-[10px]">+{order.products.length-1}</span>}
                       </div>
                     </td>
-                    <td className="px-6 py-5 align-top">
-                      <div className="font-bold text-emerald-800 text-xl">{order.total} €</div>
-                    </td>
-                    <td className="px-6 py-5 align-top">
-                      {order.status === 'nouveau' && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
-                          <Clock size={14} /> NOUVEAU
-                        </span>
-                      )}
-                      {order.status === 'pret' && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800">
-                          <CheckCircle size={14} /> PRÊT
-                        </span>
-                      )}
-                      {order.status === 'en_route' && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 animate-pulse">
-                          <Truck size={14} /> EN ROUTE
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-5 align-top text-right whitespace-nowrap">
-                      <div className="flex justify-end gap-3">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handlePrepare(order.id); }}
-                          disabled={order.status !== 'nouveau'}
-                          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                            order.status === 'nouveau'
-                              ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 active:scale-95 shadow-sm'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          }`}
-                        >
-                          Préparer
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleShip(order.id); }}
-                          disabled={order.status !== 'pret'}
-                          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                            order.status === 'pret'
-                              ? 'bg-emerald-700 text-white shadow-md hover:bg-emerald-800 active:scale-95'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          }`}
-                        >
-                          Expédier
-                        </button>
+                    <td className="px-4 py-3 font-semibold text-emerald-600 text-sm">{order.total} FCFA</td>
+                    <td className="px-4 py-3">{statusBadge(order.status)}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <div className="flex justify-end gap-2">
+                        {order.status === 'nouveau' && (
+                          <button onClick={e => { e.stopPropagation(); handlePrepareAndShip(order.id); }} className="px-3 py-1 rounded-md text-xs font-medium bg-emerald-600 text-white shadow-sm hover:bg-emerald-700">Expédier</button>
+                        )}
+                        {(order.status === 'en_route' || order.status === 'livree') && (
+                          <button onClick={e => { e.stopPropagation(); handleConfirmDelivery(order.id); }} className="px-3 py-1 rounded-md text-xs font-medium bg-blue-600 text-white shadow-sm hover:bg-blue-700">Confirmer</button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -378,187 +342,86 @@ export default function OrdersPage() {
             </table>
           </div>
 
-          {/* Footer pagination */}
-          <div className="border-t border-gray-100 bg-gray-50/50 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-3 text-sm">
-            <div className="text-gray-500">
-              Affichage de <span className="font-medium">{orders.length}</span> sur{' '}
-              <span className="font-medium">14</span> commandes
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition">
-                <ChevronLeft size={18} />
-              </button>
-              <button className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-700 text-white font-semibold text-base">
-                1
-              </button>
-              <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition">
-                2
-              </button>
-              <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition">
-                <ChevronRight size={18} />
-              </button>
-            </div>
+          {/* Version mobile (cartes) */}
+          <div className="space-y-3 md:hidden">
+            {orders.map(order => (
+              <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 cursor-pointer" onClick={() => openDetails(order)}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-semibold text-emerald-700 text-xs">{formatOrderNumber(order.id)}</span>
+                      <span className="text-gray-400 text-[10px]">{order.time}</span>
+                    </div>
+                    <div className="mt-1">
+                      <p className="font-medium text-gray-800 text-sm">{order.customer}</p>
+                      <p className="text-gray-400 text-[10px] flex items-center gap-1"><MapPin size={10} /> {order.address.split(',')[0]}</p>
+                    </div>
+                  </div>
+                  {statusBadge(order.status)}
+                </div>
+                <div className="mt-2 flex justify-between items-center">
+                  <div className="flex flex-wrap gap-1">
+                    {order.products.slice(0, 2).map((p, i) => (
+                      <span key={i} className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full">{p}</span>
+                    ))}
+                    {order.products.length > 2 && <span className="text-gray-400 text-[10px]">+{order.products.length-2}</span>}
+                  </div>
+                  <span className="font-semibold text-emerald-600 text-sm">{order.total} FCFA</span>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  {order.status === 'nouveau' && (
+                    <button onClick={e => { e.stopPropagation(); handlePrepareAndShip(order.id); }} className="flex-1 py-2 rounded-md text-xs font-medium bg-emerald-600 text-white shadow-sm hover:bg-emerald-700">Expédier</button>
+                  )}
+                  {(order.status === 'en_route' || order.status === 'livree') && (
+                    <button onClick={e => { e.stopPropagation(); handleConfirmDelivery(order.id); }} className="flex-1 py-2 rounded-md text-xs font-medium bg-blue-600 text-white shadow-sm hover:bg-blue-700">Confirmer livraison</button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
 
-      {/* MODAL DETAILS */}
+          {/* Pagination simplifiée */}
+          <div className="flex justify-center items-center gap-3 text-sm text-gray-500">
+            <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center disabled:opacity-40"><ChevronLeft size={14} /></button>
+            <span className="font-medium">1 / 1</span>
+            <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center disabled:opacity-40"><ChevronRight size={14} /></button>
+          </div>
+        </>
+      )}
+
+      {/* Modales (inchangées mais raccourcies) */}
       {modalOpen && selectedOrder && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setModalOpen(false)}
-        >
-          <div
-            className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-5 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <FileText size={24} className="text-emerald-700" />
-                Détails de la commande
-              </h2>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="p-1 rounded-full hover:bg-gray-100 transition"
-              >
-                <XCircle size={28} className="text-gray-400" />
-              </button>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setModalOpen(false)}>
+          <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+              <h3 className="font-semibold text-gray-800">Détails commande</h3>
+              <button onClick={() => setModalOpen(false)}><XCircle size={20} className="text-gray-400"/></button>
             </div>
-
-            <div className="p-6 space-y-6">
-              <div className="flex flex-col md:flex-row justify-between gap-4 pb-4 border-b border-gray-100">
-                <div>
-                  <div className="text-sm text-gray-500">N° commande</div>
-                  <div className="font-mono text-xl font-bold text-emerald-800">#{selectedOrder.id}</div>
-                  <div className="text-sm text-gray-400 mt-1 flex items-center gap-1">
-                    <Calendar size={14} /> {selectedOrder.time}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Statut</div>
-                  <div className="mt-1">
-                    {selectedOrder.status === 'nouveau' && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
-                        <Clock size={14} /> NOUVEAU
-                      </span>
-                    )}
-                    {selectedOrder.status === 'pret' && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800">
-                        <CheckCircle size={14} /> PRÊT
-                      </span>
-                    )}
-                    {selectedOrder.status === 'en_route' && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 animate-pulse">
-                        <Truck size={14} /> EN ROUTE
-                      </span>
-                    )}
-                  </div>
-                </div>
+            <div className="p-4 space-y-4">
+              <div className="flex justify-between items-start">
+                <div><div className="text-xs text-gray-500">N° commande</div><div className="font-mono font-bold text-emerald-700">{formatOrderNumber(selectedOrder.id)}</div><div className="text-xs text-gray-400">{selectedOrder.time}</div></div>
+                {statusBadge(selectedOrder.status)}
               </div>
-
-              <div>
-                <h3 className="text-base font-semibold text-gray-700 mb-3 flex items-center gap-1">
-                  <User size={18} /> Client
-                </h3>
-                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                  <div className="font-medium text-base">{selectedOrder.customer}</div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin size={16} /> {selectedOrder.address}
-                  </div>
-                  {selectedOrder.phone && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Phone size={16} /> {selectedOrder.phone}
-                    </div>
-                  )}
-                  {selectedOrder.email && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Mail size={16} /> {selectedOrder.email}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-base font-semibold text-gray-700 mb-3">Produits commandés</h3>
-                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                  {selectedOrder.products.map((p, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                      {p}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                <span className="text-xl font-bold text-gray-800">Total</span>
-                <span className="text-2xl font-extrabold text-emerald-800">{selectedOrder.total} €</span>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                {selectedOrder.status === 'nouveau' && (
-                  <button
-                    onClick={() => {
-                      handlePrepare(selectedOrder.id);
-                      setModalOpen(false);
-                    }}
-                    className="flex-1 bg-emerald-700 text-white py-3 rounded-xl font-semibold hover:bg-emerald-800 transition text-base"
-                  >
-                    Préparer la commande
-                  </button>
-                )}
-                {selectedOrder.status === 'pret' && (
-                  <button
-                    onClick={() => {
-                      handleShip(selectedOrder.id);
-                      setModalOpen(false);
-                    }}
-                    className="flex-1 bg-blue-700 text-white py-3 rounded-xl font-semibold hover:bg-blue-800 transition text-base"
-                  >
-                    Expédier maintenant
-                  </button>
-                )}
-                {(selectedOrder.status === 'nouveau' || selectedOrder.status === 'pret') && (
-                  <button
-                    onClick={() => {
-                      handleRefuse(selectedOrder.id);
-                      setModalOpen(false);
-                    }}
-                    className="flex-1 border border-red-300 text-red-700 py-3 rounded-xl font-semibold hover:bg-red-50 transition text-base"
-                  >
-                    Refuser (rupture de stock)
-                  </button>
-                )}
+              <div><h4 className="text-sm font-medium text-gray-700 mb-1">Client</h4><div className="bg-gray-50 p-3 rounded-lg"><p className="text-sm font-medium">{selectedOrder.customer}</p><p className="text-xs text-gray-500 mt-1">{selectedOrder.address}</p>{selectedOrder.phone && <p className="text-xs text-gray-500 mt-1">{selectedOrder.phone}</p>}</div></div>
+              <div><h4 className="text-sm font-medium text-gray-700 mb-1">Produits</h4><div className="bg-gray-50 p-3 rounded-lg space-y-1">{selectedOrder.products.map((p,i)=><div key={i} className="text-sm">{p}</div>)}</div></div>
+              <div className="flex justify-between items-center pt-2 border-t"><span className="font-medium">Total</span><span className="font-bold text-emerald-600">{selectedOrder.total} FCFA</span></div>
+              <div className="flex gap-2">
+                {selectedOrder.status === 'nouveau' && <button onClick={()=>{handlePrepareAndShip(selectedOrder.id);setModalOpen(false);}} className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-medium">Expédier</button>}
+                {(selectedOrder.status === 'en_route' || selectedOrder.status === 'livree') && <button onClick={()=>{handleConfirmDelivery(selectedOrder.id);setModalOpen(false);}} className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium">Confirmer livraison</button>}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL CONFIRMATION REFUS */}
       {confirmRefuse && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center gap-3 text-red-600 mb-4">
-              <AlertCircle size={28} />
-              <h3 className="text-xl font-bold">Refuser la commande</h3>
-            </div>
-            <p className="text-gray-600 mb-6">
-              Êtes-vous sûr de vouloir refuser cette commande ? Cette action est irréversible. (Rupture de stock)
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={cancelRefuse}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-base"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={confirmRefuseOrder}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-base"
-              >
-                Oui, refuser
-              </button>
+          <div className="bg-white rounded-xl max-w-sm w-full p-5">
+            <div className="flex items-center gap-2 text-red-600 mb-3"><AlertCircle size={20}/><h3 className="font-semibold">Refuser la commande</h3></div>
+            <p className="text-sm text-gray-600 mb-4">Cette action est irréversible.</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={cancelRefuse} className="px-3 py-1.5 text-sm border rounded-lg">Annuler</button>
+              <button onClick={confirmRefuseOrder} className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg">Oui, refuser</button>
             </div>
           </div>
         </div>
@@ -567,21 +430,10 @@ export default function OrdersPage() {
   );
 }
 
-// Composant Mail (icône)
-const Mail = (props: any) => (
-  <svg
-    {...props}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect width="20" height="16" x="2" y="4" rx="2" />
-    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-  </svg>
-);
+export default function SellerOrdersPage() {
+  return (
+    <VendorLayout>
+      <SellerOrdersContent />
+    </VendorLayout>
+  );
+}

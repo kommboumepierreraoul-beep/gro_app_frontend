@@ -15,9 +15,9 @@ interface Shop {
   id: number;
   name: string;
   logo: string | null;
-  total_sales?: number;      // ventes totales (si fourni par backend)
-  rating?: number;           // note moyenne
-  reliability?: number;      // taux de fiabilité
+  total_sales?: number;
+  rating?: number;
+  reliability?: number;
 }
 
 export default function AddProductPage() {
@@ -40,11 +40,21 @@ export default function AddProductPage() {
     const fetchCategories = async () => {
       try {
         const res = await api.get('/categories');
-        const data = res.data.data || res.data;
-        setCategories(data);
+        const parseResponse = (data: any) => {
+          if (typeof data === 'string') {
+            const cleaned = data.replace(/^[^\{\[]+/, '');
+            return JSON.parse(cleaned);
+          }
+          return data;
+        };
+        let data = parseResponse(res.data);
+        // La réponse peut être { data: [...] } ou directement [...]
+        const categoriesArray = data?.data ?? data;
+        setCategories(Array.isArray(categoriesArray) ? categoriesArray : []);
       } catch (error) {
         console.error('Erreur chargement catégories', error);
         toast.error('Impossible de charger les catégories');
+        setCategories([]);
       }
     };
     fetchCategories();
@@ -55,26 +65,30 @@ export default function AddProductPage() {
     const fetchShop = async () => {
       try {
         const res = await api.get('/my-shop/profile');
-        const shopData = res.data.data;
-        setShop({
-          id: shopData.id,
-          name: shopData.name,
-          logo: shopData.logo,
-          total_sales: shopData.total_sales || 0,
-          rating: shopData.rating || 0,
-          reliability: shopData.reliability || 98,
-        });
+        const parseResponse = (data: any) => {
+          if (typeof data === 'string') {
+            const cleaned = data.replace(/^[^\{\[]+/, '');
+            return JSON.parse(cleaned);
+          }
+          return data;
+        };
+        let shopRaw = parseResponse(res.data);
+        const shopData = shopRaw?.data ?? shopRaw;
+        if (shopData && shopData.id) {
+          setShop({
+            id: shopData.id,
+            name: shopData.name,
+            logo: shopData.logo,
+            total_sales: shopData.total_sales || 0,
+            rating: shopData.rating || 0,
+            reliability: shopData.reliability || 98,
+          });
+        } else {
+          setShop(null);
+        }
       } catch (error) {
         console.error('Erreur chargement boutique', error);
-        // En cas d'erreur, on utilise des valeurs par défaut (pas de blocage)
-        setShop({
-          id: 0,
-          name: 'Ma boutique',
-          logo: null,
-          total_sales: 0,
-          rating: 0,
-          reliability: 0,
-        });
+        setShop(null);
       }
     };
     fetchShop();
@@ -87,17 +101,18 @@ export default function AddProductPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    const newFiles = [...imageFiles, ...files];
-    setImageFiles(newFiles);
-    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
-    setForm(prev => ({ ...prev, images: newPreviews }));
+    setImageFiles(prev => [...prev, ...files]);
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setForm(prev => ({ ...prev, images: [...prev.images, ...newPreviews] }));
   };
 
   const removeImage = (index: number) => {
-    const newImages = form.images.filter((_, i) => i !== index);
-    setForm(prev => ({ ...prev, images: newImages }));
-    const newFiles = imageFiles.filter((_, i) => i !== index);
-    setImageFiles(newFiles);
+    URL.revokeObjectURL(form.images[index]);
+    setForm(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDraft = () => {
@@ -126,7 +141,7 @@ export default function AddProductPage() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       toast.success('Produit publié avec succès !');
-      router.push('/marketplace');
+      router.push('/my-shop');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erreur lors de la publication');
     } finally {
@@ -203,7 +218,6 @@ export default function AddProductPage() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Colonne gauche : formulaire */}
           <div className="lg:col-span-2 space-y-8">
             <div className="bg-white/90 backdrop-blur-sm rounded-3xl border border-emerald-100/60 shadow-sm p-6 transition hover:shadow-md">
               <h3 className="text-lg font-black text-gray-800 mb-1">Informations produit</h3>
@@ -278,7 +292,6 @@ export default function AddProductPage() {
               </div>
             </div>
 
-            {/* Galerie média */}
             <div className="bg-white/90 backdrop-blur-sm rounded-3xl border border-emerald-100/60 shadow-sm p-6">
               <h3 className="text-lg font-black text-gray-800 mb-1">Médias</h3>
               <p className="text-sm text-gray-500 mb-6">Ajoutez des photos du produit (max 10MB chacune)</p>
@@ -305,9 +318,7 @@ export default function AddProductPage() {
             </div>
           </div>
 
-          {/* Sidebar droite : infos boutique dynamiques */}
           <div className="space-y-6">
-            {/* Bloc vendeur avec données réelles */}
             {shop && (
               <div className="bg-gradient-to-r from-emerald-800 to-emerald-900 rounded-2xl p-5 text-white">
                 <div className="flex items-center gap-3">
@@ -324,23 +335,13 @@ export default function AddProductPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-5 text-center">
-                  <div>
-                    <p className="text-emerald-300 text-xs">Ventes</p>
-                    <p className="font-black">{shop.total_sales?.toLocaleString() || 0}</p>
-                  </div>
-                  <div>
-                    <p className="text-emerald-300 text-xs">Note</p>
-                    <p className="font-black">{shop.rating?.toFixed(1) || '0.0'}★</p>
-                  </div>
-                  <div>
-                    <p className="text-emerald-300 text-xs">Confiance</p>
-                    <p className="font-black">{shop.reliability || 0}%</p>
-                  </div>
+                  <div><p className="text-emerald-300 text-xs">Ventes</p><p className="font-black">{shop.total_sales?.toLocaleString() || 0}</p></div>
+                  <div><p className="text-emerald-300 text-xs">Note</p><p className="font-black">{shop.rating?.toFixed(1) || '0.0'}★</p></div>
+                  <div><p className="text-emerald-300 text-xs">Confiance</p><p className="font-black">{shop.reliability || 0}%</p></div>
                 </div>
               </div>
             )}
 
-            {/* Score de qualité */}
             <div className="bg-white rounded-2xl border border-emerald-100 p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
@@ -381,7 +382,6 @@ export default function AddProductPage() {
               </div>
             </div>
 
-            {/* Aperçu produit */}
             <div className="bg-white rounded-2xl border border-emerald-100 p-6 shadow-sm">
               <h3 className="font-bold text-gray-800 mb-3">Aperçu</h3>
               <div className="rounded-xl overflow-hidden border border-emerald-100">

@@ -28,7 +28,7 @@ export interface RegisterData {
   password: string;
   password_confirmation: string;
   phone?: string;
-  gender?: string;  
+  gender?: string;
 }
 
 export interface LoginData {
@@ -39,9 +39,13 @@ export interface LoginData {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const saveToken = (token: string) => {
+  if (!token) {
+    console.error('saveToken appelé avec token vide !');
+    return;
+  }
   Cookies.set("auth_token", token, {
     expires: 7,
-    secure: true,
+    secure: false,
     sameSite: "strict",
   });
 };
@@ -54,7 +58,6 @@ const getApiError = (error: unknown): string => {
   if (axios_isAxiosError(error)) {
     const data = error.response?.data;
     if (data?.errors) {
-      // Retourne la première erreur de validation
       const firstKey = Object.keys(data.errors)[0];
       return data.errors[firstKey][0];
     }
@@ -63,7 +66,6 @@ const getApiError = (error: unknown): string => {
   return "Erreur réseau.";
 };
 
-// Workaround pour isAxiosError sans import circulaire
 const axios_isAxiosError = (
   error: unknown,
 ): error is {
@@ -78,44 +80,50 @@ const axios_isAxiosError = (
 // ─── Auth Service ─────────────────────────────────────────────────────────────
 
 export const authService = {
-  // Inscription utilisateur
-  async register(data: RegisterData): Promise<AuthResponse> {
+  // auth.service.ts
+async register(data: RegisterData): Promise<AuthResponse> {
     try {
-      const res = await api.post<AuthResponse>("/auth/register", data);
-      saveToken(res.data.token);
-      return res.data;
+        const res = await api.post("/auth/register", data);
+        
+        // ✅ Parse manuellement si c'est encore une string
+        const responseData = typeof res.data === 'string' 
+            ? JSON.parse(res.data) 
+            : res.data;
+        
+        console.log('Token extrait:', responseData.token);
+        saveToken(responseData.token);
+        return responseData;
     } catch (error) {
-      throw new Error(getApiError(error));
+        throw new Error(getApiError(error));
     }
-  },
+},
 
-  // Connexion
-  async login(data: LoginData): Promise<AuthResponse> {
+async login(data: LoginData): Promise<AuthResponse> {
     try {
-      const res = await api.post<AuthResponse>("/auth/login", data);
-      saveToken(res.data.token);
-      return res.data;
-    } catch (error) {
-      throw new Error(getApiError(error));
-    }
-  },
+        const res = await api.post("/auth/login", data);
+        
+        const responseData = typeof res.data === 'string'
+            ? JSON.parse(res.data)
+            : res.data;
 
-  // Profil de l'utilisateur connecté
+        saveToken(responseData.token);
+        return responseData;
+    } catch (error) {
+        throw new Error(getApiError(error));
+    }
+},
+
   async getProfile(): Promise<User> {
     try {
-      const res = await api.get<{ success: boolean; user: User }>(
-        "/auth/profile",
-      );
+      const res = await api.get<{ success: boolean; user: User }>("/auth/profile");
       return res.data.user;
     } catch (error) {
       throw new Error(getApiError(error));
     }
   },
 
-  // Vérification email avec code OTP
-  async verifyEmail(
-    code: string,
-  ): Promise<{ success: boolean; message: string; user: User }> {
+  // ✅ verifyEmail corrigé — utilise `api` avec le token du cookie
+  async verifyEmail(code: string): Promise<any> {
     try {
       const res = await api.post("/auth/email/verify", { code });
       return res.data;
@@ -124,11 +132,8 @@ export const authService = {
     }
   },
 
-  // Renvoyer le code OTP
-  async resendVerificationCode(): Promise<{
-    success: boolean;
-    message: string;
-  }> {
+  // ✅ resendVerificationCode corrigé
+  async resendVerificationCode(): Promise<any> {
     try {
       const res = await api.post("/auth/email/resend");
       return res.data;
@@ -137,7 +142,6 @@ export const authService = {
     }
   },
 
-  // Mot de passe oublié
   async forgotPassword(
     email: string,
   ): Promise<{ success: boolean; message: string }> {
@@ -149,7 +153,6 @@ export const authService = {
     }
   },
 
-  // Réinitialisation du mot de passe
   async resetPassword(data: {
     email: string;
     code: string;
@@ -164,7 +167,6 @@ export const authService = {
     }
   },
 
-  // Déconnexion
   async logout(): Promise<void> {
     try {
       await api.post("/auth/logout");
@@ -173,7 +175,6 @@ export const authService = {
     }
   },
 
-  // Vérifier si un token existe en cookie
   isAuthenticated(): boolean {
     return !!Cookies.get("auth_token");
   },
