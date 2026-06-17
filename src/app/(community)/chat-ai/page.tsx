@@ -1,23 +1,15 @@
 // app/(community)/chat-ai/page.tsx
+"use client";
 
-import type { Metadata } from "next";
+import React from "react";
 import { ChatInterface } from "@/components/ai/ChatInterface";
 
-export const metadata: Metadata = {
-  title: "Assistant IA — Communauté",
-  description: "Posez vos questions à notre assistant IA communautaire.",
-};
-
-/**
- * Page dédiée au chat avec l'assistant IA.
- */
-export default function ChatAIPage() {
+export default function AIPage() {
   return (
-    <div
-      className="h-[calc(100vh-4rem)] max-w-2xl mx-auto px-4 py-4"
-      suppressHydrationWarning
-    >
-      <ChatInterface className="h-full" />
+    <div className="flex-1 flex overflow-hidden bg-[#f9faf2]">
+      <div className="flex-1 flex overflow-hidden  bg-white/50 backdrop-blur-sm border border-[rgba(194,201,187,0.3)] shadow-sm">
+        <ChatInterface />
+      </div>
     </div>
   );
 }

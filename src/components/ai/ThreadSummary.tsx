@@ -1,9 +1,9 @@
+// components/ai/ThreadSummary.tsx
 "use client";
 
-// components/ai/ThreadSummary.tsx
-
 import { useState } from "react";
-import { summarizeThread, APIError } from "@/lib/ai-client";
+import { useAIChat } from "@/hooks/AI/useAIChat";
+import toast from "react-hot-toast";
 
 interface ThreadMessage {
   author: string;
@@ -12,13 +12,9 @@ interface ThreadMessage {
 
 interface ThreadSummaryProps {
   messages: ThreadMessage[];
-  /** Classe CSS additionnelle */
   className?: string;
 }
 
-/**
- * Bouton + affichage du résumé IA d'un fil de discussion.
- */
 export function ThreadSummary({
   messages,
   className = "",
@@ -27,6 +23,7 @@ export function ThreadSummary({
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { summarize } = useAIChat();
 
   const handleSummarize = async () => {
     if (messages.length < 2) return;
@@ -40,13 +37,16 @@ export function ThreadSummary({
     setError(null);
 
     try {
-      const result = await summarizeThread(messages);
+      const content = messages
+        .map((m) => `${m.author}: ${m.content}`)
+        .join("\n");
+      const result = await summarize(content, "fr");
       setSummary(result);
       setIsOpen(true);
+      toast.success("Résumé généré avec succès");
     } catch (err) {
-      setError(
-        err instanceof APIError ? err.message : "Erreur lors du résumé.",
-      );
+      setError(err instanceof Error ? err.message : "Erreur lors du résumé.");
+      toast.error("Impossible de générer le résumé");
     } finally {
       setIsLoading(false);
     }
@@ -55,18 +55,12 @@ export function ThreadSummary({
   if (messages.length < 2) return null;
 
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`space-y-sm ${className}`}>
       <button
         type="button"
         onClick={handleSummarize}
         disabled={isLoading}
-        className="
-          flex items-center gap-1.5 text-xs font-medium
-          text-blue-600 dark:text-blue-400
-          hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed
-          transition-colors
-        "
-        aria-expanded={isOpen}
+        className="flex items-center gap-1.5 text-sm font-medium text-[#2d5a27] hover:text-[#154212] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         {isLoading ? (
           <>
@@ -92,50 +86,21 @@ export function ThreadSummary({
             Génération du résumé…
           </>
         ) : (
-          <>
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
-              />
-            </svg>
-            {isOpen ? "Masquer le résumé" : "Résumer cette discussion"}
-          </>
+          <>{isOpen ? "Masquer le résumé" : "Résumer cette discussion"}</>
         )}
       </button>
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-[12px] text-[#ba1a1a]">{error}</p>}
 
       {isOpen && summary && (
-        <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl">
+        <div className="px-4 py-3 bg-[rgba(45,90,39,0.05)] border border-[rgba(45,90,39,0.15)] rounded-2xl">
           <div className="flex items-center gap-2 mb-2">
-            <svg
-              className="w-3.5 h-3.5 text-blue-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-              />
-            </svg>
-            <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+            <span className="text-[#2d5a27] text-sm">🤖</span>
+            <span className="text-sm font-semibold text-[#2d5a27]">
               Résumé IA — {messages.length} messages
             </span>
           </div>
-          <p className="text-sm text-blue-900 dark:text-blue-100 leading-relaxed">
-            {summary}
-          </p>
+          <p className="text-sm text-[#191c18] leading-relaxed">{summary}</p>
         </div>
       )}
     </div>

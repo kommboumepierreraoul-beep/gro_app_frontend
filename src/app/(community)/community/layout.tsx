@@ -13,7 +13,7 @@ export default function CommunityLayout({
 }) {
   return (
     <div
-      className="min-h-screen bg-white/80"
+      className="min-h-screen"
       style={{ background: "rgba(243,244,237,0.4)" }}
     >
       {/* Navbar */}
@@ -92,7 +92,7 @@ export default function CommunityLayout({
       </div>
 
       {/* Navigation mobile uniquement */}
-      <div className="lg:hidden">
+      <div className="xl:hidden">
         <MobileBottomNav />
       </div>
     </div>

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Avatar } from "../shared/Avatar";
-import { TimeAgo } from "../shared/TimeAgo";
 import { MessageInput } from "./MessageInput";
 import MessageBubble from "./MessageBubble";
 import { useMessages, useConversation } from "@/hooks/community/useMessage";
@@ -17,6 +16,8 @@ import {
   UserPlus,
   LogOut,
   Copy,
+  X,
+  Reply,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -39,6 +40,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
   const { data: conversation } = useConversation(convId);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [replyTo, setReplyTo] = useState<any>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -76,6 +78,18 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
       }, 100);
     }
   }, [messages, isInitialLoad]);
+
+  // Scroll vers le bas quand replyTo est annulé ou envoyé
+  useEffect(() => {
+    if (!replyTo && messagesContainerRef.current) {
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop =
+            messagesContainerRef.current.scrollHeight;
+        }
+      }, 100);
+    }
+  }, [replyTo]);
 
   const handleScroll = async (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -119,6 +133,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
     navigator.clipboard.writeText(String(convId));
     toast.success("ID de conversation copié");
     setShowMenu(false);
+    setShowMobileMenu(false);
   };
 
   const handleLeaveGroup = async () => {
@@ -129,6 +144,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
       toast.success("Vous avez quitté le groupe");
       if (onBack) onBack();
       setShowMenu(false);
+      setShowMobileMenu(false);
     } catch (error) {
       console.error("Error leaving group:", error);
       toast.error("Impossible de quitter le groupe");
@@ -202,33 +218,22 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
   }
 
   return (
-    <div
-      className="flex flex-col h-full w-full"
-      style={{ background: "#f9faf2" }}
-    >
-      {/* ── Header ── */}
+    <div className="flex flex-col h-screen md:h-full bg-[#f9faf2]">
+      {/* ================= HEADER FIXE ================= */}
       <div
-        className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+        className="flex fixed w-full items-center justify-between px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0 z-10"
         style={{
           background: "rgba(249,250,242,0.95)",
           backdropFilter: "blur(12px)",
           borderBottom: "1px solid rgba(194,201,187,0.4)",
         }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           {onBack && (
             <button
               onClick={onBack}
-              className="md:hidden p-2 -ml-1 rounded-xl transition-all duration-150"
+              className="md:hidden p-1.5 sm:p-2 -ml-1 rounded-xl transition-all duration-150 active:bg-black/5"
               style={{ color: "#42493e" }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.background =
-                  "rgba(188,240,174,0.25)")
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.background =
-                  "transparent")
-              }
             >
               <ArrowLeft size={20} />
             </button>
@@ -236,29 +241,29 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
 
           {isGroup ? (
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0"
               style={{
                 background: "linear-gradient(135deg, #2d5a27 0%, #154212 100%)",
                 color: "#bcf0ae",
               }}
             >
-              <Users size={18} />
+              <Users size={16} className="sm:w-[18px] sm:h-[18px]" />
             </div>
           ) : (
-            <Link href={`/profile/${participantId}`}>
+            <Link href={`/profile/${participantId}`} className="flex-shrink-0">
               <Avatar
                 src={displayAvatar}
                 firstname={otherParticipants[0]?.firstname || "?"}
                 size="md"
-                className="cursor-pointer transition-opacity hover:opacity-80 flex-shrink-0"
+                className="cursor-pointer transition-opacity hover:opacity-80"
               />
             </Link>
           )}
 
-          <div>
+          <div className="min-w-0 flex-1">
             {isGroup ? (
               <p
-                className="font-semibold text-sm"
+                className="font-semibold text-sm sm:text-base truncate"
                 style={{
                   color: "#191c18",
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -269,32 +274,28 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
             ) : (
               <Link
                 href={`/profile/${participantId}`}
-                className="font-semibold text-sm block transition-colors"
+                className="font-semibold text-sm sm:text-base block transition-colors truncate hover:text-[#2d5a27]"
                 style={{
                   color: "#191c18",
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
-                onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLElement).style.color = "#2d5a27")
-                }
-                onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLElement).style.color = "#191c18")
-                }
               >
                 {displayName}
               </Link>
             )}
             <p
-              className="text-xs"
+              className="text-xs truncate"
               style={{ color: "#72796e", fontFamily: "'Inter', sans-serif" }}
             >
-              {isGroup ? `${participants.length} participants` : "En ligne"}
+              {isGroup
+                ? `${participants.length} participant${participants.length > 1 ? "s" : ""}`
+                : "En ligne"}
             </p>
           </div>
         </div>
 
-        {/* Actions droite */}
-        <div className="flex items-center gap-1 relative">
+        {/* Actions desktop */}
+        <div className="hidden sm:flex items-center gap-1 relative">
           {[
             { icon: <Phone size={17} />, label: "Appel" },
             { icon: <Video size={17} />, label: "Vidéo" },
@@ -302,6 +303,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
             <button
               key={label}
               title={label}
+              className="hidden lg:flex"
               style={iconBtnStyle}
               onMouseEnter={(e) =>
                 ((e.currentTarget as HTMLElement).style.background =
@@ -331,7 +333,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
             <MoreVertical size={17} />
           </button>
 
-          {/* Dropdown menu */}
+          {/* Dropdown menu desktop */}
           {showMenu && (
             <>
               <div
@@ -354,29 +356,16 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
                       {
                         icon: <UserPlus size={15} />,
                         label: "Ajouter des membres",
-                        danger: false,
                       },
-                      {
-                        icon: <Users size={15} />,
-                        label: "Voir les membres",
-                        danger: false,
-                      },
+                      { icon: <Users size={15} />, label: "Voir les membres" },
                     ].map(({ icon, label }) => (
                       <button
                         key={label}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 hover:bg-[rgba(188,240,174,0.2)]"
                         style={{
                           color: "#42493e",
                           fontFamily: "'Inter', sans-serif",
                         }}
-                        onMouseEnter={(e) =>
-                          ((e.currentTarget as HTMLElement).style.background =
-                            "rgba(188,240,174,0.2)")
-                        }
-                        onMouseLeave={(e) =>
-                          ((e.currentTarget as HTMLElement).style.background =
-                            "transparent")
-                        }
                       >
                         <span style={{ color: "#72796e" }}>{icon}</span>
                         {label}
@@ -384,19 +373,11 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
                     ))}
                     <button
                       onClick={handleLeaveGroup}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 hover:bg-[rgba(186,26,26,0.06)]"
                       style={{
                         color: "#ba1a1a",
                         fontFamily: "'Inter', sans-serif",
                       }}
-                      onMouseEnter={(e) =>
-                        ((e.currentTarget as HTMLElement).style.background =
-                          "rgba(186,26,26,0.06)")
-                      }
-                      onMouseLeave={(e) =>
-                        ((e.currentTarget as HTMLElement).style.background =
-                          "transparent")
-                      }
                     >
                       <LogOut size={15} />
                       Quitter le groupe
@@ -412,19 +393,11 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
                 )}
                 <button
                   onClick={handleCopyConversationId}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 hover:bg-[rgba(188,240,174,0.2)]"
                   style={{
                     color: "#42493e",
                     fontFamily: "'Inter', sans-serif",
                   }}
-                  onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLElement).style.background =
-                      "rgba(188,240,174,0.2)")
-                  }
-                  onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLElement).style.background =
-                      "transparent")
-                  }
                 >
                   <span style={{ color: "#72796e" }}>
                     <Copy size={15} />
@@ -435,41 +408,117 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
             </>
           )}
         </div>
+
+        {/* Bouton menu mobile */}
+        <button
+          onClick={() => setShowMobileMenu(true)}
+          className="sm:hidden p-1.5 rounded-xl transition-all duration-150 active:bg-black/5"
+          style={{ color: "#42493e" }}
+        >
+          <MoreVertical size={20} />
+        </button>
       </div>
 
-      {/* Zone de réponse (reply) */}
-      {replyTo && (
-        <div
-          className="px-4 py-2 flex items-center justify-between flex-shrink-0"
-          style={{
-            background: "rgba(188,240,174,0.15)",
-            borderLeft: `3px solid #154212`,
-          }}
-        >
-          <div className="flex-1">
-            <p className="text-xs font-semibold" style={{ color: "#154212" }}>
-              Réponse à {replyTo.sender?.firstname || "l'utilisateur"}
-            </p>
-            <p className="text-xs truncate" style={{ color: "#72796e" }}>
-              {replyTo.content}
-            </p>
-          </div>
-          <button
-            onClick={() => setReplyTo(null)}
-            className="p-1 rounded-full hover:bg-black/5 transition-colors"
+      {/* Mobile menu modal */}
+      {showMobileMenu && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setShowMobileMenu(false)}
+          />
+          <div
+            className="fixed bottom-0 left-0 right-0 rounded-t-2xl z-50 animate-slide-up"
+            style={{
+              background: "rgba(249,250,242,0.98)",
+              backdropFilter: "blur(20px)",
+              borderTop: "1px solid rgba(194,201,187,0.45)",
+            }}
           >
-            ✕
-          </button>
-        </div>
+            <div className="flex justify-between items-center p-4 border-b border-[rgba(194,201,187,0.3)]">
+              <h3 className="font-semibold" style={{ color: "#191c18" }}>
+                Options
+              </h3>
+              <button
+                onClick={() => setShowMobileMenu(false)}
+                className="p-2 rounded-full active:bg-black/5"
+              >
+                <X size={20} style={{ color: "#42493e" }} />
+              </button>
+            </div>
+            <div className="py-2 max-h-[70vh] overflow-y-auto">
+              {[
+                { icon: <Phone size={20} />, label: "Appel" },
+                { icon: <Video size={20} />, label: "Vidéo" },
+              ].map(({ icon, label }) => (
+                <button
+                  key={label}
+                  className="w-full flex items-center gap-3 px-4 py-3 transition-colors active:bg-[rgba(188,240,174,0.2)]"
+                  style={{ color: "#42493e" }}
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <span style={{ color: "#72796e" }}>{icon}</span>
+                  <span className="flex-1 text-left">{label}</span>
+                </button>
+              ))}
+              {isGroup && (
+                <>
+                  {[
+                    {
+                      icon: <UserPlus size={20} />,
+                      label: "Ajouter des membres",
+                    },
+                    { icon: <Users size={20} />, label: "Voir les membres" },
+                  ].map(({ icon, label }) => (
+                    <button
+                      key={label}
+                      className="w-full flex items-center gap-3 px-4 py-3 transition-colors active:bg-[rgba(188,240,174,0.2)]"
+                      style={{ color: "#42493e" }}
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <span style={{ color: "#72796e" }}>{icon}</span>
+                      <span className="flex-1 text-left">{label}</span>
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => {
+                      handleLeaveGroup();
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 transition-colors active:bg-[rgba(186,26,26,0.1)]"
+                    style={{ color: "#ba1a1a" }}
+                  >
+                    <LogOut size={20} />
+                    <span className="flex-1 text-left">Quitter le groupe</span>
+                  </button>
+                  <div className="h-px bg-[rgba(194,201,187,0.3)] my-2" />
+                </>
+              )}
+              <button
+                onClick={() => {
+                  handleCopyConversationId();
+                  setShowMobileMenu(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 transition-colors active:bg-[rgba(188,240,174,0.2)]"
+                style={{ color: "#42493e" }}
+              >
+                <span style={{ color: "#72796e" }}>
+                  <Copy size={20} />
+                </span>
+                <span className="flex-1 text-left">Copier l'ID</span>
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
-      {/* ── Zone de messages ── */}
+      {/* ================= MESSAGES ================= */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-3 gro-chat-scroll"
+        className="flex-1 overflow-y-auto px-2 sm:px-4 py-3 sm:py-4 space-y-2 sm:space-y-3 gro-chat-scroll"
         style={{ background: "rgba(243,244,237,0.6)" }}
         onScroll={handleScroll}
       >
+        {/* loader */}
         {(isFetchingMore || isFetchingNextPage) && (
           <div className="flex justify-center py-2">
             <div
@@ -482,6 +531,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
           </div>
         )}
 
+        {/* empty */}
         {messages.length === 0 && (
           <div className="text-center py-12">
             <div
@@ -503,13 +553,14 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
           </div>
         )}
 
-        {messages.map((msg: any, index: number) => {
+        {/* messages */}
+        {messages.map((msg: any) => {
           const isMine = msg.sender_id === user?.id || msg.is_mine;
 
           return (
             <div
               key={msg.id}
-              className={`flex ${isMine ? "justify-end" : "justify-start"} mb-3`}
+              className={`flex ${isMine ? "justify-end" : "justify-start"} mb-2 sm:mb-3`}
             >
               <MessageBubble
                 message={{
@@ -537,11 +588,51 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
         })}
       </div>
 
-      {/* MessageInput - corrigé */}
-      <MessageInput
-        onSend={handleSendMessage}
-        isLoading={sendMessage.isPending}
-      />
+      {/* ================= INPUT ZONE ================= */}
+      <div className="flex-shrink-0 bg-[#f9faf2] border-t border-[rgba(194,201,187,0.4)]">
+        {/* REPLY BAR - Placée juste au-dessus du MessageInput */}
+        {replyTo && (
+          <div
+            className="px-3 sm:px-4 pt-2 pb-1 flex items-center justify-between gap-2 animate-slide-up"
+            style={{
+              background: "rgba(188,240,174,0.08)",
+              borderTop: "1px solid rgba(188,240,174,0.3)",
+            }}
+          >
+            <div className="flex-1 min-w-0 flex items-start gap-2">
+              <div className="flex-shrink-0 mt-0.5">
+                <Reply size={14} style={{ color: "#154212" }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-xs font-semibold mb-0.5"
+                  style={{ color: "#154212" }}
+                >
+                  Réponse à {replyTo.sender?.firstname || "l'utilisateur"}
+                </p>
+                <p className="text-xs truncate" style={{ color: "#72796e" }}>
+                  {replyTo.content || "📎 Média"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setReplyTo(null)}
+              className="p-1.5 rounded-full hover:bg-black/5 active:bg-black/10 transition-colors flex-shrink-0"
+              style={{ color: "#72796e" }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* Message Input */}
+        <div className="px-2 sm:px-4 mb-24 md:mb-4 py-2 sm:py-3">
+          <MessageInput
+            onSend={handleSendMessage}
+            isLoading={sendMessage.isPending}
+          />
+        </div>
+      </div>
 
       <style jsx global>{`
         .gro-chat-scroll::-webkit-scrollbar {
@@ -566,6 +657,19 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slideUp 0.2s ease-out;
         }
       `}</style>
     </div>

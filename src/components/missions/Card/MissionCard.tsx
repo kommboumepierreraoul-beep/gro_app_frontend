@@ -1,32 +1,40 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { MapPin, Clock, Banknote, Users, Calendar, Star, ChevronRight } from 'lucide-react';
-import { Mission } from '@/lib/missions/types';
-import { useMissionStore } from '@/stores/useMissionStore';
-import MissionStatusBadge from './MissionStatusBadge';
+import Link from "next/link";
+import {
+  MapPin,
+  Clock,
+  Banknote,
+  Users,
+  Calendar,
+  Star,
+  ChevronRight,
+} from "lucide-react";
+import { Mission } from "@/lib/missions/types";
+import { useMissionStore } from "@/stores/useMissionStore";
+import MissionStatusBadge from "../MissionStatusBadge";
 
 interface Props {
   mission: Mission;
-  viewMode?: 'grid' | 'list';
+  viewMode?: "grid" | "list";
   onViewDetails?: () => void;
 }
 
 const REMUNERATION_LABELS: Record<string, string> = {
-  fixed:       'Montant fixe',
-  daily_rate:  'Taux journalier',
-  hourly_rate: 'Taux horaire',
-  negotiable:  'À négocier',
-  in_kind:     'En nature',
-  volunteer:   'Bénévolat',
+  fixed: "Montant fixe",
+  daily_rate: "Taux journalier",
+  hourly_rate: "Taux horaire",
+  negotiable: "À négocier",
+  in_kind: "En nature",
+  volunteer: "Bénévolat",
 };
 
 const DURATION_LABELS: Record<string, string> = {
-  hours:    'h',
-  day:      'journée',
-  days:     'j',
-  weeks:    'sem.',
-  flexible: 'flexible',
+  hours: "h",
+  day: "journée",
+  days: "j",
+  weeks: "sem.",
+  flexible: "flexible",
 };
 
 // Badge urgence : si expire dans moins de 3 jours
@@ -36,35 +44,40 @@ function isUrgent(mission: Mission): boolean {
   return diff > 0 && diff < 3 * 24 * 60 * 60 * 1000;
 }
 
-export default function MissionCard({ mission, viewMode = 'grid', onViewDetails }: Props) {
-  const openApplyModal = useMissionStore(s => s.openApplyModal);
+export default function MissionCard({
+  mission,
+  viewMode = "grid",
+  onViewDetails,
+}: Props) {
+  const openApplyModal = useMissionStore((s) => s.openApplyModal);
 
   const remuLabel = mission.remuneration_amount
-    ? `${Number(mission.remuneration_amount).toLocaleString('fr-FR')} ${mission.remuneration_currency}`
-    : REMUNERATION_LABELS[mission.remuneration_type] ?? '';
+    ? `${Number(mission.remuneration_amount).toLocaleString("fr-FR")} ${mission.remuneration_currency}`
+    : (REMUNERATION_LABELS[mission.remuneration_type] ?? "");
 
-  const durationLabel = mission.duration_type === 'flexible'
-    ? 'Flexible'
-    : `${mission.duration_value ?? ''}${DURATION_LABELS[mission.duration_type] ?? ''}`;
+  const durationLabel =
+    mission.duration_type === "flexible"
+      ? "Flexible"
+      : `${mission.duration_value ?? ""}${DURATION_LABELS[mission.duration_type] ?? ""}`;
 
   const urgent = isUrgent(mission);
 
   // ── Vue liste ─────────────────────────────────────────────────────────
-  if (viewMode === 'list') {
+  if (viewMode === "list") {
     return (
       <article className="bg-[#fafbf3] border border-[#c2c9bb]/30 rounded-2xl p-4 hover:shadow-md transition-all duration-200 group flex items-center gap-4">
         {/* Icône catégorie */}
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white text-sm font-bold"
-          style={{ backgroundColor: mission.category?.color ?? '#154212' }}
+          style={{ backgroundColor: mission.category?.color ?? "#154212" }}
         >
-          {mission.category?.name?.[0] ?? '?'}
+          {mission.category?.name?.[0] ?? "?"}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <span className="text-[10px] font-semibold text-[#72796e] uppercase tracking-wider">
-              {mission.category?.name ?? 'Mission'}
+              {mission.category?.name ?? "Mission"}
             </span>
             {urgent && (
               <span className="bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
@@ -81,16 +94,29 @@ export default function MissionCard({ mission, viewMode = 'grid', onViewDetails 
               <span className="flex items-center gap-1">
                 <MapPin size={11} />
                 {mission.location_label}
-                {mission.distance_km != null && <span className="text-[#3b6934] font-medium ml-1">· {mission.distance_km} km</span>}
+                {mission.distance_km != null && (
+                  <span className="text-[#3b6934] font-medium ml-1">
+                    · {mission.distance_km} km
+                  </span>
+                )}
               </span>
             )}
-            <span className="flex items-center gap-1"><Clock size={11} />{durationLabel}</span>
-            <span className="flex items-center gap-1"><Users size={11} />{mission.applications_count} candidature{mission.applications_count !== 1 ? 's' : ''}</span>
+            <span className="flex items-center gap-1">
+              <Clock size={11} />
+              {durationLabel}
+            </span>
+            <span className="flex items-center gap-1">
+              <Users size={11} />
+              {mission.applications_count} candidature
+              {mission.applications_count !== 1 ? "s" : ""}
+            </span>
           </div>
         </div>
 
         <div className="flex items-center gap-4 shrink-0">
-          <span className="font-bold text-[#154212] text-base font-[Inter]">{remuLabel}</span>
+          <span className="font-bold text-[#154212] text-base font-[Inter]">
+            {remuLabel}
+          </span>
           <div className="flex gap-2">
             {onViewDetails && (
               <button
@@ -100,7 +126,7 @@ export default function MissionCard({ mission, viewMode = 'grid', onViewDetails 
                 Détails
               </button>
             )}
-            {mission.status === 'published' && mission.isOpen && (
+            {mission.status === "published" && mission.isOpen && (
               <button
                 onClick={() => openApplyModal(mission.ulid)}
                 className="px-3 py-1.5 text-xs font-semibold bg-[#154212] text-white rounded-lg hover:bg-[#2d5a27] transition-all"
@@ -167,24 +193,42 @@ export default function MissionCard({ mission, viewMode = 'grid', onViewDetails 
           </div>
         )}
         <div className="flex items-center gap-4 text-[#42493e] text-sm">
-          <span className="flex items-center gap-1.5"><Clock size={14} className="text-[#3b6934]" />{durationLabel}</span>
+          <span className="flex items-center gap-1.5">
+            <Clock size={14} className="text-[#3b6934]" />
+            {durationLabel}
+          </span>
           {mission.start_date && (
-            <span className="flex items-center gap-1.5"><Calendar size={14} className="text-[#3b6934]" />{new Date(mission.start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+            <span className="flex items-center gap-1.5">
+              <Calendar size={14} className="text-[#3b6934]" />
+              {new Date(mission.start_date).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "short",
+              })}
+            </span>
           )}
-          <span className="flex items-center gap-1.5 ml-auto"><Users size={14} className="text-[#3b6934]" />{mission.applications_count}</span>
+          <span className="flex items-center gap-1.5 ml-auto">
+            <Users size={14} className="text-[#3b6934]" />
+            {mission.applications_count}
+          </span>
         </div>
       </div>
 
       {/* Auteur */}
       <div className="flex items-center gap-2 mb-5">
         {mission.author.avatar ? (
-          <img src={mission.author.avatar} alt={mission.author.firstname} className="w-7 h-7 rounded-full object-cover border-2 border-[#bcf0ae]" />
+          <img
+            src={mission.author.avatar}
+            alt={mission.author.firstname}
+            className="w-7 h-7 rounded-full object-cover border-2 border-[#bcf0ae]"
+          />
         ) : (
           <div className="w-7 h-7 rounded-full bg-[#2d5a27] flex items-center justify-center text-white text-xs font-bold border-2 border-[#bcf0ae]">
             {mission.author.firstname}
           </div>
         )}
-        <span className="text-xs text-[#42493e] font-medium">{mission.author.firstname}</span>
+        <span className="text-xs text-[#42493e] font-medium">
+          {mission.author.firstname}
+        </span>
         {mission.author.rating > 0 && (
           <span className="flex items-center gap-0.5 ml-auto text-xs text-[#72796e]">
             <Star size={11} className="fill-amber-400 text-amber-400" />
@@ -203,7 +247,7 @@ export default function MissionCard({ mission, viewMode = 'grid', onViewDetails 
             Voir les détails
           </button>
         )}
-        {mission.status === 'published' && (
+        {mission.status === "published" && (
           <button
             onClick={() => openApplyModal(mission.ulid)}
             className="flex-1 py-3 bg-[#154212] text-white font-semibold text-xs tracking-widest uppercase rounded-xl hover:bg-[#2d5a27] shadow-md hover:shadow-lg transition-all duration-200 active:scale-95"

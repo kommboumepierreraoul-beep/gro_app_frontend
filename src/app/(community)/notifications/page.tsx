@@ -11,7 +11,7 @@ export default function NotificationsPage() {
   if (isLoading) {
     return (
       <div
-        className="rounded-2xl overflow-hidden"
+        className="overflow-hidden"
         style={{
           background: "rgba(255,255,255,0.7)",
           backdropFilter: "blur(12px)",
@@ -57,7 +57,7 @@ export default function NotificationsPage() {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
+      className="overflow-hidden"
       style={{
         background: "rgba(255,255,255,0.7)",
         backdropFilter: "blur(12px)",

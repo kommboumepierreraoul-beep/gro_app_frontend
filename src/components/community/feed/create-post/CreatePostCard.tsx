@@ -57,7 +57,7 @@ export function CreatePostCard() {
     firstname: profile?.firstname ?? user?.firstname,
     lastname: profile?.lastname ?? user?.lastname,
     avatar: getAvatarUrl(profile?.avatar ?? user?.avatar),
-    headline: profile?.headline ?? user?.headline ?? "Membre de la communauté",
+    headline: profile?.headline ??  "Membre de la communauté",
   };
 
   // Prefill depuis l'AI assistant

@@ -1,82 +1,85 @@
+// components/ai/MessageBubble.tsx
 "use client";
 
-// components/ai/MessageBubble.tsx
-
-import type { ChatMessage } from "@/types/ai";
+import type { AIMessage } from "@/types/ai.types";
+import { Bot, User } from "lucide-react";
 
 interface MessageBubbleProps {
-  message: ChatMessage;
+  message: AIMessage;
 }
 
 /**
- * Bulle d'affichage d'un message (user ou assistant).
- * Supporte l'animation de streaming (curseur clignotant).
+ * Bulle compacte d'affichage d'un message (user ou assistant).
+ * Variante légère de ChatMessage — sans markdown ni actions,
+ * pour aperçus, notifications ou widgets condensés.
  */
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
   return (
     <div
-      className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}
+      className={`flex items-end gap-2 sm:gap-3 ${isUser ? "justify-end" : "justify-start"}`}
       role="article"
       aria-label={`Message de ${isUser ? "l'utilisateur" : "l'assistant"}`}
     >
       {/* Avatar assistant */}
       {!isUser && (
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 mb-1">
-          <svg
-            className="w-3.5 h-3.5 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-            />
-          </svg>
+        <div
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm mb-1"
+          style={{
+            background: "linear-gradient(135deg, #2d5a27 0%, #154212 100%)",
+            color: "#bcf0ae",
+          }}
+        >
+          <Bot size={14} className="sm:w-[16px] sm:h-[16px]" />
         </div>
       )}
 
       {/* Bulle */}
       <div
-        className={`
-          max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed
-          ${
-            isUser
-              ? "bg-blue-600 text-white rounded-br-sm"
-              : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm"
-          }
-        `}
+        className={`max-w-[85%] sm:max-w-[80%] px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl text-sm leading-relaxed shadow-sm transition-all ${
+          isUser
+            ? "bg-[#2d5a27] text-white rounded-br-sm"
+            : "bg-white border border-[rgba(194,201,187,0.3)] text-[#191c18] rounded-bl-sm"
+        }`}
+        style={{ fontFamily: "'Inter', sans-serif" }}
       >
-        {/* Contenu du message — préservation des sauts de ligne */}
         <p className="whitespace-pre-wrap break-words">
           {message.content}
-          {/* Curseur clignotant pendant le streaming */}
           {message.isStreaming && (
             <span
-              className="inline-block w-0.5 h-4 bg-current ml-0.5 align-middle animate-pulse"
+              className="inline-block w-0.5 h-3.5 bg-current ml-1 align-middle animate-pulse rounded-full"
               aria-hidden="true"
             />
           )}
         </p>
 
-        {/* Timestamp */}
         <time
-          dateTime={message.timestamp.toISOString()}
-          className={`
-            block mt-1 text-xs
-            ${isUser ? "text-blue-200 text-right" : "text-gray-400 dark:text-gray-500"}
-          `}
+          dateTime={message.createdAt?.toISOString()}
+          className={`block mt-1 text-[10px] font-medium ${
+            isUser ? "text-white/60 text-right" : "text-[#72796e]/60"
+          }`}
+          style={{ fontFamily: "'Inter', sans-serif" }}
         >
-          {message.timestamp.toLocaleTimeString("fr-FR", {
+          {message.createdAt?.toLocaleTimeString("fr-FR", {
             hour: "2-digit",
             minute: "2-digit",
           })}
         </time>
       </div>
+
+      {/* Avatar user */}
+      {isUser && (
+        <div
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm mb-1"
+          style={{
+            background: "linear-gradient(135deg, #42493e 0%, #2d5a27 100%)",
+            color: "#bcf0ae",
+          }}
+        >
+          <User size={14} className="sm:w-[16px] sm:h-[16px]" />
+        </div>
+      )}
     </div>
   );
 }

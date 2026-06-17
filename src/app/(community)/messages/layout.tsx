@@ -1,52 +1,70 @@
-// app/community/messages/layout.tsx
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { CommunityNavbar } from "@/components/community/layout/CommunityNavbar";
 import { LeftSidebar } from "@/components/community/layout/LeftSidebar";
 import { MobileBottomNav } from "@/components/community/layout/MobileBottomNav";
 import { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
 
 export default function MessagesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const searchParams = useSearchParams();
+
+  // 👉 source de vérité = URL
+  const conversationId = searchParams.get("id");
+  const isChatOpen = Boolean(conversationId);
+
+  // Logs pour vérifier le comportement
+  useEffect(() => {
+    console.log("=== MessagesLayout Debug ===");
+    console.log("conversationId from URL:", conversationId);
+    console.log("isChatOpen:", isChatOpen);
+    console.log(
+      "searchParams全体:",
+      Object.fromEntries(searchParams.entries()),
+    );
+    console.log("Mobile navbar should show:", !isChatOpen);
+    console.log("============================");
+  }, [conversationId, isChatOpen, searchParams]);
+
   return (
-    <div
-      className="h-screen w-full overflow-hidden flex flex-col"
-      style={{ background: "#f9faf2" }}
-    >
+    <div className="min-h-screen w-full flex flex-col bg-[#f9faf2] overflow-hidden">
+      {/* ================= TOASTER ================= */}
       <Toaster position="top-right" />
 
-      {/* Navbar fixée en haut — hauteur 4rem (h-16) */}
+      {/* ================= NAVBAR ================= */}
       <CommunityNavbar />
 
-      {/* Corps principal sous la navbar */}
-      <div className="flex flex-1 overflow-hidden " style={{ paddingTop: "0" }}>
-        {/* LeftSidebar est fixed (top-16, w-72) — on lui réserve l'espace avec un spacer */}
-        <div
-          className="hidden lg:block flex-shrink-0"
-          style={{ width: "18rem" }}
-        />
+      {/* ================= MAIN BODY ================= */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* ================= LEFT SIDEBAR ================= */}
+        <aside className="hidden lg:block w-72 flex-shrink-0 fixed top-16 left-0 bottom-0 z-40">
+          <LeftSidebar />
+        </aside>
 
-        {/* Contenu — prend tout le reste */}
+        {/* Spacer pour sidebar */}
+        <div className="hidden lg:block w-72 flex-shrink-0" />
+
+        {/* ================= CONTENT ================= */}
         <main
-          className="flex flex-1 overflow-hidden min-w-0"
+          className="flex-1 min-w-0 overflow-y-auto"
           style={{ background: "rgba(243,244,237,0.4)" }}
         >
           {children}
         </main>
       </div>
 
-      {/* LeftSidebar réelle (fixed, rendue ici pour le z-order) */}
-      <div className="hidden lg:block fixed top-16 left-0 w-72 z-40">
-      <LeftSidebar />
-      </div>
-
-      {/* Nav mobile */}
-      <div className="lg:hidden flex-shrink-0 z-50">
-        <MobileBottomNav />
-      </div>
+      {/* ================= MOBILE BOTTOM NAV ================= */}
+      {/* La navbar mobile disparaît complètement quand une conversation est ouverte */}
+      {!isChatOpen && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+          <MobileBottomNav />
+        </div>
+      )}
     </div>
   );
 }

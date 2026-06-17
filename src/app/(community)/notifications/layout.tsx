@@ -12,35 +12,35 @@ export default function NotificationsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className="h-screen w-full overflow-hidden flex flex-col"
-      style={{ background: "#f9faf2" }}
-    >
+    <div className="h-screen w-full overflow-hidden flex flex-col bg-[#f9faf2]">
       <Toaster position="top-right" />
 
-      {/* Navbar fixée — génère son propre spacer h-16 en bas de son render */}
+      {/* Navbar fixée */}
       <CommunityNavbar />
 
-      {/* Corps : sidebar spacer + contenu centré */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Spacer = largeur de la LeftSidebar fixed (w-72 = 18rem) */}
-        <div
-          className="hidden lg:block flex-shrink-0"
-          style={{ width: "18rem" }}
-        />
+      {/* Corps principal */}
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Spacer pour la LeftSidebar - visible uniquement sur desktop */}
+        <div className="hidden lg:block w-72 flex-shrink-0" />
 
         {/* Zone de contenu scrollable */}
-        <main className="flex-1 overflow-y-auto min-w-0 py-6 px-4 lg:px-8">
-          <div className="max-w-2xl mx-auto">{children}</div>
+        <main
+          className={`
+          flex-1 overflow-y-auto min-w-0
+        `}
+        >
+          <div className="max-w-2xl mx-auto w-full">{children}</div>
         </main>
-      </div>
 
-      {/* LeftSidebar fixed — positionnée indépendamment du flux */}
-      <LeftSidebar />
+        {/* LeftSidebar - visible uniquement sur desktop (lg et plus) */}
+        <div className="hidden lg:block">
+          <LeftSidebar />
+        </div>
 
-      {/* Nav mobile bas de page */}
-      <div className="lg:hidden flex-shrink-0 z-50">
-        <MobileBottomNav />
+        {/* Mobile bottom navigation - visible uniquement sur mobile */}
+        <div className="lg:hidden">
+          <MobileBottomNav />
+        </div>
       </div>
     </div>
   );

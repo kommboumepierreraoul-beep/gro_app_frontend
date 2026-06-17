@@ -187,3 +187,27 @@ export function useSubmitReview() {
     },
   });
 }
+
+// ── Signalements ──────────────────────────────────────────────────────────
+
+export function useReportMission() {
+  return useMutation({
+    mutationFn: ({
+      ulid,
+      reason,
+      details,
+    }: {
+      ulid: string;
+      reason: import("@/lib/missions/types").ReportReason;
+      details?: string;
+    }) => applicationService.report(ulid, reason, details),
+    onSuccess: () => {
+      toast.success("Signalement envoyé. Merci pour votre vigilance.");
+    },
+    onError: (err: any) => {
+      toast.error(
+        err?.response?.data?.message ?? "Erreur lors du signalement.",
+      );
+    },
+  });
+}

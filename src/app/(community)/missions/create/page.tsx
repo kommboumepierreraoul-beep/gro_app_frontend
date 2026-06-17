@@ -1,9 +1,12 @@
-'use client';
+"use client";
+
+import { useRouter } from "next/navigation";
+import CreateMissionModal from "@/components/missions/Form/CreateMissionModal";
 
 export default function CreateMissionPage() {
+  const router = useRouter();
+
   return (
-    <div>
-      {/* Créer une mission */}
-    </div>
+    <CreateMissionModal onClose={() => router.push("/community/missions")} />
   );
 }
