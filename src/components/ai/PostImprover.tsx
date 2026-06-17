@@ -1,19 +1,15 @@
 /* eslint-disable react/no-unescaped-entities */
+// components/ai/PostImprover.tsx
 "use client";
 
-// components/ai/PostImprover.tsx
-
 import { useState } from "react";
-import { improvePost, APIError } from "@/lib/ai-client";
+import { aiService } from "@/services/Ai/ai.service";
 
 interface PostImproverProps {
   content: string;
   onAccept: (improved: string) => void;
 }
 
-/**
- * Propose une version améliorée du post et permet de l'accepter ou la refuser.
- */
 export function PostImprover({ content, onAccept }: PostImproverProps) {
   const [improved, setImproved] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,14 +23,12 @@ export function PostImprover({ content, onAccept }: PostImproverProps) {
     setImproved(null);
 
     try {
-      const result = await improvePost(content);
+      const result = await aiService.improveText({ content });
       setImproved(result.improved);
       setIsVisible(true);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(
-        err instanceof APIError
-          ? err.message
-          : "Erreur lors de l'amélioration.",
+        err instanceof Error ? err.message : "Erreur lors de l'amélioration.",
       );
     } finally {
       setIsLoading(false);
@@ -49,23 +43,22 @@ export function PostImprover({ content, onAccept }: PostImproverProps) {
     }
   };
 
-  const handleDiscard = () => {
-    setImproved(null);
-    setIsVisible(false);
-  };
-
   return (
     <div className="space-y-3">
       <button
         type="button"
         onClick={handleImprove}
         disabled={isLoading || content.trim().length < 10}
-        className="
-          flex items-center gap-1.5 text-xs font-medium
-          text-emerald-600 dark:text-emerald-400
-          hover:text-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed
-          transition-colors
-        "
+        className="flex items-center gap-1.5 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        style={{ color: "#1f6223" }}
+        onMouseEnter={(e) => {
+          if (!isLoading && content.trim().length >= 10) {
+            (e.currentTarget as HTMLButtonElement).style.color = "#002203";
+          }
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.color = "#1f6223";
+        }}
       >
         {isLoading ? (
           <>
@@ -102,7 +95,7 @@ export function PostImprover({ content, onAccept }: PostImproverProps) {
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z"
               />
             </svg>
             Améliorer avec l'IA
@@ -110,33 +103,65 @@ export function PostImprover({ content, onAccept }: PostImproverProps) {
         )}
       </button>
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && (
+        <p className="text-xs" style={{ color: "#ba1a1a" }}>
+          {error}
+        </p>
+      )}
 
       {isVisible && improved && (
-        <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20">
-            <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+        <div
+          className="rounded-xl border overflow-hidden"
+          style={{ borderColor: "#91d78a" }}
+        >
+          {/* Header */}
+          <div
+            className="flex items-center justify-between px-3 py-2"
+            style={{ background: "rgba(168,244,164,0.2)" }}
+          >
+            <span
+              className="text-xs font-semibold"
+              style={{ color: "#1f6223" }}
+            >
               Version améliorée
             </span>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={handleAccept}
-                className="text-xs px-2.5 py-1 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                className="text-xs px-2.5 py-1 rounded-lg font-medium text-white transition-all"
+                style={{ background: "#1f6223" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "#0d631b";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "#1f6223";
+                }}
               >
                 Accepter
               </button>
               <button
                 type="button"
-                onClick={handleDiscard}
-                className="text-xs px-2.5 py-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 transition-colors"
+                onClick={() => {
+                  setImproved(null);
+                  setIsVisible(false);
+                }}
+                className="text-xs px-2.5 py-1 rounded-lg transition-all"
+                style={{ color: "#707a6c" }}
               >
                 Ignorer
               </button>
             </div>
           </div>
-          <div className="px-3 py-3 bg-white dark:bg-gray-900">
-            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+
+          {/* Contenu */}
+          <div className="px-3 py-3" style={{ background: "white" }}>
+            <p
+              className="text-sm leading-relaxed whitespace-pre-wrap"
+              style={{ color: "#1a1c1c" }}
+            >
               {improved}
             </p>
           </div>

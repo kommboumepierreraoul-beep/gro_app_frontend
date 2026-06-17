@@ -1,14 +1,28 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { X, MapPin, Clock, Calendar, Banknote, Users, Star, MessageCircle, Phone, Mail, ExternalLink, ChevronRight, Award } from 'lucide-react';
-import { Mission } from '@/lib/missions/types';
-import { useMissionStore } from '@/stores/useMissionStore';
-import { useMission } from '@/hooks/missions/useMissions';
-import MissionStatusBadge from './MissionStatusBadge';
-import MissionMap from './MissionMap';
+import { useEffect } from "react";
+import {
+  X,
+  MapPin,
+  Clock,
+  Calendar,
+  Banknote,
+  Users,
+  Star,
+  MessageCircle,
+  Phone,
+  Mail,
+  ExternalLink,
+  ChevronRight,
+  Award,
+} from "lucide-react";
+import { Mission } from "@/lib/missions/types";
+import { useMissionStore } from "@/stores/useMissionStore";
+import { useMission } from "@/hooks/missions/useMissions";
+import MissionStatusBadge from "../MissionStatusBadge";
+import MissionMap from "../Map/MissionDetailMap";
 
 interface Props {
   mission: Mission; // mission partielle depuis la liste
@@ -16,16 +30,19 @@ interface Props {
 }
 
 const REMUNERATION_LABELS: Record<string, string> = {
-  fixed:       'Montant fixe',
-  daily_rate:  'Taux journalier',
-  hourly_rate: 'Taux horaire',
-  negotiable:  'À négocier',
-  in_kind:     'En nature',
-  volunteer:   'Bénévolat',
+  fixed: "Montant fixe",
+  daily_rate: "Taux journalier",
+  hourly_rate: "Taux horaire",
+  negotiable: "À négocier",
+  in_kind: "En nature",
+  volunteer: "Bénévolat",
 };
 
-export default function MissionDetailModal({ mission: partialMission, onClose }: Props) {
-  const openApplyModal = useMissionStore(s => s.openApplyModal);
+export default function MissionDetailModal({
+  mission: partialMission,
+  onClose,
+}: Props) {
+  const openApplyModal = useMissionStore((s) => s.openApplyModal);
 
   // Charger la mission complète avec reviews/coords
   const { data: fullMission } = useMission(partialMission.ulid);
@@ -33,17 +50,23 @@ export default function MissionDetailModal({ mission: partialMission, onClose }:
 
   // Fermer avec Escape
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
   const remuLabel = mission.remuneration_amount
-    ? `${Number(mission.remuneration_amount).toLocaleString('fr-FR')} ${mission.remuneration_currency}`
-    : REMUNERATION_LABELS[mission.remuneration_type] ?? '';
+    ? `${Number(mission.remuneration_amount).toLocaleString("fr-FR")} ${mission.remuneration_currency}`
+    : (REMUNERATION_LABELS[mission.remuneration_type] ?? "");
 
-  const whatsappContact = mission.contact_methods?.find((c: any) => c.type === 'whatsapp');
-  const emailContact    = mission.contact_methods?.find((c: any) => c.type === 'email');
+  const whatsappContact = mission.contact_methods?.find(
+    (c: any) => c.type === "whatsapp",
+  );
+  const emailContact = mission.contact_methods?.find(
+    (c: any) => c.type === "email",
+  );
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">

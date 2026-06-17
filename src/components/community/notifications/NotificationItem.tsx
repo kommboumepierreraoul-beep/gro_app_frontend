@@ -14,12 +14,21 @@ import {
   AtSign,
   Megaphone,
   Bell,
+  User,
+  Briefcase,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Star,
 } from "lucide-react";
 
+// Configurations des icônes pour tous les types
 const notifConfig: Record<
   string,
   { icon: React.ReactNode; bg: string; color: string }
 > = {
+  // Community
   like_post: {
     icon: <ThumbsUp size={10} strokeWidth={2.5} />,
     bg: "rgba(186,26,26,0.12)",
@@ -60,10 +69,86 @@ const notifConfig: Record<
     bg: "rgba(128,85,51,0.12)",
     color: "#805533",
   },
+  
+  // Missions
+  new_mission: {
+    icon: <Briefcase size={10} strokeWidth={2.5} />,
+    bg: "rgba(21,66,18,0.12)",
+    color: "#154212",
+  },
+  new_application: {
+    icon: <MessageCircle size={10} strokeWidth={2.5} />,
+    bg: "rgba(45,90,39,0.12)",
+    color: "#2d5a27",
+  },
+  application_accepted: {
+    icon: <CheckCircle size={10} strokeWidth={2.5} />,
+    bg: "rgba(59,105,52,0.12)",
+    color: "#3b6934",
+  },
+  application_rejected: {
+    icon: <XCircle size={10} strokeWidth={2.5} />,
+    bg: "rgba(186,26,26,0.12)",
+    color: "#ba1a1a",
+  },
+  mission_reminder: {
+    icon: <Calendar size={10} strokeWidth={2.5} />,
+    bg: "rgba(255,152,0,0.12)",
+    color: "#ff9800",
+  },
+  mission_updated: {
+    icon: <Repeat2 size={10} strokeWidth={2.5} />,
+    bg: "rgba(128,85,51,0.12)",
+    color: "#805533",
+  },
+  mission_completed: {
+    icon: <CheckCircle size={10} strokeWidth={2.5} />,
+    bg: "rgba(59,105,52,0.12)",
+    color: "#3b6934",
+  },
+  mission_filled: {
+    icon: <UserPlus size={10} strokeWidth={2.5} />,
+    bg: "rgba(45,90,39,0.12)",
+    color: "#2d5a27",
+  },
+  mission_cancelled: {
+    icon: <AlertCircle size={10} strokeWidth={2.5} />,
+    bg: "rgba(186,26,26,0.12)",
+    color: "#ba1a1a",
+  },
+  review_request: {
+    icon: <Star size={10} strokeWidth={2.5} />,
+    bg: "rgba(255,152,0,0.12)",
+    color: "#ff9800",
+  },
 };
 
+// Fonction pour déterminer l'URL de redirection
 const getRedirectUrl = (notif: Notification): string => {
-  const { type, post, actor } = notif;
+  const { type, data, post, actor } = notif;
+  
+  // Priorité aux missions
+  if (data?.mission_ulid) {
+    switch (type) {
+      case "new_application":
+        return `/missions/${data.mission_ulid}/applications`;
+      case "application_accepted":
+      case "application_rejected":
+      case "mission_reminder":
+      case "mission_updated":
+      case "new_mission":
+      case "mission_filled":
+      case "mission_cancelled":
+        return `/missions/${data.mission_ulid}`;
+      case "mission_completed":
+      case "review_request":
+        return `/missions/${data.mission_ulid}/review`;
+      default:
+        return `/missions/${data.mission_ulid}`;
+    }
+  }
+  
+  // Community
   switch (type) {
     case "like_post":
     case "comment":
@@ -98,18 +183,24 @@ export function NotificationItem({ notif }: { notif: Notification }) {
     color: "#72796e",
   };
 
+  // Vérifier si l'acteur existe
+  const hasActor = notif.actor && notif.actor.id;
+
   return (
     <div
       onClick={handleClick}
-      className="flex items-start gap-3 px-5 py-4 cursor-pointer transition-all duration-150"
+      className="flex items-start gap-3 px-3 sm:px-5 py-3 sm:py-4 cursor-pointer transition-all duration-150 hover:bg-[#f3f4ed]"
       style={{
         borderBottom: "1px solid rgba(194,201,187,0.28)",
         background: notif.is_read ? "transparent" : "rgba(188,240,174,0.12)",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.background = notif.is_read
-          ? "rgba(21,66,18,0.03)"
-          : "rgba(188,240,174,0.2)";
+        if (notif.is_read) {
+          (e.currentTarget as HTMLElement).style.background = "#f3f4ed";
+        } else {
+          (e.currentTarget as HTMLElement).style.background =
+            "rgba(188,240,174,0.2)";
+        }
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLElement).style.background = notif.is_read
@@ -119,14 +210,27 @@ export function NotificationItem({ notif }: { notif: Notification }) {
     >
       {/* Avatar + badge icône */}
       <div className="relative flex-shrink-0">
-        <Avatar
-          src={notif.actor.avatar}
-          firstname={notif.actor.firstname}
-          size="md"
-        />
-        {/* Badge lucide en bas à droite de l'avatar */}
+        {hasActor ? (
+          <Avatar
+            src={notif.actor.avatar}
+            firstname={notif.actor.firstname}
+            lastname={notif.actor.lastname}
+            size="md"
+            className="w-10 h-10 sm:w-11 sm:h-11"
+          />
+        ) : (
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#e2e3dc] flex items-center justify-center">
+            {notif.type.startsWith("mission") ? (
+              <Briefcase size={18} className="text-[#154212]" />
+            ) : (
+              <User size={18} className="text-[#72796e]" />
+            )}
+          </div>
+        )}
+
+        {/* Badge icône en bas à droite de l'avatar */}
         <span
-          className="absolute -bottom-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full border-2"
+          className="absolute -bottom-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full border-2 shadow-sm"
           style={{
             background: cfg.bg,
             borderColor: "#f9faf2",
@@ -140,7 +244,7 @@ export function NotificationItem({ notif }: { notif: Notification }) {
       {/* Contenu */}
       <div className="flex-1 min-w-0">
         <p
-          className="text-sm leading-snug"
+          className="text-xs sm:text-sm leading-relaxed sm:leading-snug"
           style={{
             color: notif.is_read ? "#42493e" : "#191c18",
             fontWeight: notif.is_read ? 400 : 500,
@@ -151,7 +255,7 @@ export function NotificationItem({ notif }: { notif: Notification }) {
         </p>
         <TimeAgo
           date={notif.created_at}
-          className="mt-1 text-xs"
+          className="mt-1 text-[10px] sm:text-xs"
           style={{ color: notif.is_read ? "#c2c9bb" : "#72796e" }}
         />
       </div>
@@ -159,7 +263,7 @@ export function NotificationItem({ notif }: { notif: Notification }) {
       {/* Dot non-lu */}
       {!notif.is_read && (
         <div
-          className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5"
+          className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0 mt-1.5"
           style={{ background: "#2d5a27" }}
         />
       )}

@@ -6,7 +6,15 @@ import { Avatar } from "../shared/Avatar";
 import { TimeAgo } from "../shared/TimeAgo";
 import { useConversations } from "@/hooks/community/useMessage";
 import { useAuthStore } from "@/stores/auth.store";
-import { MessageCircle, Edit2, Users, Loader2, Search } from "lucide-react";
+import {
+  MessageCircle,
+  Edit2,
+  Users,
+  Loader2,
+  Search,
+  X,
+  UserPlus,
+} from "lucide-react";
 import { CreateGroupModal } from "./CreateGroupModal";
 
 interface ConversationListProps {
@@ -142,7 +150,7 @@ export function ConversationList({
   if (convLoading) return <ConversationListSkeleton />;
 
   return (
-    <div>
+    <div className="h-full">
       <div
         className="flex flex-col h-full relative"
         style={{ background: "transparent" }}
@@ -178,16 +186,16 @@ export function ConversationList({
         {/* ── Liste des conversations ── */}
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+            <div className="flex flex-col items-center justify-center h-full p-6 sm:p-8 text-center">
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-3 sm:mb-4"
                 style={{
                   background: "rgba(188,240,174,0.18)",
                   border: "1px solid rgba(194,201,187,0.4)",
                 }}
               >
                 <MessageCircle
-                  size={24}
+                  size={20}
                   strokeWidth={1.5}
                   style={{ color: "#72796e" }}
                 />
@@ -201,7 +209,7 @@ export function ConversationList({
               >
                 {convSearch ? "Aucun résultat" : "Aucune discussion"}
               </p>
-              <p className="text-xs mb-5" style={{ color: "#72796e" }}>
+              <p className="text-xs mb-4 sm:mb-5" style={{ color: "#72796e" }}>
                 {convSearch
                   ? "Essayez un autre terme"
                   : "Commencez une nouvelle conversation"}
@@ -257,7 +265,7 @@ export function ConversationList({
                   <div
                     key={conv.id}
                     onClick={() => handleSelectConversation(conv.id)}
-                    className="cursor-pointer flex items-center gap-3 px-3.5 py-3 transition-colors"
+                    className="cursor-pointer flex items-center gap-2 sm:gap-3 px-3 sm:px-3.5 py-3 transition-colors"
                     style={{
                       borderBottom: "1px solid rgba(194,201,187,0.28)",
                       borderLeft: isActive
@@ -280,16 +288,16 @@ export function ConversationList({
                     <div className="relative flex-shrink-0">
                       {conv.is_group ? (
                         <div
-                          className="w-11 h-11 rounded-full flex items-center justify-center"
+                          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center"
                           style={{ background: "#2d5a27" }}
                         >
-                          <Users size={18} style={{ color: "#bcf0ae" }} />
+                          <Users size={16} style={{ color: "#bcf0ae" }} />
                         </div>
                       ) : (
                         <Avatar
                           src={displayAvatar}
                           firstname={other?.firstname || "?"}
-                          size="lg"
+                          size="md"
                         />
                       )}
                       {hasUnread && (
@@ -306,7 +314,7 @@ export function ConversationList({
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline justify-between">
+                      <div className="flex items-baseline justify-between gap-1">
                         <p
                           className="text-sm truncate"
                           style={{
@@ -320,7 +328,7 @@ export function ConversationList({
                         {displayTime && (
                           <TimeAgo
                             date={displayTime}
-                            className="flex-shrink-0 ml-2 text-[10px]"
+                            className="flex-shrink-0 text-[10px]"
                             style={{ color: "#72796e" }}
                           />
                         )}
@@ -343,8 +351,8 @@ export function ConversationList({
                         {conv.last_message?.sender_id === user?.id
                           ? "Vous : "
                           : ""}
-                        {displayLastMessage.length > 50
-                          ? displayLastMessage.substring(0, 50) + "…"
+                        {displayLastMessage.length > 40
+                          ? displayLastMessage.substring(0, 40) + "…"
                           : displayLastMessage}
                       </p>
                     </div>
@@ -355,10 +363,10 @@ export function ConversationList({
           )}
         </div>
 
-        {/* Bouton flottant */}
+        {/* Bouton flottant - caché sur mobile quand conversation ouverte */}
         <button
           onClick={handleOpenNewConversation}
-          className="absolute bottom-10 right-4 w-11 h-11 flex items-center justify-center rounded-full transition-transform hover:scale-105 z-10"
+          className="hidden sm:flex absolute bottom-10 right-4 w-11 h-11 items-center justify-center rounded-full transition-transform hover:scale-105 z-10 shadow-lg"
           style={{
             background: "#154212",
             color: "#fff",
@@ -370,17 +378,23 @@ export function ConversationList({
         </button>
       </div>
 
-      {/* ── Modal nouvelle conversation ── */}
+      {/* ── Modal nouvelle conversation (responsive) ── */}
       {showNewConversation && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
           style={{
             background: "rgba(0,0,0,0.32)",
             backdropFilter: "blur(4px)",
           }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowNewConversation(false);
+              setModalSearch("");
+            }
+          }}
         >
           <div
-            className="w-full max-w-md rounded-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            className="w-[95%] sm:w-full max-w-md rounded-2xl overflow-hidden max-h-[90vh] flex flex-col"
             style={{
               background: "#f9faf2",
               border: "1px solid rgba(194,201,187,0.5)",
@@ -389,14 +403,14 @@ export function ConversationList({
           >
             {/* Header */}
             <div
-              className="flex items-center justify-between px-5 py-4 flex-shrink-0"
+              className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 flex-shrink-0"
               style={{
                 background: "rgba(255,255,255,0.85)",
                 borderBottom: "1px solid rgba(194,201,187,0.35)",
               }}
             >
               <h2
-                className="font-bold text-base"
+                className="font-bold text-sm sm:text-base"
                 style={{
                   color: "#154212",
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -409,21 +423,15 @@ export function ConversationList({
                   setShowNewConversation(false);
                   setModalSearch("");
                 }}
-                className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-black/5 active:bg-black/10"
                 style={{ color: "#72796e" }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "#e7e9e1")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
             <div className="p-4 flex flex-col gap-3 overflow-y-auto">
-              {/* Search users — état séparé modalSearch */}
+              {/* Search users */}
               <div className="relative">
                 <Search
                   size={13}
@@ -435,7 +443,7 @@ export function ConversationList({
                   placeholder="Rechercher un contact..."
                   value={modalSearch}
                   onChange={(e) => setModalSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-sm outline-none"
+                  className="w-full pl-8 pr-3 py-2 text-sm outline-none transition-colors"
                   style={{
                     background: "#f3f4ed",
                     border: "1px solid rgba(194,201,187,0.5)",
@@ -450,7 +458,7 @@ export function ConversationList({
                 />
               </div>
 
-              {/* Créer un groupe
+              {/* Créer un groupe - option */}
               <button
                 onClick={() => {
                   setShowNewConversation(false);
@@ -473,9 +481,9 @@ export function ConversationList({
                   className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ background: "#2d5a27" }}
                 >
-                  <Users size={17} style={{ color: "#bcf0ae" }} />
+                  <UserPlus size={17} style={{ color: "#bcf0ae" }} />
                 </div>
-                <div>
+                <div className="flex-1">
                   <p
                     className="text-sm font-semibold"
                     style={{
@@ -489,10 +497,10 @@ export function ConversationList({
                     Discutez avec plusieurs personnes
                   </p>
                 </div>
-              </button> */}
+              </button>
 
               {/* Liste utilisateurs */}
-              <div className="max-h-80 overflow-y-auto">
+              <div className="max-h-60 sm:max-h-80 overflow-y-auto">
                 {usersLoading ? (
                   <div className="flex justify-center py-6">
                     <Loader2
@@ -522,7 +530,7 @@ export function ConversationList({
                       <button
                         key={userId}
                         onClick={() => handleStartConversation(userId)}
-                        className="w-full flex items-center gap-3 px-2 py-2.5 rounded-xl transition-colors"
+                        className="w-full flex items-center gap-3 px-2 py-2.5 rounded-xl transition-colors active:bg-[rgba(21,66,18,0.08)]"
                         onMouseEnter={(e) =>
                           (e.currentTarget.style.background =
                             "rgba(21,66,18,0.04)")
@@ -536,9 +544,9 @@ export function ConversationList({
                           firstname={userData.firstname}
                           size="md"
                         />
-                        <div className="flex-1 text-left">
+                        <div className="flex-1 text-left min-w-0">
                           <p
-                            className="text-sm font-semibold"
+                            className="text-sm font-semibold truncate"
                             style={{
                               color: "#191c18",
                               fontFamily: "'Plus Jakarta Sans', sans-serif",

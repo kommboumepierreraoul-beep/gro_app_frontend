@@ -5,7 +5,7 @@ import type {
   Conversation,
   ModerationResult,
   StreamChunk,
-} from "@/types/ai";
+} from "@/types/ai.types";
 
 /**
  * Client centralisé pour toutes les requêtes vers l'API IA Laravel.

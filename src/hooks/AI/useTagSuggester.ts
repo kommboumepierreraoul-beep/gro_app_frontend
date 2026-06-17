@@ -1,8 +1,15 @@
-// hooks/useTagSuggester.ts
+// hooks/AI/useTagSuggester.ts
 "use client";
 
+/**
+ * Hook pour la suggestion automatique de tags via IA.
+ *
+ * Correction : appelle aiService.generateTags (route /ai/suggestions/tags)
+ * au lieu de l'ancien ai-client.ts qui pointait vers /ai/tags (inexistant).
+ */
+
 import { useCallback, useState } from "react";
-import { generateTags, APIError } from "@/lib/ai-client";
+import { aiService } from "@/services/Ai/ai.service";
 
 interface UseTagSuggesterReturn {
   suggestions: string[];
@@ -12,9 +19,6 @@ interface UseTagSuggesterReturn {
   clearSuggestions: () => void;
 }
 
-/**
- * Hook pour la génération automatique de tags via IA.
- */
 export function useTagSuggester(): UseTagSuggesterReturn {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,14 +31,14 @@ export function useTagSuggester(): UseTagSuggesterReturn {
     setError(null);
 
     try {
-      const tags = await generateTags(content, maxTags);
-      setSuggestions(tags);
-    } catch (err) {
-      setError(
-        err instanceof APIError
+      const result = await aiService.generateTags(content, maxTags);
+      setSuggestions(result.tags);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
           ? err.message
-          : "Impossible de générer des tags pour le moment.",
-      );
+          : "Impossible de générer des tags pour le moment.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }

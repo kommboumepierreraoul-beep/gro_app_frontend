@@ -73,6 +73,16 @@ class MessageService {
     await api.post(`/community/messages/conversations/${conversationId}/read`);
   }
 
+  // Récupérer le statut d'un message spécifique
+  async getMessageStatus(
+    messageId: number,
+  ): Promise<{ is_read: boolean; is_delivered: boolean }> {
+    const response = await api.get(
+      `/community/messages/messages/${messageId}/status`,
+    );
+    return response.data.data;
+  }
+
   // Ajouter des participants à un groupe
   async addParticipants(
     conversationId: number,

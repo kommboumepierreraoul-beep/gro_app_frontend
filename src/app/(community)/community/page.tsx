@@ -6,7 +6,6 @@ export default function CommunityPage() {
   return (
     <>
      <Feed />
-     <GROAssistant mode="floating" />
     </>
   );
 }

@@ -3,10 +3,14 @@ import { CommunityUser } from "@/types/community.types";
 
 export const profileService = {
   // Récupérer mon profil
-  async getMe(): Promise<CommunityUser> {
-    const res = await api.get("/community/profile/me");
-    return res.data.data;
-  },
+ async getMe() {
+  const res = await api.get("/community/profile/me");
+
+  console.log("TYPE", typeof res.data);
+  console.log("RAW", res.data);
+
+  return res.data.data;
+},
 
   // Récupérer le profil d'un utilisateur
   async getProfile(userId: number): Promise<CommunityUser> {

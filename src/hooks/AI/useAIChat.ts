@@ -1,344 +1,230 @@
-// hooks/useAIChat.ts
-"use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useCallback, useRef, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { aiService } from "@/services/Ai/ai.service";
+import { ChatRequest, AIConversation, AIMessage } from "@/types/ai.types";
+import { tokenService } from "@/lib/auth-token";
 
-import {
-  sendMessage,
-  streamMessage,
-  APIError,
-} from "@/lib/ai-client";
-
-import type { ChatMessage } from "@/types/ai";
-
-interface UseAIChatOptions {
-  /** Active le streaming SSE */
-  streaming?: boolean;
-
-  /** Session existante */
-  initialSessionId?: string;
-}
-
-interface UseAIChatReturn {
-  messages: ChatMessage[];
-  isLoading: boolean;
-  error: string | null;
-  sessionId: string;
-
-  sendUserMessage: (content: string) => Promise<void>;
-  clearConversation: () => void;
-  retryLastMessage: () => Promise<void>;
-}
-
-/**
- * Hook principal du chat IA
- */
-export function useAIChat(
-  options: UseAIChatOptions = {},
-): UseAIChatReturn {
-
-  const {
-    streaming = true,
-    initialSessionId,
-  } = options;
-
-  // ─────────────────────────────────────────────
-  // STATES
-  // ─────────────────────────────────────────────
-
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+export function useAIChat() {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [sessionId, setSessionId] = useState<string>(
-    () => initialSessionId ?? uuidv4(),
-  );
-
-  // ─────────────────────────────────────────────
-  // REFS
-  // ─────────────────────────────────────────────
-
-  const cancelStreamRef = useRef<(() => void) | null>(null);
-
-  const lastMessageRef = useRef<string>("");
-
-  // ─────────────────────────────────────────────
-  // HANDLER : DIRECT RESPONSE
-  // ─────────────────────────────────────────────
-
-  async function handleDirectResponse(
-    content: string,
-  ): Promise<void> {
-
-    try {
-      const res = await sendMessage(
-        content,
-        sessionId,
-      );
-
-      const assistantMsg: ChatMessage = {
-        id: uuidv4(),
-        role: "assistant",
-        content: res.content,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [
-        ...prev,
-        assistantMsg,
-      ]);
-    } catch (err) {
-
-      const message =
-        err instanceof APIError
-          ? err.message
-          : "Une erreur inattendue s'est produite.";
-
-      setError(message);
-
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  // ─────────────────────────────────────────────
-  // HANDLER : STREAMING RESPONSE
-  // ─────────────────────────────────────────────
-
-  async function handleStreamingResponse(
-    content: string,
-  ): Promise<void> {
-
-    return new Promise((resolve) => {
-
-      const assistantMsgId = uuidv4();
-
-      // Message assistant vide
-      const assistantMsg: ChatMessage = {
-        id: assistantMsgId,
-        role: "assistant",
-        content: "",
-        timestamp: new Date(),
-        isStreaming: true,
-      };
-
-      setMessages((prev) => [
-        ...prev,
-        assistantMsg,
-      ]);
-
-      cancelStreamRef.current = streamMessage(
-
-        content,
-        sessionId,
-
-        // ───────────────────────────
-        // onChunk
-        // ───────────────────────────
-
-        (chunk) => {
-
-          setMessages((prev) => {
-
-            return prev.map((msg) => {
-
-              if (msg.id !== assistantMsgId) {
-                return msg;
-              }
-
-              return {
-                ...msg,
-                content: msg.content + chunk,
-              };
-            });
-          });
-        },
-
-        // ───────────────────────────
-        // onDone
-        // ───────────────────────────
-
-        () => {
-
-          setMessages((prev) => {
-
-            return prev.map((msg) => {
-
-              if (msg.id !== assistantMsgId) {
-                return msg;
-              }
-
-              return {
-                ...msg,
-                isStreaming: false,
-              };
-            });
-          });
-
-          setIsLoading(false);
-
-          resolve();
-        },
-
-        // ───────────────────────────
-        // onError
-        // ───────────────────────────
-
-        (err) => {
-
-          setError(err.message);
-
-          setMessages((prev) => {
-
-            return prev.map((msg) => {
-
-              if (msg.id !== assistantMsgId) {
-                return msg;
-              }
-
-              return {
-                ...msg,
-                isStreaming: false,
-              };
-            });
-          });
-
-          setIsLoading(false);
-
-          resolve();
-        },
-      );
-    });
-  }
-
-  // ─────────────────────────────────────────────
-  // SEND MESSAGE
-  // ─────────────────────────────────────────────
-
-  const sendUserMessage = useCallback(
-    async (content: string) => {
-
-      if (!content.trim()) return;
-
-      if (isLoading) return;
-
-      // Annule stream précédent
-      cancelStreamRef.current?.();
-
-      setError(null);
-
-      setIsLoading(true);
-
-      lastMessageRef.current = content;
-
-      // Message user
-      const userMsg: ChatMessage = {
-        id: uuidv4(),
-        role: "user",
-        content,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [
-        ...prev,
-        userMsg,
-      ]);
-
-      if (streaming) {
-
-        await handleStreamingResponse(content);
-
-      } else {
-
-        await handleDirectResponse(content);
-      }
-    },
-    [
-      isLoading,
-      streaming,
-      sessionId,
-    ],
-  );
-
-  // ─────────────────────────────────────────────
-  // CLEAR CONVERSATION
-  // ─────────────────────────────────────────────
-
-  const clearConversation = useCallback(() => {
-
-    cancelStreamRef.current?.();
-
-    setMessages([]);
-
-    setError(null);
-
-    setIsLoading(false);
-
-    setSessionId(uuidv4());
-
-    lastMessageRef.current = "";
-
+  const [conversations, setConversations] = useState<AIConversation[]>([]);
+  const [currentConversation, setCurrentConversation] =
+    useState<AIConversation | null>(null);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    total: 0,
+    last_page: 1,
+  });
+
+  // ✅ Éviter les appels multiples
+  const hasLoaded = useRef(false);
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  const handleAuthError = useCallback(() => {
+    tokenService.remove();
+    setError("Session expirée. Veuillez vous reconnecter.");
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 2000);
   }, []);
 
-  // ─────────────────────────────────────────────
-  // RETRY LAST MESSAGE
-  // ─────────────────────────────────────────────
-
-  const retryLastMessage = useCallback(
-    async () => {
-
-      if (!lastMessageRef.current) {
-        return;
+  const handleError = useCallback(
+    (err: any, fallback: string) => {
+      if (err?.response?.status === 401) {
+        handleAuthError();
+      } else {
+        setError(err?.response?.data?.message ?? err?.message ?? fallback);
       }
-
-      // Supprime les 2 derniers messages
-      setMessages((prev) => {
-
-        const filtered = [...prev];
-
-        // assistant
-        if (
-          filtered[filtered.length - 1]?.role ===
-          "assistant"
-        ) {
-          filtered.pop();
-        }
-
-        // user
-        if (
-          filtered[filtered.length - 1]?.role ===
-          "user"
-        ) {
-          filtered.pop();
-        }
-
-        return filtered;
-      });
-
-      setError(null);
-
-      await sendUserMessage(
-        lastMessageRef.current,
-      );
     },
-    [sendUserMessage],
+    [handleAuthError],
   );
 
-  // ─────────────────────────────────────────────
-  // RETURN
-  // ─────────────────────────────────────────────
+  // ── Chat ────────────────────────────────────────────────────────────────────
+
+  const sendMessage = useCallback(
+    async (request: ChatRequest) => {
+      if (!tokenService.get()) {
+        const msg = "Non authentifié. Veuillez vous connecter.";
+        setError(msg);
+        throw new Error(msg);
+      }
+
+      setLoading(true);
+      setError(null);
+      try {
+        return await aiService.chat(request);
+      } catch (err: any) {
+        handleError(err, "Erreur lors de l'envoi du message");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [handleError],
+  );
+
+  // ── Tags ────────────────────────────────────────────────────────────────────
+
+  const generateTags = useCallback(
+    async (content: string, max = 5): Promise<string[]> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await aiService.generateTags(content, max);
+        return response.tags;
+      } catch (err: any) {
+        handleError(err, "Erreur lors de la génération des tags");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [handleError],
+  );
+
+  // ── Résumé ──────────────────────────────────────────────────────────────────
+
+  const summarize = useCallback(
+    async (content: string, language = "fr"): Promise<string> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await aiService.summarizeContent({
+          content,
+          language,
+        });
+        return response.summary;
+      } catch (err: any) {
+        handleError(err, "Erreur lors du résumé");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [handleError],
+  );
+
+  // ── Amélioration ────────────────────────────────────────────────────────────
+
+  const improveText = useCallback(
+    async (content: string, language = "fr"): Promise<string> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await aiService.improveText({ content, language });
+        return response.improved;
+      } catch (err: any) {
+        handleError(err, "Erreur lors de l'amélioration du texte");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [handleError],
+  );
+
+  // ── Conversations ────────────────────────────────────────────────────────────
+
+  const loadConversations = useCallback(
+    async (page = 1) => {
+      if (!tokenService.get()) {
+        console.log("❌ Pas de token, impossible de charger les conversations");
+        return { data: [] };
+      }
+
+      setLoading(true);
+      setError(null);
+      try {
+        console.log("📚 Chargement des conversations...");
+        const response = await aiService.getConversations(page);
+        console.log("📚 Conversations chargées:", response.data.length);
+
+        setConversations(response.data);
+        setPagination({
+          current_page: response.current_page,
+          total: response.total,
+          last_page: response.last_page,
+        });
+        return response;
+      } catch (err: any) {
+        console.error("❌ Erreur chargement conversations:", err);
+        if (![404, 405].includes(err?.response?.status)) {
+          handleError(err, "Erreur lors du chargement des conversations");
+        }
+        return { data: [] };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [handleError],
+  );
+
+  const loadConversation = useCallback(
+    async (id: string): Promise<AIConversation> => {
+      setLoading(true);
+      setError(null);
+      try {
+        console.log("📚 Chargement conversation:", id);
+        const conversation = await aiService.getConversation(id);
+        setCurrentConversation(conversation);
+        return conversation;
+      } catch (err: any) {
+        handleError(err, "Erreur lors du chargement de la conversation");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [handleError],
+  );
+
+  const deleteConversation = useCallback(
+    async (id: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await aiService.deleteConversation(id);
+        setConversations((prev) => prev.filter((c) => c.id !== id));
+        if (currentConversation?.id === id) {
+          setCurrentConversation(null);
+        }
+      } catch (err: any) {
+        handleError(err, "Erreur lors de la suppression");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentConversation, handleError],
+  );
+
+  // ── Auto-chargement (CORRIGÉ) ─────────────────────────────────────────────
+
+  useEffect(() => {
+    if (tokenService.get() && !hasLoaded.current) {
+      hasLoaded.current = true;
+      loadConversations();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const clearError = useCallback(() => setError(null), []);
 
   return {
-    messages,
-    isLoading,
+    loading,
     error,
-    sessionId,
-
-    sendUserMessage,
-
-    clearConversation,
-
-    retryLastMessage,
+    conversations,
+    currentConversation,
+    pagination,
+    sendMessage,
+    generateTags,
+    summarize,
+    improveText,
+    loadConversations,
+    loadConversation,
+    deleteConversation,
+    clearError,
   };
 }

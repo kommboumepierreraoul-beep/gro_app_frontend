@@ -47,4 +47,6 @@ export function useNotifications() {
     markAllRead,
     deleteNotif,
   };
+
+  
 }

@@ -61,7 +61,7 @@ export function CommunityNavbar() {
     firstname: profile?.firstname ?? user?.firstname,
     lastname: profile?.lastname ?? user?.lastname,
     avatar: getAvatarUrl(profile?.avatar ?? user?.avatar),
-    headline: profile?.headline ?? user?.headline ?? "Membre de la communauté",
+    headline: profile?.headline ?? "Membre de la communauté",
     email: profile?.email ?? user?.email,
   };
 
@@ -84,7 +84,7 @@ export function CommunityNavbar() {
   return (
     <>
       <nav
-        className="fixed top-0 right-0 z-50 left-0 transition-all duration-300"
+        className="fixed top-0 right-0 z-50 left-0 transition-all duration-300 "
         style={{
           background: scrolled
             ? "rgba(249,250,242,0.96)"
@@ -133,7 +133,7 @@ export function CommunityNavbar() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Agritech
+                AgriPulse
               </span>
             </Link>
 

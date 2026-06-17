@@ -68,8 +68,8 @@ export interface MissionCategory {
 
 export interface MissionAuthor {
   id: number;
-  firstname: string;
-  lastname: string;
+  firstname?: string;
+  lastname?: string;
   email?: string;
   avatar?: string | null;
   bio?: string;
@@ -77,6 +77,7 @@ export interface MissionAuthor {
   created_at?: string;
   rating?: number;
 }
+
 
 export interface MissionReview {
   id: number;
@@ -199,4 +200,21 @@ export interface MissionMapPoint {
   category_icon: string | null;
   category_color: string | null;
   distance_km: number;
+}
+
+export type ReportReason =
+  | "spam"
+  | "inappropriate"
+  | "scam"
+  | "duplicate"
+  | "misleading"
+  | "other";
+
+export interface MissionReport {
+  id: number;
+  mission_id: number;
+  reason: ReportReason;
+  details?: string;
+  status: "pending" | "reviewed" | "dismissed" | "action_taken";
+  created_at: string;
 }

@@ -1,15 +1,33 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, MapPin, ChevronRight, ChevronLeft, Check } from 'lucide-react';
-import { useCreateMission } from '@/hooks/missions/useCreateMission';
-import {  useCategories } from "@/hooks/missions/useMissions";
-import { FormField } from '@/lib/missions/types';
-import MissionLocationPicker from './MissionLocationPicker';
+import { useState, useEffect } from "react";
+import {
+  X,
+  Plus,
+  Trash2,
+  MapPin,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+} from "lucide-react";
+import { useCreateMission } from "@/hooks/missions/useCreateMission";
+import { useCategories } from "@/hooks/missions/useMissions";
+import { FormField } from "@/lib/missions/types";
 
-interface Props { onClose: () => void; }
+
+// Par :
+import dynamic from 'next/dynamic';
+
+const MissionLocationPicker = dynamic(
+  () => import('../Map/MissionLocationPicker'),
+  { ssr: false }
+);
+
+interface Props {
+  onClose: () => void;
+}
 
 interface FormState {
   // Étape 1 : Infos générales
@@ -41,57 +59,69 @@ interface FormState {
 }
 
 const STEPS = [
-  { label: 'Mission', desc: 'Titre & description' },
-  { label: 'Lieu & Durée', desc: 'Quand et où ?' },
-  { label: 'Rémunération', desc: 'Conditions financières !' },
-  { label: 'Contact', desc: 'Comment postuler ?' },
+  { label: "Mission", desc: "Titre & description" },
+  { label: "Lieu & Durée", desc: "Quand et où ?" },
+  { label: "Rémunération", desc: "Conditions financières !" },
+  { label: "Contact", desc: "Comment postuler ?" },
 ];
 
 const REMUNERATION_TYPES = [
-  { value: 'fixed',       label: 'Montant fixe' },
-  { value: 'daily_rate',  label: 'Taux journalier' },
-  { value: 'hourly_rate', label: 'Taux horaire' },
-  { value: 'negotiable',  label: 'À négocier' },
-  { value: 'in_kind',     label: 'En nature' },
-  { value: 'volunteer',   label: 'Bénévolat' },
+  { value: "fixed", label: "Montant fixe" },
+  { value: "daily_rate", label: "Taux journalier" },
+  { value: "hourly_rate", label: "Taux horaire" },
+  { value: "negotiable", label: "À négocier" },
+  { value: "in_kind", label: "En nature" },
+  { value: "volunteer", label: "Bénévolat" },
 ];
 
 const DURATION_TYPES = [
-  { value: 'hours',    label: 'Heures' },
-  { value: 'day',      label: '1 journée' },
-  { value: 'days',     label: 'Jours' },
-  { value: 'weeks',    label: 'Semaines' },
-  { value: 'flexible', label: 'Flexible' },
+  { value: "hours", label: "Heures" },
+  { value: "day", label: "1 journée" },
+  { value: "days", label: "Jours" },
+  { value: "weeks", label: "Semaines" },
+  { value: "flexible", label: "Flexible" },
 ];
 
 const CONTACT_TYPES = [
-  { value: 'app_message', label: 'Messagerie AgriPulse' },
-  { value: 'whatsapp',    label: 'WhatsApp' },
-  { value: 'email',       label: 'Email' },
-  { value: 'instagram',   label: 'Instagram' },
-  { value: 'facebook',    label: 'Facebook' },
+  { value: "app_message", label: "Messagerie AgriPulse" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "email", label: "Email" },
+  { value: "instagram", label: "Instagram" },
+  { value: "facebook", label: "Facebook" },
 ];
 
 const FIELD_TYPES = [
-  { value: 'text',     label: 'Texte court' },
-  { value: 'textarea', label: 'Texte long' },
-  { value: 'boolean',  label: 'Oui / Non' },
-  { value: 'select',   label: 'Choix multiple' },
-  { value: 'number',   label: 'Nombre' },
+  { value: "text", label: "Texte court" },
+  { value: "textarea", label: "Texte long" },
+  { value: "boolean", label: "Oui / Non" },
+  { value: "select", label: "Choix multiple" },
+  { value: "number", label: "Nombre" },
 ];
 
 export default function CreateMissionModal({ onClose }: Props) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>({
-    title: '', category_id: '', description: '', desired_profile: '',
-    duration_type: 'days', duration_value: '', start_date: '', expires_at: '',
-    location_label: '', latitude: '', longitude: '', diffusion_radius_km: '25',
-    remuneration_type: 'fixed', remuneration_amount: '', remuneration_currency: 'XAF',
-    remuneration_conditions: '',
-    contact_methods: [{ type: 'app_message', value: '' }],
-    allow_attachments: false, max_applications: '',
+    title: "",
+    category_id: "",
+    description: "",
+    desired_profile: "",
+    duration_type: "days",
+    duration_value: "",
+    start_date: "",
+    expires_at: "",
+    location_label: "",
+    latitude: "",
+    longitude: "",
+    diffusion_radius_km: "25",
+    remuneration_type: "fixed",
+    remuneration_amount: "",
+    remuneration_currency: "XAF",
+    remuneration_conditions: "",
+    contact_methods: [{ type: "app_message", value: "" }],
+    allow_attachments: false,
+    max_applications: "",
     application_form: [],
-    status: 'published',
+    status: "published",
   });
 
   const { data: categories } = useCategories();
@@ -99,60 +129,75 @@ export default function CreateMissionModal({ onClose }: Props) {
 
   // Fermer avec Escape
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
   const set = (key: keyof FormState, value: unknown) =>
-    setForm(f => ({ ...f, [key]: value }));
+    setForm((f) => ({ ...f, [key]: value }));
 
   // Ajouter un contact
   const addContact = () => {
     if (form.contact_methods.length >= 5) return;
-    set('contact_methods', [...form.contact_methods, { type: 'email', value: '' }]);
+    set("contact_methods", [
+      ...form.contact_methods,
+      { type: "email", value: "" },
+    ]);
   };
 
   const updateContact = (idx: number, key: string, value: string) => {
-    const updated = form.contact_methods.map((c, i) => i === idx ? { ...c, [key]: value } : c);
-    set('contact_methods', updated);
+    const updated = form.contact_methods.map((c, i) =>
+      i === idx ? { ...c, [key]: value } : c,
+    );
+    set("contact_methods", updated);
   };
 
   const removeContact = (idx: number) => {
-    set('contact_methods', form.contact_methods.filter((_, i) => i !== idx));
+    set(
+      "contact_methods",
+      form.contact_methods.filter((_, i) => i !== idx),
+    );
   };
 
   // Ajouter un champ formulaire
   const addFormField = () => {
     const newField: FormField = {
       id: `q${Date.now()}`,
-      label: '',
-      type: 'text',
+      label: "",
+      type: "text",
       required: false,
     };
-    set('application_form', [...form.application_form, newField]);
+    set("application_form", [...form.application_form, newField]);
   };
 
   const updateField = (idx: number, key: string, value: unknown) => {
-    const updated = form.application_form.map((f, i) => i === idx ? { ...f, [key]: value } : f);
-    set('application_form', updated);
+    const updated = form.application_form.map((f, i) =>
+      i === idx ? { ...f, [key]: value } : f,
+    );
+    set("application_form", updated);
   };
 
   const removeField = (idx: number) => {
-    set('application_form', form.application_form.filter((_, i) => i !== idx));
+    set(
+      "application_form",
+      form.application_form.filter((_, i) => i !== idx),
+    );
   };
 
   // Soumettre
   const handleSubmit = (publishNow: boolean) => {
     const fd = new FormData();
-    const data = { ...form, status: publishNow ? 'published' : 'draft' };
+    const data = { ...form, status: publishNow ? "published" : "draft" };
 
     Object.entries(data).forEach(([key, val]) => {
-      if (key === 'contact_methods' || key === 'application_form') {
+      if (key === "contact_methods" || key === "application_form") {
         fd.append(key, JSON.stringify(val));
-      } else if (typeof val === 'boolean') {
-        fd.append(key, val ? '1' : '0');
-      } else if (val !== '' && val !== null && val !== undefined) {
+      } else if (typeof val === "boolean") {
+        fd.append(key, val ? "1" : "0");
+      } else if (val !== "" && val !== null && val !== undefined) {
         fd.append(key, String(val));
       }
     });
@@ -161,9 +206,10 @@ export default function CreateMissionModal({ onClose }: Props) {
   };
 
   const canNext = () => {
-    if (step === 0) return form.title.length >= 5 && form.description.length >= 20;
-    if (step === 1) return form.duration_type !== '';
-    if (step === 2) return form.remuneration_type !== '';
+    if (step === 0)
+      return form.title.length >= 5 && form.description.length >= 20;
+    if (step === 1) return form.duration_type !== "";
+    if (step === 2) return form.remuneration_type !== "";
     return true;
   };
 
