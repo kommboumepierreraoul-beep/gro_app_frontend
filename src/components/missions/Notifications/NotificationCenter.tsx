@@ -13,7 +13,7 @@ import {
 import {
   notificationService,
   AppNotification,
-} from "@/services/notification.service";
+} from "@/services/mission/notification.service";
 
 const TYPE_ICONS: Record<string, string> = {
   new_mission: "📋",

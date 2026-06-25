@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -21,7 +22,7 @@ import { Avatar } from "@/components/community/shared/Avatar";
 import { TimeAgo } from "@/components/community/shared/TimeAgo";
 import { profileService } from "@/services/community/profile.service";
 import { postService } from "@/services/community/post.service";
-import { PostCard } from "@/components/community/feed/PostCard";
+import { PostCard } from "@/components/community/feed/posts/PostCard";
 
 type TabType = "all" | "users" | "posts";
 
@@ -124,7 +125,7 @@ export default function SearchPage() {
       {users.map((user) => (
         <Link
           key={user.id}
-          href={`/profile/${user.id}`}
+          href={`/community/profile/${user.id}`}
           className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:shadow-md transition"
         >
           <Avatar src={user.avatar} firstname={user.firstname} size="lg" />
@@ -140,7 +141,7 @@ export default function SearchPage() {
               <span>👥 {user.followers_count || 0} abonnés</span>
             </div>
           </div>
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
+          <button className="px-4 py-2 bg-green-950 hover:bg-green-900 text-white text-sm font-medium rounded-xl transition">
             Voir le profil
           </button>
         </Link>
@@ -165,13 +166,13 @@ export default function SearchPage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
+              <Users className="w-5 h-5 text-green-950" />
               Utilisateurs
             </h3>
             {users.length > 3 && (
               <button
                 onClick={() => setActiveTab("users")}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-green-950 hover:text-green-800 hover:underline"
               >
                 Voir tous ({users.length})
               </button>
@@ -181,7 +182,7 @@ export default function SearchPage() {
             {users.slice(0, 3).map((user) => (
               <Link
                 key={user.id}
-                href={`/profile/${user.id}`}
+                href={`/community/profile/${user.id}`}
                 className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:shadow-md transition"
               >
                 <Avatar
@@ -208,13 +209,13 @@ export default function SearchPage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-green-600" />
+              <FileText className="w-5 h-5 text-green-950" />
               Publications
             </h3>
             {posts.length > 3 && (
               <button
                 onClick={() => setActiveTab("posts")}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-green-950 hover:text-green-800 hover:underline"
               >
                 Voir toutes ({posts.length})
               </button>
@@ -231,121 +232,123 @@ export default function SearchPage() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Recherche</h1>
-        <p className="text-sm text-gray-500">
-          Trouvez des utilisateurs et des publications
-        </p>
-      </div>
-
-      {/* Barre de recherche */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
-        <div className="relative">
-          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => updateSearch(e.target.value)}
-            placeholder="Rechercher des utilisateurs ou publications..."
-            className="w-full pl-12 pr-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition"
-            autoFocus
-          />
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Recherche</h1>
+          <p className="text-sm text-gray-500">
+            Trouvez des utilisateurs et des publications
+          </p>
         </div>
 
-        {/* Suggestions de recherche rapide */}
-        {!query && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            <p className="text-xs text-gray-400 mr-2">Suggestions :</p>
-            {["agriculture", "fermier", "élevage", "récolte"].map(
-              (suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => updateSearch(suggestion)}
-                  className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
-                >
-                  {suggestion}
-                </button>
-              ),
-            )}
+        {/* Barre de recherche */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
+          <div className="relative">
+            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => updateSearch(e.target.value)}
+              placeholder="Rechercher des utilisateurs ou publications..."
+              className="w-full pl-12 pr-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-green-950/20 focus:border-green-950 transition"
+              autoFocus
+            />
+          </div>
+
+          {/* Suggestions de recherche rapide */}
+          {!query && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <p className="text-xs text-gray-400 mr-2">Suggestions :</p>
+              {["agriculture", "fermier", "élevage", "récolte"].map(
+                (suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => updateSearch(suggestion)}
+                    className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+                  >
+                    {suggestion}
+                  </button>
+                ),
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Résultats */}
+        {query.length >= 2 ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Tabs */}
+            <div className="flex border-b border-gray-100">
+              <button
+                onClick={() => setActiveTab("all")}
+                className={`flex-1 py-4 text-sm font-medium transition ${
+                  activeTab === "all"
+                    ? "text-green-950 border-b-2 border-green-950"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Tous ({users.length + posts.length})
+              </button>
+              <button
+                onClick={() => setActiveTab("users")}
+                className={`flex-1 py-4 text-sm font-medium transition ${
+                  activeTab === "users"
+                    ? "text-green-950 border-b-2 border-green-950"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Utilisateurs ({users.length})
+              </button>
+              <button
+                onClick={() => setActiveTab("posts")}
+                className={`flex-1 py-4 text-sm font-medium transition ${
+                  activeTab === "posts"
+                    ? "text-green-950 border-b-2 border-green-950"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Publications ({posts.length})
+              </button>
+            </div>
+
+            {/* Contenu des résultats */}
+            <div className="p-4 sm:p-6">
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-8 h-8 text-green-950 animate-spin" />
+                </div>
+              ) : !hasResults ? (
+                <div className="text-center py-12">
+                  <SearchIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">
+                    Aucun résultat trouvé
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Essayez avec d'autres mots-clés ou vérifiez l'orthographe
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {activeTab === "all" && <MixedResults />}
+                  {activeTab === "users" && <UsersList />}
+                  {activeTab === "posts" && <PostsList />}
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+            <SearchIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
+              Commencez votre recherche
+            </h3>
+            <p className="text-sm text-gray-500">
+              Saisissez au moins 2 caractères pour lancer la recherche
+            </p>
           </div>
         )}
       </div>
-
-      {/* Résultats */}
-      {query.length >= 2 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Tabs */}
-          <div className="flex border-b border-gray-100">
-            <button
-              onClick={() => setActiveTab("all")}
-              className={`flex-1 py-4 text-sm font-medium transition ${
-                activeTab === "all"
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Tous ({users.length + posts.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("users")}
-              className={`flex-1 py-4 text-sm font-medium transition ${
-                activeTab === "users"
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Utilisateurs ({users.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("posts")}
-              className={`flex-1 py-4 text-sm font-medium transition ${
-                activeTab === "posts"
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Publications ({posts.length})
-            </button>
-          </div>
-
-          {/* Contenu des résultats */}
-          <div className="p-4">
-            {isLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-              </div>
-            ) : !hasResults ? (
-              <div className="text-center py-12">
-                <SearchIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-1">
-                  Aucun résultat trouvé
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Essayez avec d'autres mots-clés ou vérifiez l'orthographe
-                </p>
-              </div>
-            ) : (
-              <>
-                {activeTab === "all" && <MixedResults />}
-                {activeTab === "users" && <UsersList />}
-                {activeTab === "posts" && <PostsList />}
-              </>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
-          <SearchIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-1">
-            Commencez votre recherche
-          </h3>
-          <p className="text-sm text-gray-500">
-            Saisissez au moins 2 caractères pour lancer la recherche
-          </p>
-        </div>
-      )}
     </div>
   );
 }

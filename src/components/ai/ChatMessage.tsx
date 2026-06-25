@@ -259,7 +259,7 @@ export function ChatMessage({
           }`}
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
-          <span>{isUser ? "Vous" : "Assistant IA"}</span>
+          <span>{isUser ? "Vous" : "AgriPulse IA"}</span>
           {isStreaming && (
             <span className="inline-flex gap-0.5 items-center">
               <span

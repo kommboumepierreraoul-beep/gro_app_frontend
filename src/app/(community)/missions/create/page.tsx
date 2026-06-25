@@ -7,6 +7,6 @@ export default function CreateMissionPage() {
   const router = useRouter();
 
   return (
-    <CreateMissionModal onClose={() => router.push("/community/missions")} />
+    <CreateMissionModal onClose={() => router.push("/missions")} />
   );
 }

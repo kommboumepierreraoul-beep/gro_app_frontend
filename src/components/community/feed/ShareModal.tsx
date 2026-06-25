@@ -111,57 +111,28 @@ export function ShareModal({ post, onClose }: ShareModalProps) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{
-        background: "rgba(15,25,12,0.65)",
+        background: "rgba(0,0,0,0.5)",
         backdropFilter: "blur(8px)",
       }}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-2xl overflow-hidden"
+        className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
         style={{
-          background: "rgba(249,250,242,0.98)",
-          backdropFilter: "blur(24px)",
-          border: "1px solid rgba(194,201,187,0.5)",
-          boxShadow: "0 24px 60px rgba(21,66,18,0.2)",
-          animation: "groSlideUp 0.25s ease-out",
+          animation: "slideUp 0.2s ease-out",
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER */}
-        <div
-          className="flex items-center justify-between px-5 py-4"
-          style={{
-            borderBottom: "1px solid rgba(194,201,187,0.35)",
-            background:
-              "linear-gradient(135deg, rgba(188,240,174,0.18) 0%, transparent 100%)",
-          }}
-        >
-          <h2
-            className="text-sm font-bold"
-            style={{
-              color: "#154212",
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-            }}
-          >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+          <h2 className="text-sm font-bold text-gray-900">
             Partager la publication
           </h2>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150"
-            style={{
-              background: "rgba(194,201,187,0.3)",
-              color: "#42493e",
-            }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLElement).style.background =
-                "rgba(194,201,187,0.5)")
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLElement).style.background =
-                "rgba(194,201,187,0.3)")
-            }
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -171,31 +142,12 @@ export function ShareModal({ post, onClose }: ShareModalProps) {
           <div className="flex items-center gap-3">
             <Avatar src={user?.avatar} firstname={user?.firstname} size="md" />
             <div>
-              <p
-                className="text-sm font-semibold"
-                style={{
-                  color: "#191c18",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                }}
-              >
+              <p className="text-sm font-semibold text-gray-900">
                 {user?.firstname} {user?.lastname}
               </p>
-              <div
-                className="flex items-center gap-1 mt-0.5 inline-flex rounded-full px-2 py-0.5"
-                style={{
-                  background: "rgba(45,90,39,0.08)",
-                  border: "1px solid rgba(45,90,39,0.18)",
-                }}
-              >
-                <Globe
-                  className="w-3 h-3"
-                  style={{ color: "#2d5a27" }}
-                  strokeWidth={1.5}
-                />
-                <span
-                  className="text-[10px] font-semibold"
-                  style={{ color: "#2d5a27" }}
-                >
+              <div className="flex items-center gap-1 mt-0.5">
+                <Globe className="w-3 h-3 text-green-950" strokeWidth={1.5} />
+                <span className="text-[10px] font-medium text-green-950">
                   Partage public
                 </span>
               </div>
@@ -208,34 +160,11 @@ export function ShareModal({ post, onClose }: ShareModalProps) {
             onChange={(e) => setText(e.target.value)}
             placeholder="Ajouter un commentaire..."
             rows={3}
-            className="w-full resize-none outline-none text-sm leading-relaxed rounded-xl px-3 py-2.5 transition-all duration-150"
-            style={{
-              background: "rgba(255,255,255,0.8)",
-              border: "1px solid rgba(194,201,187,0.45)",
-              color: "#191c18",
-              fontFamily: "'Inter', sans-serif",
-            }}
-            onFocus={(e) => {
-              (e.target as HTMLElement).style.borderColor =
-                "rgba(45,90,39,0.4)";
-              (e.target as HTMLElement).style.boxShadow =
-                "0 0 0 3px rgba(188,240,174,0.2)";
-            }}
-            onBlur={(e) => {
-              (e.target as HTMLElement).style.borderColor =
-                "rgba(194,201,187,0.45)";
-              (e.target as HTMLElement).style.boxShadow = "none";
-            }}
+            className="w-full resize-none outline-none text-sm text-gray-800 leading-relaxed rounded-xl px-3 py-2.5 border border-gray-200 focus:ring-2 focus:ring-green-950/20 focus:border-green-950 transition bg-white"
           />
 
           {/* ORIGINAL POST PREVIEW */}
-          <div
-            className="rounded-xl p-3"
-            style={{
-              background: "rgba(255,255,255,0.5)",
-              border: "1px solid rgba(194,201,187,0.4)",
-            }}
-          >
+          <div className="rounded-xl p-3 bg-gray-50/70 border border-gray-100">
             <div className="flex items-center gap-2 mb-2">
               <Avatar
                 src={post.author?.avatar}
@@ -243,36 +172,23 @@ export function ShareModal({ post, onClose }: ShareModalProps) {
                 size="xs"
               />
               <div>
-                <p
-                  className="text-xs font-semibold"
-                  style={{
-                    color: "#191c18",
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  }}
-                >
+                <p className="text-xs font-semibold text-gray-900">
                   {post.author?.firstname} {post.author?.lastname}
                 </p>
                 <TimeAgo
                   date={post.created_at}
-                  className="text-[10px]"
-                  style={{ color: "#72796e" }}
+                  className="text-[10px] text-gray-400"
                 />
               </div>
             </div>
-            <p
-              className="text-xs line-clamp-3 leading-relaxed"
-              style={{ color: "#42493e", fontFamily: "'Inter', sans-serif" }}
-            >
+            <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
               {post.content}
             </p>
           </div>
 
           {/* SOCIAL */}
           <div>
-            <p
-              className="text-[10px] font-bold uppercase tracking-[0.12em] mb-2"
-              style={{ color: "#72796e", fontFamily: "'Inter', sans-serif" }}
-            >
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
               Partager sur
             </p>
             <div className="flex flex-wrap gap-2">
@@ -282,10 +198,9 @@ export function ShareModal({ post, onClose }: ShareModalProps) {
                   href={s.link}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-white text-xs font-semibold transition-all duration-150 hover:opacity-90 hover:scale-[1.03]"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-white text-xs font-semibold transition-all duration-150 hover:opacity-90 hover:scale-[1.02]"
                   style={{
                     background: s.bg,
-                    fontFamily: "'Inter', sans-serif",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                   }}
                 >
@@ -300,21 +215,7 @@ export function ShareModal({ post, onClose }: ShareModalProps) {
           <div className="flex gap-2">
             <button
               onClick={handleNativeShare}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150"
-              style={{
-                background: "rgba(194,201,187,0.25)",
-                border: "1px solid rgba(194,201,187,0.45)",
-                color: "#42493e",
-                fontFamily: "'Inter', sans-serif",
-              }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.background =
-                  "rgba(188,240,174,0.25)")
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.background =
-                  "rgba(194,201,187,0.25)")
-              }
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-gray-700 border border-gray-200 hover:bg-gray-50 transition"
             >
               <Share2 className="w-4 h-4" />
               Partage natif
@@ -322,21 +223,7 @@ export function ShareModal({ post, onClose }: ShareModalProps) {
 
             <button
               onClick={handleCopy}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150"
-              style={{
-                background: "rgba(194,201,187,0.25)",
-                border: "1px solid rgba(194,201,187,0.45)",
-                color: "#42493e",
-                fontFamily: "'Inter', sans-serif",
-              }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.background =
-                  "rgba(188,240,174,0.25)")
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.background =
-                  "rgba(194,201,187,0.25)")
-              }
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-gray-700 border border-gray-200 hover:bg-gray-50 transition"
             >
               <Copy className="w-4 h-4" />
               Copier lien
@@ -345,29 +232,14 @@ export function ShareModal({ post, onClose }: ShareModalProps) {
         </div>
 
         {/* FOOTER */}
-        <div
-          className="px-5 py-4"
-          style={{ borderTop: "1px solid rgba(194,201,187,0.35)" }}
-        >
+        <div className="px-5 py-4 border-t border-gray-100 bg-gray-50/50">
           <button
             onClick={handleShareInternal}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 disabled:opacity-50"
-            style={{
-              background: "linear-gradient(135deg, #3b6934 0%, #154212 100%)",
-              color: "#bcf0ae",
-              boxShadow: "0 4px 12px rgba(21,66,18,0.25)",
-              fontFamily: "'Inter', sans-serif",
-            }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-green-950 hover:bg-green-900 disabled:opacity-50 transition"
           >
             {loading ? (
-              <div
-                className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                style={{
-                  borderColor: "rgba(188,240,174,0.4)",
-                  borderTopColor: "transparent",
-                }}
-              />
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               <Send className="w-4 h-4" />
             )}
@@ -377,7 +249,7 @@ export function ShareModal({ post, onClose }: ShareModalProps) {
       </div>
 
       <style jsx global>{`
-        @keyframes groSlideUp {
+        @keyframes slideUp {
           from {
             opacity: 0;
             transform: translateY(16px);

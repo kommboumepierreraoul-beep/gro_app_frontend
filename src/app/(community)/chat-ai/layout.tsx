@@ -13,7 +13,7 @@ export default function AiLayout({ children }: { children: React.ReactNode }) {
         position="top-right"
         toastOptions={{
           style: {
-            background: "#f9faf2",
+            background: "transparent",
             color: "#191c18",
             border: "1px solid rgba(194,201,187,0.4)",
             borderRadius: "16px",

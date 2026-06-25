@@ -5,18 +5,22 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { announcementService } from "@/services/community/announcement.service";
-import { 
-  X, 
-  Image as ImageIcon, 
-  Calendar, 
-  Send, 
+import {
+  X,
+  Image as ImageIcon,
+  Calendar,
+  Send,
   Globe,
   Briefcase,
   CalendarDays,
   Newspaper,
   GraduationCap,
   MoreHorizontal,
-  Trash2
+  Trash2,
+  Sparkles,
+  Megaphone,
+  Plus,
+  ChevronDown,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth.store";
 import { Avatar } from "../shared/Avatar";
@@ -35,7 +39,7 @@ export default function CreateAnnouncementModal({
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
+
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -44,6 +48,7 @@ export default function CreateAnnouncementModal({
     category: "news",
     expires_at: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -61,6 +66,7 @@ export default function CreateAnnouncementModal({
 
   const createMutation = useMutation({
     mutationFn: async () => {
+      setIsSubmitting(true);
       const form = new FormData();
       form.append("title", formData.title);
       form.append("content", formData.content);
@@ -75,17 +81,23 @@ export default function CreateAnnouncementModal({
       setFormData({ title: "", content: "", category: "news", expires_at: "" });
       setCoverImage(null);
       setCoverPreview(null);
+      setIsSubmitting(false);
       toast.success("Annonce créée avec succès !");
       onClose();
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || "Erreur lors de la création de l'annonce";
+      setIsSubmitting(false);
+      const message =
+        error.response?.data?.message ||
+        "Erreur lors de la création de l'annonce";
       toast.error(message);
     },
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     setFormData({
       ...formData,
@@ -96,22 +108,18 @@ export default function CreateAnnouncementModal({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
-      
-      // Vérifier la taille (max 5MB)
+
       if (file.size > 5 * 1024 * 1024) {
         toast.error("L'image ne doit pas dépasser 5 Mo");
         return;
       }
-      
-      // Vérifier le type
+
       if (!file.type.startsWith("image/")) {
         toast.error("Le fichier doit être une image");
         return;
       }
-      
+
       setCoverImage(file);
-      
-      // Créer une preview
       if (coverPreview) URL.revokeObjectURL(coverPreview);
       setCoverPreview(URL.createObjectURL(file));
     }
@@ -139,30 +147,41 @@ export default function CreateAnnouncementModal({
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case "job": return <Briefcase className="w-3.5 h-3.5" />;
-      case "event": return <CalendarDays className="w-3.5 h-3.5" />;
-      case "news": return <Newspaper className="w-3.5 h-3.5" />;
-      case "training": return <GraduationCap className="w-3.5 h-3.5" />;
-      default: return <MoreHorizontal className="w-3.5 h-3.5" />;
+      case "job":
+        return <Briefcase className="w-3.5 h-3.5" />;
+      case "event":
+        return <CalendarDays className="w-3.5 h-3.5" />;
+      case "news":
+        return <Newspaper className="w-3.5 h-3.5" />;
+      case "training":
+        return <GraduationCap className="w-3.5 h-3.5" />;
+      default:
+        return <MoreHorizontal className="w-3.5 h-3.5" />;
     }
   };
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
-      case "job": return "Offre d'emploi";
-      case "event": return "Événement";
-      case "news": return "Actualité";
-      case "training": return "Formation";
-      default: return "Autre";
+      case "job":
+        return "Offre d'emploi";
+      case "event":
+        return "Événement";
+      case "news":
+        return "Actualité";
+      case "training":
+        return "Formation";
+      default:
+        return "Autre";
     }
   };
 
-  // Fonction pour obtenir l'URL complète de l'avatar
   const getAvatarUrl = () => {
     if (!user?.avatar) return undefined;
-    if (user.avatar.startsWith('http')) return user.avatar;
+    if (user.avatar.startsWith("http")) return user.avatar;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const cleanPath = user.avatar.startsWith('/') ? user.avatar : `/${user.avatar}`;
+    const cleanPath = user.avatar.startsWith("/")
+      ? user.avatar
+      : `/${user.avatar}`;
     return `${apiUrl}${cleanPath}`;
   };
 
@@ -180,88 +199,54 @@ export default function CreateAnnouncementModal({
       <div
         className="w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
         style={{
-          background: "rgba(249,250,242,0.98)",
-          backdropFilter: "blur(24px)",
-          border: "1px solid rgba(194,201,187,0.5)",
-          boxShadow: "0 24px 60px rgba(21,66,18,0.2)",
+          background: "#ffffff",
+          border: "1px solid rgba(194,201,187,0.3)",
+          boxShadow: "0 24px 60px rgba(21,66,18,0.15)",
           animation: "groSlideUp 0.25s ease-out",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header modal */}
+        {/* Header */}
         <div
-          className="flex items-center justify-between px-5 py-4"
+          className="flex items-center justify-between px-6 py-4"
           style={{
-            borderBottom: "1px solid rgba(194,201,187,0.35)",
-            background:
-              "linear-gradient(135deg, rgba(188,240,174,0.2) 0%, transparent 100%)",
+            borderBottom: "1px solid rgba(194,201,187,0.2)",
+            background: "rgba(249,250,242,0.5)",
           }}
         >
-          <h2
-            className="text-sm font-bold"
-            style={{
-              color: "#154212",
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-            }}
-          >
-            Créer une annonce
-          </h2>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-[#154212] flex items-center justify-center">
+              <Megaphone className="w-4 h-4 text-white" />
+            </div>
+            <h2 className="text-base font-bold text-[#191c18]">
+              Nouvelle annonce
+            </h2>
+          </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full transition-all duration-150"
-            style={{
-              background: "rgba(194,201,187,0.3)",
-              color: "#42493e",
-            }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLElement).style.background =
-                "rgba(194,201,187,0.5)")
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLElement).style.background =
-                "rgba(194,201,187,0.3)")
-            }
+            className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-[#f3f4ed] transition-all duration-150 text-[#72796e] hover:text-[#191c18]"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
-          {/* Body modal */}
-          <div className="px-5 py-4 space-y-4">
+          <div className="px-6 py-5 space-y-5">
             {/* Auteur */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pb-3 border-b border-[#c2c9bb]/20">
               <Avatar
                 src={getAvatarUrl()}
                 firstname={user?.firstname}
                 size="md"
+                className="ring-2 ring-[#bcf0ae]/30"
               />
               <div>
-                <p
-                  className="text-sm font-semibold"
-                  style={{
-                    color: "#191c18",
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  }}
-                >
+                <p className="text-sm font-semibold text-[#191c18]">
                   {user?.firstname} {user?.lastname}
                 </p>
-                <div
-                  className="mt-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5"
-                  style={{
-                    background: "rgba(45,90,39,0.1)",
-                    border: "1px solid rgba(45,90,39,0.2)",
-                  }}
-                >
-                  <Globe
-                    className="w-3 h-3"
-                    style={{ color: "#2d5a27" }}
-                    strokeWidth={1.5}
-                  />
-                  <span
-                    className="text-[10px] font-semibold"
-                    style={{ color: "#2d5a27" }}
-                  >
+                <div className="flex items-center gap-1 mt-0.5">
+                  <Globe className="w-3 h-3 text-[#2d5a27]" />
+                  <span className="text-[10px] font-medium text-[#2d5a27] bg-[#eaf3de] px-2 py-0.5 rounded-full">
                     Annonce officielle
                   </span>
                 </div>
@@ -276,52 +261,38 @@ export default function CreateAnnouncementModal({
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="Titre de l'annonce *"
-                className="w-full px-0 py-1 text-lg font-semibold outline-none bg-transparent placeholder:text-gray-400"
-                style={{
-                  color: "#191c18",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                }}
+                className="w-full px-0 py-1 text-lg font-semibold outline-none bg-transparent placeholder:text-[#a0a8a0] text-[#191c18]"
                 autoFocus
               />
-              <div className="h-px mt-1" style={{ background: "rgba(194,201,187,0.3)" }} />
+              <div className="h-px mt-1 bg-[#c2c9bb]/30" />
             </div>
 
             {/* Catégorie */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "#72796e" }}
-              >
+              <label className="block text-xs font-medium text-[#72796e] mb-2">
                 Catégorie
               </label>
               <div className="flex flex-wrap gap-2">
-                {["job", "event", "news", "training", "other"].map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, category: cat })}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
-                      formData.category === cat
-                        ? "shadow-sm"
-                        : "opacity-70 hover:opacity-100"
-                    }`}
-                    style={
-                      formData.category === cat
-                        ? {
-                            background: "linear-gradient(135deg, #2d5a27 0%, #154212 100%)",
-                            color: "#bcf0ae",
-                          }
-                        : {
-                            background: "rgba(194,201,187,0.15)",
-                            color: "#42493e",
-                            border: "1px solid rgba(194,201,187,0.3)",
-                          }
-                    }
-                  >
-                    {getCategoryIcon(cat)}
-                    <span>{getCategoryLabel(cat)}</span>
-                  </button>
-                ))}
+                {["job", "event", "news", "training", "other"].map((cat) => {
+                  const isActive = formData.category === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, category: cat })
+                      }
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
+                        isActive
+                          ? "bg-[#154212] text-[#bcf0ae] shadow-sm"
+                          : "bg-[#f3f4ed] text-[#42493e] hover:bg-[#eaf3de] border border-[#c2c9bb]/20"
+                      }`}
+                    >
+                      {getCategoryIcon(cat)}
+                      <span>{getCategoryLabel(cat)}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -334,22 +305,18 @@ export default function CreateAnnouncementModal({
                 onChange={handleChange}
                 placeholder="Décrivez votre annonce..."
                 rows={4}
-                className="w-full resize-none outline-none text-sm leading-relaxed bg-transparent"
-                style={{ color: "#191c18", fontFamily: "'Inter', sans-serif" }}
+                className="w-full resize-none outline-none text-sm leading-relaxed bg-transparent text-[#42493e] placeholder:text-[#a0a8a0]"
               />
             </div>
 
             {/* Image de couverture */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "#72796e" }}
-              >
+              <label className="block text-xs font-medium text-[#72796e] mb-2">
                 Image de couverture
               </label>
-              
+
               {coverPreview ? (
-                <div className="relative rounded-xl overflow-hidden group">
+                <div className="relative rounded-xl overflow-hidden group border border-[#c2c9bb]/20">
                   <img
                     src={coverPreview}
                     alt="Aperçu"
@@ -358,11 +325,7 @@ export default function CreateAnnouncementModal({
                   <button
                     type="button"
                     onClick={removeCoverImage}
-                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-150 opacity-0 group-hover:opacity-100"
-                    style={{
-                      background: "rgba(0,0,0,0.6)",
-                      color: "white",
-                    }}
+                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-xl bg-black/60 text-white hover:bg-black/80 transition-all duration-150 opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -371,39 +334,15 @@ export default function CreateAnnouncementModal({
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="w-full rounded-xl p-6 transition-all duration-150 flex flex-col items-center gap-2"
-                  style={{
-                    background: "rgba(194,201,187,0.08)",
-                    border: "1px dashed rgba(194,201,187,0.4)",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.background =
-                      "rgba(194,201,187,0.12)";
-                    (e.currentTarget as HTMLElement).style.borderColor =
-                      "rgba(45,90,39,0.4)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background =
-                      "rgba(194,201,187,0.08)";
-                    (e.currentTarget as HTMLElement).style.borderColor =
-                      "rgba(194,201,187,0.4)";
-                  }}
+                  className="w-full rounded-xl p-6 transition-all duration-150 flex flex-col items-center gap-2 border-2 border-dashed border-[#c2c9bb]/30 hover:border-[#154212]/40 hover:bg-[#f9faf2]"
                 >
-                  <ImageIcon
-                    className="w-8 h-8"
-                    style={{ color: "#72796e" }}
-                    strokeWidth={1.5}
-                  />
-                  <span
-                    className="text-xs"
-                    style={{ color: "#72796e" }}
-                  >
-                    Cliquez pour ajouter une image
+                  <div className="w-12 h-12 rounded-xl bg-[#eaf3de] flex items-center justify-center">
+                    <ImageIcon className="w-6 h-6 text-[#154212]" />
+                  </div>
+                  <span className="text-sm font-medium text-[#42493e]">
+                    Ajouter une image
                   </span>
-                  <span
-                    className="text-[10px]"
-                    style={{ color: "#72796e80" }}
-                  >
+                  <span className="text-xs text-[#72796e]">
                     JPG, PNG, GIF, WebP (max. 5 Mo)
                   </span>
                 </button>
@@ -412,11 +351,8 @@ export default function CreateAnnouncementModal({
 
             {/* Date d'expiration */}
             <div>
-              <label
-                className="block text-xs font-medium mb-1.5"
-                style={{ color: "#72796e" }}
-              >
-                <Calendar className="w-3 h-3 inline mr-1" />
+              <label className="block text-xs font-medium text-[#72796e] mb-1.5">
+                <Calendar className="w-3 h-3 inline mr-1 text-[#154212]" />
                 Date d'expiration (optionnelle)
               </label>
               <input
@@ -424,95 +360,57 @@ export default function CreateAnnouncementModal({
                 name="expires_at"
                 value={formData.expires_at}
                 onChange={handleChange}
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all duration-150"
-                style={{
-                  background: "rgba(194,201,187,0.08)",
-                  border: "1px solid rgba(194,201,187,0.3)",
-                  color: "#191c18",
-                }}
+                className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all duration-150 bg-[#f9faf2] border border-[#c2c9bb]/30 text-[#191c18] focus:ring-2 focus:ring-[#154212]/20 focus:border-[#154212]"
               />
             </div>
           </div>
 
-          {/* Footer modal */}
+          {/* Footer */}
           <div
-            className="flex items-center justify-between px-5 py-3.5"
+            className="flex items-center justify-between px-6 py-4"
             style={{
-              borderTop: "1px solid rgba(194,201,187,0.35)",
-              background:
-                "linear-gradient(135deg, transparent 0%, rgba(188,240,174,0.1) 100%)",
+              borderTop: "1px solid rgba(194,201,187,0.2)",
+              background: "rgba(249,250,242,0.5)",
             }}
           >
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-150"
-                style={{ color: "#42493e" }}
-                title="Ajouter une image"
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    "rgba(188,240,174,0.3)";
-                  (e.currentTarget as HTMLElement).style.color = "#2d5a27";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    "transparent";
-                  (e.currentTarget as HTMLElement).style.color = "#42493e";
-                }}
-              >
-                <ImageIcon className="w-[18px] h-[18px]" strokeWidth={1.5} />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-[#72796e] hover:text-[#154212] hover:bg-[#eaf3de] transition-all duration-150"
+              title="Ajouter une image"
+            >
+              <ImageIcon className="w-[18px] h-[18px]" />
+            </button>
 
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2 rounded-full text-sm font-medium transition-all duration-200"
-                style={{
-                  background: "rgba(194,201,187,0.15)",
-                  color: "#72796e",
-                  fontFamily: "'Inter', sans-serif",
-                  border: "1px solid rgba(194,201,187,0.3)",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    "rgba(194,201,187,0.25)";
-                  (e.currentTarget as HTMLElement).style.color = "#42493e";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    "rgba(194,201,187,0.15)";
-                  (e.currentTarget as HTMLElement).style.color = "#72796e";
-                }}
+                className="px-5 py-2 rounded-xl text-sm font-medium text-[#72796e] hover:text-[#42493e] hover:bg-[#f3f4ed] transition-all duration-150"
               >
                 Annuler
               </button>
-              
+
               <button
                 type="submit"
-                disabled={createMutation.isPending || !formData.title.trim() || !formData.content.trim()}
-                className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={
-                  !createMutation.isPending && formData.title.trim() && formData.content.trim()
-                    ? {
-                        background:
-                          "linear-gradient(135deg, #3b6934 0%, #154212 100%)",
-                        color: "#bcf0ae",
-                        boxShadow: "0 4px 12px rgba(21,66,18,0.3)",
-                        fontFamily: "'Inter', sans-serif",
-                      }
-                    : {
-                        background: "rgba(194,201,187,0.35)",
-                        color: "#72796e",
-                        cursor: "not-allowed",
-                        fontFamily: "'Inter', sans-serif",
-                      }
+                disabled={
+                  createMutation.isPending ||
+                  !formData.title.trim() ||
+                  !formData.content.trim()
                 }
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed bg-[#154212] text-white hover:bg-[#2d5a27] shadow-sm hover:shadow-md active:scale-95"
               >
-                <Send className="w-3.5 h-3.5" strokeWidth={2} />
-                {createMutation.isPending ? "Création..." : "Publier l'annonce"}
+                {createMutation.isPending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Création...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Publier l'annonce
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -531,11 +429,11 @@ export default function CreateAnnouncementModal({
         @keyframes groSlideUp {
           from {
             opacity: 0;
-            transform: translateY(16px);
+            transform: translateY(20px) scale(0.98);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
           }
         }
       `}</style>
