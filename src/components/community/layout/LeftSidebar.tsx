@@ -259,7 +259,7 @@ export function LeftSidebar({
               badge={badge}
               icon={
                 <Icon
-                  className="w-5 h-5"
+                  className="w-6 h-6"
                   strokeWidth={isActive(href) ? 2.2 : 1.8}
                 />
               }

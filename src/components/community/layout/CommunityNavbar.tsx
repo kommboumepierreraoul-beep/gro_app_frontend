@@ -350,7 +350,7 @@ export function CommunityNavbar() {
           <div
             className="md:hidden absolute top-full left-0 right-0 border-b p-3 z-50 animate-slideDown"
             style={{
-              background: "rgba(249,250,242,0.98)",
+              background: "transparent",
               backdropFilter: "blur(16px)",
               borderColor: "rgba(194,201,187,0.4)",
             }}

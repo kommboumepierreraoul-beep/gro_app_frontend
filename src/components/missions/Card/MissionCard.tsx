@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   MapPin,
   Clock,
@@ -9,10 +10,12 @@ import {
   Calendar,
   Star,
   ChevronRight,
+  Eye,
 } from "lucide-react";
 import { Mission } from "@/lib/missions/types";
 import { useMissionStore } from "@/stores/useMissionStore";
 import MissionStatusBadge from "../MissionStatusBadge";
+import MissionDetailModal from "./MissionDetailModal";
 
 interface Props {
   mission: Mission;
@@ -37,6 +40,30 @@ const DURATION_LABELS: Record<string, string> = {
   flexible: "flexible",
 };
 
+// Fonction utilitaire pour obtenir le nom de l'auteur
+function getAuthorName(author?: Mission["author"]): string {
+  if (!author) return "Auteur";
+
+  if (author.firstname && author.lastname) {
+    return `${author.firstname} ${author.lastname}`;
+  }
+  if (author.firstname) {
+    return author.firstname;
+  }
+  if (author.lastname) {
+    return author.lastname;
+  }
+  return "Auteur";
+}
+
+// Fonction utilitaire pour obtenir l'initiale de l'auteur
+function getAuthorInitial(author?: Mission["author"]): string {
+  if (!author) return "A";
+
+  const name = getAuthorName(author);
+  return name.charAt(0).toUpperCase();
+}
+
 // Badge urgence : si expire dans moins de 3 jours
 function isUrgent(mission: Mission): boolean {
   if (!mission.expires_at) return false;
@@ -49,6 +76,7 @@ export default function MissionCard({
   viewMode = "grid",
   onViewDetails,
 }: Props) {
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const openApplyModal = useMissionStore((s) => s.openApplyModal);
   const missionUlid = mission.ulid || mission.id;
 
@@ -62,6 +90,21 @@ export default function MissionCard({
       : `${mission.duration_value ?? ""}${DURATION_LABELS[mission.duration_type] ?? ""}`;
 
   const urgent = isUrgent(mission);
+
+  // Handler pour ouvrir le modal de détails
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDetailModalOpen(true);
+    if (onViewDetails) onViewDetails();
+  };
+
+  // Handler pour postuler
+  const handleApply = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openApplyModal(mission.ulid);
+  };
 
   // ── Vue liste ─────────────────────────────────────────────────────────
   if (viewMode === "list") {

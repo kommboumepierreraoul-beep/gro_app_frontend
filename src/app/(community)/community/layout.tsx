@@ -39,7 +39,7 @@ export default function CommunityLayout({
           <div
             className="
               mx-auto
-              max-w-[1000px]
+              max-w-[1200px]
               px-3
               sm:px-4
               lg:px-6
@@ -72,18 +72,7 @@ export default function CommunityLayout({
                   flex-shrink-0
                 "
               >
-                <div
-                  className="
-                    sticky top-20
-                    rounded-3xl
-                    border border-green-100
-                    backdrop-blur-xl
-                    shadow-sm
-                    overflow-hidden
-                    bd-transparent
-                    p-auto
-                  "
-                >
+                <div>
                   <RightSidebar />
                 </div>
               </div>

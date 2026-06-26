@@ -38,31 +38,22 @@ export default function MissionsLayout({ children }: Props) {
       </header>
 
       {/* MAIN */}
-      <div className="flex flex-1 relative overflow-hidden">
-        {/* COMMUNITY SIDEBAR (desktop only, fixed drawer style) */}
-        <aside className="hidden lg:block w-72 border-r border-[#d9ddd2] bg-white overflow-y-auto">
+      <div className="flex flex-1 overflow-hidden">
+        <aside className="hidden lg:block w-72 border-r border-[#d9ddd2]">
           <LeftSidebar />
         </aside>
 
-        {/* CONTENT WRAPPER */}
-        <div className="flex flex-1 min-w-0 overflow-hidden relative">
-          {/* MAIN CONTENT */}
-          <main className={`
-            flex-1 overflow-y-auto min-w-0
-            ${isMobile ? 'pb-0' : 'pb-20 lg:pb-0'}
-            px-2 md:px-4
-          `}>
-            {children}
-          </main>
-
-          {/* MISSIONS NAVBAR - Visible sur mobile et desktop */}
-          <div className={`
-            ${isMobile ? 'block' : 'hidden xl:block'}
-            transition-all duration-300
-          `}>
-            <MissionNavbar />
-          </div>
+        <div
+          className="
+      hidden xl:block
+      border-r border-[#d9ddd2]
+      transition-all duration-300
+    "
+        >
+          <MissionNavbar />
         </div>
+
+        <main className="flex-1 overflow-y-auto min-w-0">{children}</main>
       </div>
 
       {/* MOBILE BOTTOM NAV - Caché quand MissionNavbar est ouvert sur mobile */}

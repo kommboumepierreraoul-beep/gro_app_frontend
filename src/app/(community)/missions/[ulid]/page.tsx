@@ -105,7 +105,7 @@ export default function MissionDetailPage() {
   };
 
   return (
-    <div className="md:ml-50 max-w-5xl mx-autop-6 md:p-12 pb-32 md:pb-12">
+    <div className="md:ml-10 max-w-6xl mx-autop md:p-12 pb-32 md:pb-12">
       {/* Header navigation */}
       <div className="flex items-center justify-between mb-6">
         {/* Bouton de retour avec navigation arrière */}

@@ -51,7 +51,7 @@ export default function MessagesLayout({
 
         {/* ================= CONTENT ================= */}
         <main
-          className="flex-1 min-w-0 overflow-y-auto"
+          className="flex-1 min-w-0 overflow-y-hidden"
           style={{ background: "rgba(243,244,237,0.4)" }}
         >
           {children}
