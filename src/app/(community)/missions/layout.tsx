@@ -21,11 +21,11 @@ export default function MissionsLayout({ children }: Props) {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   return (
@@ -46,7 +46,6 @@ export default function MissionsLayout({ children }: Props) {
         <div
           className="
       hidden xl:block
-      border-r border-[#d9ddd2]
       transition-all duration-300
     "
         >
