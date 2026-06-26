@@ -105,6 +105,7 @@ export function CommunityNavbar() {
                 <Image
                   src="/logo_agri_pulse.png"
                   alt="AgriPulse"
+                  sizes="4"
                   fill
                   className="object-contain"
                 />

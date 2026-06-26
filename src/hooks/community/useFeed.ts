@@ -38,6 +38,7 @@ export function useFeed() {
     },
 
     onSuccess: (res: any) => {
+      // Mettre à jour le feed
       queryClient.setQueryData(["feed"], (old: any) => {
         if (!old) return old;
         return {
@@ -56,18 +57,21 @@ export function useFeed() {
         };
       });
 
-      // Rafraîchir les statistiques de modération
+      // Invalider les caches de modération
       queryClient.invalidateQueries({ queryKey: ["moderation", "stats"] });
       queryClient.invalidateQueries({
         queryKey: ["moderation", "my", "summary"],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["moderation", "my", "pending"],
+      });
 
       const status = res.data?.moderation_status || "pending";
       const messages = {
-        pending: "Publication créée, en cours d'analyse...",
-        approved: " Publication approuvée et publiée",
-        review: " Publication en cours de vérification",
-        rejected: " Publication rejetée",
+        pending: "⏳ Publication créée, en cours d'analyse...",
+        approved: "✅ Publication approuvée et publiée",
+        review: "🔍 Publication en cours de vérification",
+        rejected: "❌ Publication rejetée",
       };
       toast.success(
         messages[status as ModerationStatus] || "Publication créée !",
@@ -103,7 +107,7 @@ export function useFeed() {
         };
       });
       queryClient.invalidateQueries({ queryKey: ["moderation", "my"] });
-      toast.success("Publication supprimée");
+      toast.success("🗑️ Publication supprimée");
     },
 
     onError: (error: any) => {
@@ -153,7 +157,7 @@ export function useFeed() {
     },
   });
 
-  // ── MODÉRATION ────────────────────────────────────────────────────────────
+  // ─── MODÉRATION - POSTS ──────────────────────────────────────────────────
 
   /**
    * Modérer un post
@@ -222,7 +226,6 @@ export function useFeed() {
     mutationFn: (postId: number) => postService.reanalyzePost(postId),
 
     onSuccess: (_, postId) => {
-      // Mettre à jour le statut du post
       queryClient.setQueryData(["feed"], (old: any) => {
         if (!old) return old;
         return {
@@ -245,7 +248,7 @@ export function useFeed() {
         };
       });
 
-      toast.success(" Réanalyse en cours...");
+      toast.success("🔄 Réanalyse en cours...");
     },
 
     onError: (error: any) => {
@@ -254,7 +257,7 @@ export function useFeed() {
     },
   });
 
-  // ── Statistiques de modération ───────────────────────────────────────────
+  // ─── STATISTIQUES DE MODÉRATION ──────────────────────────────────────────
 
   /**
    * Récupérer les statistiques de modération
@@ -262,7 +265,7 @@ export function useFeed() {
   const moderationStatsQuery = useQuery({
     queryKey: ["moderation", "stats"],
     queryFn: () => postService.getModerationStats(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
 
@@ -272,13 +275,13 @@ export function useFeed() {
   const myModerationSummaryQuery = useQuery({
     queryKey: ["moderation", "my", "summary"],
     queryFn: () => postService.getMyModerationSummary(),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
   });
 
-  // ── File de review ───────────────────────────────────────────────────────
+  // ─── FILE DE REVIEW ──────────────────────────────────────────────────────
 
   /**
-   * Récupérer la file de review
+   * Récupérer la file de review des posts
    */
   const reviewQueueQuery = useInfiniteQuery({
     queryKey: ["moderation", "queue", "posts"],
@@ -289,17 +292,17 @@ export function useFeed() {
         ? lastPage.data.current_page + 1
         : undefined,
     initialPageParam: 1,
-    staleTime: 30 * 1000, // 30 secondes
+    staleTime: 30 * 1000,
     refetchOnWindowFocus: true,
   });
 
   const reviewQueuePosts =
     reviewQueueQuery.data?.pages.flatMap((p: any) => p.data?.data ?? []) ?? [];
 
-  // ── Mes posts en attente ─────────────────────────────────────────────────
+  // ─── MES POSTS - MODÉRATION ─────────────────────────────────────────────
 
   /**
-   * Récupérer mes posts en attente de modération
+   * Récupérer mes posts en attente
    */
   const myPendingPostsQuery = useInfiniteQuery({
     queryKey: ["moderation", "my", "pending", "posts"],
@@ -353,7 +356,25 @@ export function useFeed() {
     myApprovedPostsQuery.data?.pages.flatMap((p: any) => p.data?.data ?? []) ??
     [];
 
-  // ── Actions en masse ─────────────────────────────────────────────────────
+  /**
+   * Récupérer mes posts en révision
+   */
+  const myReviewPostsQuery = useInfiniteQuery({
+    queryKey: ["moderation", "my", "review", "posts"],
+    queryFn: ({ pageParam = 1 }) =>
+      postService.getMyReviewPosts(pageParam as number),
+    getNextPageParam: (lastPage: any) =>
+      lastPage.data.current_page < lastPage.data.last_page
+        ? lastPage.data.current_page + 1
+        : undefined,
+    initialPageParam: 1,
+  });
+
+  const myReviewPosts =
+    myReviewPostsQuery.data?.pages.flatMap((p: any) => p.data?.data ?? []) ??
+    [];
+
+  // ─── ACTIONS EN MASSE ────────────────────────────────────────────────────
 
   /**
    * Approuver plusieurs posts en masse
@@ -366,7 +387,8 @@ export function useFeed() {
       queryClient.invalidateQueries({ queryKey: ["moderation", "my"] });
       toast.success("✅ Posts approuvés en masse");
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("❌ [useFeed] bulkApprove error:", error);
       toast.error("Erreur lors de l'approbation en masse");
     },
   });
@@ -383,10 +405,30 @@ export function useFeed() {
       queryClient.invalidateQueries({ queryKey: ["moderation", "my"] });
       toast.success("❌ Posts rejetés en masse");
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("❌ [useFeed] bulkReject error:", error);
       toast.error("Erreur lors du rejet en masse");
     },
   });
+
+  /**
+   * Mettre plusieurs posts en révision en masse
+   */
+  const bulkReview = useMutation({
+    mutationFn: (ids: number[]) => postService.bulkReviewPosts(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["moderation", "queue"] });
+      queryClient.invalidateQueries({ queryKey: ["moderation", "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["moderation", "my"] });
+      toast.success("🔍 Posts mis en révision en masse");
+    },
+    onError: (error: any) => {
+      console.error("❌ [useFeed] bulkReview error:", error);
+      toast.error("Erreur lors de la mise en révision en masse");
+    },
+  });
+
+  // ─── RETURN ──────────────────────────────────────────────────────────────
 
   return {
     // Feed
@@ -401,7 +443,7 @@ export function useFeed() {
     deletePost,
     likePost,
 
-    // Modération
+    // Modération - Actions individuelles
     moderatePost: moderatePost.mutate,
     moderatePostLoading: moderatePost.isPending,
     reanalyzePost: reanalyzePost.mutate,
@@ -419,19 +461,23 @@ export function useFeed() {
     reviewQueueFetchNextPage: reviewQueueQuery.fetchNextPage,
     reviewQueueHasNextPage: reviewQueueQuery.hasNextPage,
 
-    // Mes posts
+    // Mes posts - modération
     myPendingPosts,
     myPendingPostsLoading: myPendingPostsQuery.isLoading,
     myRejectedPosts,
     myRejectedPostsLoading: myRejectedPostsQuery.isLoading,
     myApprovedPosts,
     myApprovedPostsLoading: myApprovedPostsQuery.isLoading,
+    myReviewPosts,
+    myReviewPostsLoading: myReviewPostsQuery.isLoading,
 
     // Actions en masse
     bulkApprove: bulkApprove.mutate,
     bulkApproveLoading: bulkApprove.isPending,
     bulkReject: bulkReject.mutate,
     bulkRejectLoading: bulkReject.isPending,
+    bulkReview: bulkReview.mutate,
+    bulkReviewLoading: bulkReview.isPending,
 
     // Utilitaires
     getStatusLabel: postService.getStatusLabel.bind(postService),
