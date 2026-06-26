@@ -52,7 +52,7 @@ export default function CommunityLayout({
                   flex-1
                   min-w-0
                   w-full
-                  max-w-4xl
+                  max-w-3xl
                   mx-auto
                 "
                 style={{

@@ -14,11 +14,6 @@ import {
   Settings,
   Calendar,
   HelpCircleIcon,
-  Menu,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Home,
 } from "lucide-react";
 
 const links = [
@@ -33,6 +28,11 @@ const links = [
     label: "Agenda",
     icon: Calendar,
     color: "#805533",
+  },
+  {
+    href: "/missions/agenda",
+    label: "Agenda",
+    icon: Calendar
   },
   {
     href: "/missions/map",
@@ -62,7 +62,6 @@ const links = [
     href: "/support/mission-support",
     label: "Support",
     icon: HelpCircleIcon,
-    color: "#72796e",
   },
   {
     href: "/missions/settings",

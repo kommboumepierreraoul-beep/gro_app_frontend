@@ -169,7 +169,7 @@ class PostService {
   }
 
   // ────────────────────────────────────────────────────────────────────────────
-  // MODÉRATION - ACTIONS ADMIN
+  // MODÉRATION - ACTIONS ADMIN (POSTS UNIQUEMENT)
   // ────────────────────────────────────────────────────────────────────────────
 
   /**
@@ -230,7 +230,7 @@ class PostService {
   }
 
   // ────────────────────────────────────────────────────────────────────────────
-  // MODÉRATION - FILE DE REVIEW
+  // MODÉRATION - FILE DE REVIEW (POSTS UNIQUEMENT)
   // ────────────────────────────────────────────────────────────────────────────
 
   /**
@@ -248,38 +248,12 @@ class PostService {
     }
   }
 
-  /**
-   * Récupérer la file de review des commentaires
-   */
-  async getCommentReviewQueue(page: number = 1, perPage: number = 20) {
-    try {
-      const response = await api.get(`/moderation/queue/comments`, {
-        params: { page, per_page: perPage },
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching comment review queue:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Récupérer la file de review des messages
-   */
-  async getMessageReviewQueue(page: number = 1, perPage: number = 20) {
-    try {
-      const response = await api.get(`/moderation/queue/messages`, {
-        params: { page, per_page: perPage },
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching message review queue:", error);
-      throw error;
-    }
-  }
+  // ❌ SUPPRIMER les méthodes pour les commentaires et messages
+  // async getCommentReviewQueue() { ... }
+  // async getMessageReviewQueue() { ... }
 
   // ────────────────────────────────────────────────────────────────────────────
-  // MODÉRATION - MES CONTENUS
+  // MODÉRATION - MES CONTENUS (POSTS UNIQUEMENT)
   // ────────────────────────────────────────────────────────────────────────────
 
   /**
@@ -356,7 +330,7 @@ class PostService {
   }
 
   // ────────────────────────────────────────────────────────────────────────────
-  // MODÉRATION - STATISTIQUES
+  // MODÉRATION - STATISTIQUES (POSTS UNIQUEMENT)
   // ────────────────────────────────────────────────────────────────────────────
 
   /**
@@ -414,7 +388,7 @@ class PostService {
   }
 
   // ────────────────────────────────────────────────────────────────────────────
-  // MODÉRATION - ACTIONS EN MASSE
+  // MODÉRATION - ACTIONS EN MASSE (POSTS UNIQUEMENT)
   // ────────────────────────────────────────────────────────────────────────────
 
   /**
@@ -467,7 +441,7 @@ class PostService {
   }
 
   // ────────────────────────────────────────────────────────────────────────────
-  // MODÉRATION - AUDIT
+  // MODÉRATION - AUDIT (POSTS UNIQUEMENT)
   // ────────────────────────────────────────────────────────────────────────────
 
   /**

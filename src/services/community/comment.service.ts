@@ -1,5 +1,4 @@
-import api from "@/lib/axios";
-import { ModerationStatus } from "@/types/community.types";
+import api from "@/lib/axios"; 
 
 interface CreateCommentData {
   content: string;
