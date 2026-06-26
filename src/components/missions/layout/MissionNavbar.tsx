@@ -14,6 +14,10 @@ import {
   Settings,
   Calendar,
   HelpCircleIcon,
+  Menu,
+  ChevronRight,
+  ChevronLeft,
+  X,
 } from "lucide-react";
 
 const links = [
@@ -143,6 +147,7 @@ export default function MissionNavbar() {
           }}
         >
           {isMobileMenuOpen ? (
+            // eslint-disable-next-line react/jsx-no-undef
             <X size={24} strokeWidth={2} />
           ) : (
             <Menu size={24} strokeWidth={2} />
