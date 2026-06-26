@@ -111,6 +111,7 @@ export function Feed() {
             <div className="space-y-3 pt-1">
               <PostSkeleton />
               <PostSkeleton />
+              <PostSkeleton />
             </div>
           }
           endMessage={

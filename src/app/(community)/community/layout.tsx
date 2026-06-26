@@ -30,7 +30,7 @@ export default function CommunityLayout({
         {/* Zone principale */}
         <div
           className="
-            pt-16
+            pt-10
             pb-20
             lg:pb-6
             lg:pl-56
@@ -39,7 +39,7 @@ export default function CommunityLayout({
           <div
             className="
               mx-auto
-              max-w-[1600px]
+              max-w-[1000px]
               px-3
               sm:px-4
               lg:px-6
@@ -52,11 +52,12 @@ export default function CommunityLayout({
                   flex-1
                   min-w-0
                   w-full
-                  max-w-4xl
+                  max-w-3xl
                   mx-auto
                 "
                 style={{
-                  background: "rgba(249,250,242,0.92)",
+                          background: "rgba(249,250,242,0.92)",
+
                 }}
               >
                 {children}

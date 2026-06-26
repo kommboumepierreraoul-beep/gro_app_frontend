@@ -13,83 +13,55 @@ export default function AnnouncementsLayout({
 }) {
   return (
     <div
-      className="min-h-screen bg-white/80"
-      style={{ background: "rgba(243,244,237,0.4)" }}
+      className="min-h-screen bg-[#f3f4ed]/40"
     >
       {/* Navbar */}
       <CommunityNavbar />
 
       <Toaster position="top-right" />
 
-      <div className="relative">
-        {/* Sidebar gauche desktop */}
-        <aside className="hidden lg:block">
+      <div className="flex">
+        {/* Sidebar gauche */}
+        <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-56">
           <LeftSidebar />
         </aside>
 
-        {/* Zone principale */}
-        <div
-          className="
-            pt-16
-            pb-20
-            lg:pb-6
-            lg:pl-56
-          "
-        >
-          <div
-            className="
-              mx-auto
-              max-w-[1600px]
-              px-3
-              sm:px-4
-              lg:px-6
-            "
-          >
-            <div className="flex gap-6 items-start h-full">
-              {/* Contenu */}
+        {/* Contenu principal */}
+        <div className="flex-1 lg:ml-56">
+          <div className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 py-6">
+            <div className="flex gap-6 items-start">
+              
+              {/* Feed principal */}
               <main
                 className="
                   flex-1
-                  min-w-0
                   w-full
                   max-w-4xl
                   mx-auto
-                  bg-none
                 "
               >
                 {children}
               </main>
 
-              {/* Sidebar droite uniquement XL */}
-              <div
+              {/* Sidebar droite */}
+              <aside
                 className="
                   hidden
                   xl:block
                   w-[320px]
-                  flex-shrink-0
+                  shrink-0
+                  sticky
+                  top-24
                 "
               >
-                <div
-                  className="
-                    sticky top-20
-                    rounded-3xl
-                    border border-green-100
-                    backdrop-blur-xl
-                    shadow-sm
-                    overflow-hidden
-                    bd-transparent
-                    p-auto
-                  "
-                >
-                  <RightSidebar />
-                </div>
-              </div>
+                <RightSidebar />
+              </aside>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation mobile uniquement */}
+      {/* Navigation mobile */}
       <div className="lg:hidden">
         <MobileBottomNav />
       </div>

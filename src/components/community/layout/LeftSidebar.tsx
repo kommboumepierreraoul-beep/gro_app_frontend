@@ -13,6 +13,7 @@ import {
   Settings,
   Bot,
   Target,
+  HelpCircle,
 } from "lucide-react";
 
 import { useAuthStore } from "@/stores/auth.store";
@@ -62,7 +63,6 @@ export function LeftSidebar() {
 
   const mainLinks = [
     { href: "/community", icon: Home, label: "Fil d'actualité" },
-    { href: "/community/feed", icon: FileText, label: "Feed" },
     {
       href: "/messages",
       icon: MessageCircle,
@@ -83,7 +83,7 @@ export function LeftSidebar() {
     {
       href: "/chat-ai",
       icon: Bot,
-      label: "Assistant IA",
+      label: "AgriPulse IA",
     },
     {
       href: "/missions",
@@ -94,6 +94,7 @@ export function LeftSidebar() {
 
   const secondaryLinks = [
     { href: "/users", icon: Users, label: "Communauté" },
+    { href: "/support", icon: HelpCircle, label: "Aide & Support" },
     { href: "/settings", icon: Settings, label: "Paramètres" },
   ];
 
@@ -160,7 +161,7 @@ export function LeftSidebar() {
               badge={badge}
               icon={
                 <Icon
-                  className="w-5 h-5"
+                  className="w-6 h-6"
                   strokeWidth={isActive(href) ? 2.2 : 1.8}
                 />
               }
@@ -169,7 +170,7 @@ export function LeftSidebar() {
         </div>
 
         <div
-          className="my-4 h-px"
+          className="my-4 h-4"
           style={{
             background:
               "linear-gradient(to right, transparent, rgba(194,201,187,0.6), transparent)",

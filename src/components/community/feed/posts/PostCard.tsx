@@ -1,160 +1,770 @@
-// components/community/posts/PostCard.tsx
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
+import {
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Heart,
+  MessageCircle,
+  X,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Share,
+  Copy,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+} from "lucide-react";
+
+import { Avatar } from "@/components/community/shared/Avatar";
+import { TimeAgo } from "@/components/community/shared/TimeAgo";
 import { PostActions } from "../PostActions";
 import { CommentSection } from "../CommentSection";
-import { PostCardHeader } from "./PostCardHeader";
-import { PostContent } from "./PostContent";
-import { PostActionsBar } from "./PostActionsBar";
-import { DeleteModal } from "./DeleteModal";
-import { EditModal } from "./EditModal";
-import { MediaViewerModal } from "./MediaViewerModal";
+import { Post } from "@/types/community.types";
 import { useAuthStore } from "@/stores/auth.store";
 import { useFeed } from "@/hooks/community/useFeed";
-import { Post } from "@/types/community.types";
-import { profileService } from "@/services/community/profile.service";
+import toast from "react-hot-toast";
 
-import {
-  Megaphone,
-  Pin,
-  FileText,
-  Image as ImageIcon,
-  Film,
-  Briefcase,
-  CalendarDays,
-  Newspaper,
-  GraduationCap,
-  MoreHorizontal,
-} from "lucide-react";
-import { JSX } from "react/jsx-runtime";
-
-// Configuration des badges pour différents types de posts
-const postTypeConfig: Record<
-  string,
-  { label: string; icon: JSX.Element; color: string; bg: string }
-> = {
-  announcement: {
-    label: "Annonce officielle",
-    icon: <Megaphone className="w-3 h-3" />,
-    color: "#dc2626",
-    bg: "rgba(220,38,38,0.1)",
-  },
-  pinned: {
-    label: "Épinglé",
-    icon: <Pin className="w-3 h-3" />,
-    color: "#059669",
-    bg: "rgba(5,150,105,0.1)",
-  },
-  text: {
-    label: "Texte",
-    icon: <FileText className="w-3 h-3" />,
-    color: "#6b7280",
-    bg: "rgba(107,114,128,0.1)",
-  },
-  image: {
-    label: "Photo",
-    icon: <ImageIcon className="w-3 h-3" />,
-    color: "#3b82f6",
-    bg: "rgba(59,130,246,0.1)",
-  },
-  video: {
-    label: "Vidéo",
-    icon: <Film className="w-3 h-3" />,
-    color: "#8b5cf6",
-    bg: "rgba(139,92,246,0.1)",
-  },
+/* ─── Helpers ─── */
+const getFullMediaUrl = (url: string): string => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  if (url.startsWith("/storage")) return `${apiUrl}${url}`;
+  return `${apiUrl}/${url}`;
 };
 
-// Configuration des catégories d'annonces
-const announcementCategoryConfig: Record<
-  string,
-  { label: string; icon: JSX.Element; color: string; bg: string }
-> = {
-  job: {
-    label: "Offre d'emploi",
-    icon: <Briefcase className="w-3 h-3" />,
-    color: "#059669",
-    bg: "rgba(5,150,105,0.1)",
-  },
-  event: {
-    label: "Événement",
-    icon: <CalendarDays className="w-3 h-3" />,
-    color: "#d97706",
-    bg: "rgba(217,119,6,0.1)",
-  },
-  news: {
-    label: "Actualité",
-    icon: <Newspaper className="w-3 h-3" />,
-    color: "#2563eb",
-    bg: "rgba(37,99,235,0.1)",
-  },
-  training: {
-    label: "Formation",
-    icon: <GraduationCap className="w-3 h-3" />,
-    color: "#7c3aed",
-    bg: "rgba(124,58,237,0.1)",
-  },
-  other: {
-    label: "Autre",
-    icon: <MoreHorizontal className="w-3 h-3" />,
-    color: "#6b7280",
-    bg: "rgba(107,114,128,0.1)",
-  },
+const isVideoFile = (url: string): boolean =>
+  [".mp4", ".webm", ".ogg", ".mov", ".avi", ".mkv"].some((ext) =>
+    url.toLowerCase().includes(ext),
+  );
+
+const getMediaType = (url: string, mimeType?: string): "image" | "video" => {
+  if (mimeType?.startsWith("video/")) return "video";
+  if (isVideoFile(url)) return "video";
+  return "image";
 };
 
-interface PostCardProps {
-  post: Post;
-  isAnnouncement?: boolean;
-  announcementCategory?: string;
-  isPinned?: boolean;
+/* ─── ExpandableText ─── */
+const LINE_CLAMP = 4;
+
+function ExpandableText({ content }: { content: string }) {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [needsClamp, setNeedsClamp] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+
+    // 1. Mesurer la hauteur SANS clamp
+    el.style.webkitLineClamp = "unset";
+    el.style.display = "block";
+    const fullHeight = el.scrollHeight;
+
+    // 2. Remettre le clamp et mesurer la hauteur réduite
+    el.style.webkitLineClamp = String(LINE_CLAMP);
+    el.style.display = "-webkit-box";
+    // Laisser le navigateur recalculer
+    const clampedHeight = el.clientHeight;
+
+    setNeedsClamp(fullHeight > clampedHeight + 2); // +2 pour tolérance pixel
+  }, [content]);
+
+  if (!content) return null;
+
+  return (
+    <div className="pb-3">
+      <div
+        ref={innerRef}
+        className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed break-words overflow-hidden"
+        style={
+          isExpanded
+            ? { display: "block" }
+            : {
+                display: "-webkit-box",
+                WebkitLineClamp: LINE_CLAMP,
+                WebkitBoxOrient: "vertical",
+              }
+        }
+      >
+        {content}
+      </div>
+
+      {needsClamp && (
+        <button
+          onClick={() => setIsExpanded((v) => !v)}
+          className="mt-1.5 text-xs font-semibold text-green-950 hover:text-green-800 transition-colors"
+        >
+          {isExpanded ? "Voir moins" : "Voir plus"}
+        </button>
+      )}
+    </div>
+  );
 }
 
-export function PostCard({
+/* ─── VideoPlayer ─── */
+function VideoPlayer({
+  src,
+  poster,
+  autoPlay = false,
+  onPlay,
+  onPause,
+}: {
+  src: string;
+  poster?: string;
+  autoPlay?: boolean;
+  onPlay?: () => void;
+  onPause?: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(autoPlay);
+  const [isMuted, setIsMuted] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [volume, setVolume] = useState(0.5);
+  const [showControls, setShowControls] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    if (autoPlay && videoRef.current) {
+      videoRef.current.play().catch(() => setIsPlaying(false));
+    }
+  }, [autoPlay]);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (isPlaying) {
+      videoRef.current.pause();
+      onPause?.();
+    } else {
+      videoRef.current.play();
+      onPlay?.();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = !isMuted;
+    setIsMuted(!isMuted);
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = parseFloat(e.target.value);
+    setVolume(v);
+    if (videoRef.current) {
+      videoRef.current.volume = v;
+      videoRef.current.muted = false;
+      setIsMuted(false);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (!videoRef.current) return;
+    const cur = videoRef.current.currentTime;
+    const dur = videoRef.current.duration;
+    setCurrentTime(cur);
+    setProgress((cur / dur) * 100);
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) setDuration(videoRef.current.duration);
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!videoRef.current) return;
+    const t = (parseFloat(e.target.value) / 100) * duration;
+    videoRef.current.currentTime = t;
+    setCurrentTime(t);
+  };
+
+  const formatTime = (s: number) =>
+    `${Math.floor(s / 60)}:${Math.floor(s % 60)
+      .toString()
+      .padStart(2, "0")}`;
+
+  const handleFullscreen = () => videoRef.current?.requestFullscreen?.();
+
+  const showControlsTemporarily = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (!isHovering) setShowControls(false);
+    }, 2000);
+  };
+
+  return (
+    <div
+      className="relative group rounded-xl overflow-hidden bg-black"
+      onMouseEnter={() => {
+        setIsHovering(true);
+        setShowControls(true);
+      }}
+      onMouseLeave={() => {
+        setIsHovering(false);
+      }}
+      onMouseMove={showControlsTemporarily}
+    >
+      <video
+        ref={videoRef}
+        src={getFullMediaUrl(src)}
+        poster={poster ? getFullMediaUrl(poster) : undefined}
+        className="w-full h-full object-contain cursor-pointer"
+        onClick={togglePlay}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        playsInline
+      />
+
+      <div
+        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 transition-opacity duration-300 ${
+          showControls || !isPlaying
+            ? "opacity-100"
+            : "opacity-0 group-hover:opacity-100"
+        }`}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-white text-xs tabular-nums">
+            {formatTime(currentTime)}
+          </span>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={progress}
+            onChange={handleSeek}
+            className="flex-1 h-1 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+            style={{
+              background: `linear-gradient(to right, white 0%, white ${progress}%, rgba(255,255,255,0.3) ${progress}%, rgba(255,255,255,0.3) 100%)`,
+            }}
+          />
+          <span className="text-white text-xs tabular-nums">
+            {formatTime(duration)}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={togglePlay}
+            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition"
+          >
+            {isPlaying ? (
+              <Pause className="w-4 h-4 text-white" />
+            ) : (
+              <Play className="w-4 h-4 text-white ml-0.5" />
+            )}
+          </button>
+          <div className="flex items-center gap-2 group/volume">
+            <button
+              onClick={toggleMute}
+              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition"
+            >
+              {isMuted ? (
+                <VolumeX className="w-4 h-4 text-white" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-white" />
+              )}
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={isMuted ? 0 : volume}
+              onChange={handleVolumeChange}
+              className="w-20 h-1 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white opacity-0 group-hover/volume:opacity-100 transition-opacity"
+            />
+          </div>
+          <button
+            onClick={handleFullscreen}
+            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition ml-auto"
+          >
+            <Maximize className="w-4 h-4 text-white" />
+          </button>
+        </div>
+      </div>
+
+      {!isPlaying && (
+        <button
+          onClick={togglePlay}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/30 hover:bg-white/40 backdrop-blur-md flex items-center justify-center transition hover:scale-110"
+        >
+          <Play className="w-7 h-7 text-white ml-1" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ─── MediaGrid ─── */
+function MediaGrid({
+  mediaItems,
+  onMediaClick,
+}: {
+  mediaItems: Array<{ url: string; type?: string; mime_type?: string }>;
+  onMediaClick: (index: number) => void;
+}) {
+  const mediaCount = mediaItems.length;
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+
+  let gridClass = "";
+  let mediaHeight = "";
+  if (mediaCount === 1) {
+    gridClass = "grid-cols-1";
+    mediaHeight = "max-h-[400px]";
+  } else if (mediaCount === 2) {
+    gridClass = "grid-cols-2";
+    mediaHeight = "h-[250px] md:h-[300px]";
+  } else if (mediaCount === 3) {
+    gridClass = "grid-cols-2";
+    mediaHeight = "h-[200px] md:h-[250px]";
+  } else if (mediaCount === 4) {
+    gridClass = "grid-cols-2";
+    mediaHeight = "h-[200px] md:h-[220px]";
+  } else {
+    gridClass = "grid-cols-3";
+    mediaHeight = "h-[150px] md:h-[180px]";
+  }
+
+  const getImageLayout = (index: number) =>
+    mediaCount === 3 && index === 0 ? "col-span-2" : "";
+
+  const displayMedia = mediaCount > 6 ? mediaItems.slice(0, 5) : mediaItems;
+  const remainingMedia = mediaCount - 5;
+
+  const renderMediaItem = (item: (typeof mediaItems)[0], index: number) => {
+    const mediaType = getMediaType(item.url, item.mime_type);
+    const layout = getImageLayout(index);
+    const fullUrl = getFullMediaUrl(item.url);
+
+    if (mediaType === "video") {
+      return (
+        <div
+          key={index}
+          className={`relative cursor-pointer overflow-hidden rounded-xl bg-black ${layout} ${mediaHeight}`}
+          onClick={() => onMediaClick(index)}
+        >
+          <VideoPlayer src={item.url} autoPlay={false} />
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={index}
+        className={`relative bg-gray-100 cursor-pointer overflow-hidden rounded-xl group/image ${layout} ${mediaHeight}`}
+        onClick={() => onMediaClick(index)}
+      >
+        {!imageErrors[index] ? (
+          <div className="relative w-full h-full">
+            <img
+              src={fullUrl}
+              alt={`Média ${index + 1}`}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover/image:scale-105"
+              onError={() => setImageErrors((p) => ({ ...p, [index]: true }))}
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/image:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+              <ZoomIn className="w-8 h-8 text-white/80" />
+            </div>
+          </div>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-xs text-gray-400">Image non disponible</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="pb-3">
+      <div className={`grid ${gridClass} gap-2`}>
+        {displayMedia.map((item, i) => renderMediaItem(item, i))}
+        {remainingMedia > 0 && (
+          <div
+            className={`relative bg-gray-900/80 cursor-pointer overflow-hidden rounded-xl flex items-center justify-center ${mediaHeight}`}
+            onClick={() => onMediaClick(5)}
+          >
+            <div className="text-center">
+              <p className="text-white text-2xl font-bold">+{remainingMedia}</p>
+              <p className="text-white/60 text-xs">médias supplémentaires</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── MediaViewerModal ─── */
+function MediaViewerModal({
+  mediaItems,
+  initialIndex,
+  onClose,
+}: {
+  mediaItems: Array<{ url: string; type?: string; mime_type?: string }>;
+  initialIndex: number;
+  onClose: () => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  const currentMedia = mediaItems[currentIndex];
+  const currentUrl = getFullMediaUrl(currentMedia.url);
+  const isVideo =
+    getMediaType(currentMedia.url, currentMedia.mime_type) === "video";
+
+  const handleNext = () => {
+    setCurrentIndex((p) => (p + 1) % mediaItems.length);
+    setZoom(1);
+    setRotation(0);
+    setImgError(false);
+  };
+  const handlePrev = () => {
+    setCurrentIndex((p) => (p - 1 + mediaItems.length) % mediaItems.length);
+    setZoom(1);
+    setRotation(0);
+    setImgError(false);
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      const res = await fetch(currentUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download =
+        currentMedia.url.split("/").pop() || `media-${currentIndex + 1}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(currentUrl, "_blank");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(currentUrl);
+      toast.success("Lien copié !");
+    } catch {
+      toast.error("Impossible de copier le lien");
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Média partagé", url: currentUrl });
+      } catch {}
+    } else handleCopyLink();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.95)", backdropFilter: "blur(8px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full h-full flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/50 to-transparent">
+          <span className="text-sm text-white/80 bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+            {currentIndex + 1} / {mediaItems.length}
+          </span>
+          <div className="flex items-center gap-2">
+            {!isVideo && (
+              <>
+                <button
+                  onClick={() => setZoom((z) => Math.max(z - 0.25, 0.5))}
+                  className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setZoom((z) => Math.min(z + 0.25, 3))}
+                  className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setRotation((r) => (r + 90) % 360)}
+                  className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+                >
+                  <RotateCw className="w-4 h-4" />
+                </button>
+                <div className="w-px h-6 bg-white/20" />
+              </>
+            )}
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center disabled:opacity-50"
+            >
+              {isDownloading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleShare}
+              className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+            >
+              <Share className="w-4 h-4" />
+            </button>
+            <div className="w-px h-6 bg-white/20" />
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center overflow-hidden p-4">
+          {isVideo ? (
+            <div className="w-full max-w-5xl">
+              <VideoPlayer src={currentMedia.url} autoPlay={true} />
+            </div>
+          ) : !imgError ? (
+            <div
+              className="transition-all duration-300"
+              style={{
+                transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                maxWidth: "90vw",
+                maxHeight: "90vh",
+              }}
+            >
+              <img
+                src={currentUrl}
+                alt={`Média ${currentIndex + 1}`}
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                onError={() => setImgError(true)}
+              />
+            </div>
+          ) : (
+            <div className="text-center text-white/60">
+              <p className="text-lg mb-2">Média non disponible</p>
+              <p className="text-sm">Le média n'a pas pu être chargé</p>
+            </div>
+          )}
+        </div>
+
+        {mediaItems.length > 1 && (
+          <>
+            <button
+              onClick={handlePrev}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleNext}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </>
+        )}
+
+        {mediaItems.length > 1 && (
+          <div className="absolute bottom-4 left-0 right-0">
+            <div className="flex justify-center gap-2 overflow-x-auto px-4 pb-2">
+              {mediaItems.map((item, idx) => {
+                const isVid =
+                  getMediaType(item.url, item.mime_type) === "video";
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setCurrentIndex(idx);
+                      setZoom(1);
+                      setRotation(0);
+                      setImgError(false);
+                    }}
+                    className={`relative w-12 h-12 rounded-lg overflow-hidden transition-all flex-shrink-0 ${idx === currentIndex ? "ring-2 ring-green-950 scale-110" : "opacity-60 hover:opacity-100"}`}
+                  >
+                    {isVid ? (
+                      <div className="w-full h-full bg-black flex items-center justify-center">
+                        <Play className="w-4 h-4 text-white/60" />
+                      </div>
+                    ) : (
+                      <img
+                        src={getFullMediaUrl(item.url)}
+                        alt={`Miniature ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src =
+                            "https://placehold.co/48x48?text=Error";
+                        }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── DeleteModal ─── */
+function DeleteModal({
+  onConfirm,
+  onCancel,
+  isPending,
+}: {
+  onConfirm: () => void;
+  onCancel: () => void;
+  isPending: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Supprimer le post
+        </h3>
+        <p className="text-sm text-gray-600 mb-6">
+          Êtes-vous sûr de vouloir supprimer ce post ? Cette action est
+          irréversible.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isPending}
+            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-xl text-sm font-medium text-white transition"
+          >
+            {isPending ? "Suppression..." : "Supprimer"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── EditModal ─── */
+function EditModal({
   post,
-  isAnnouncement = false,
-  announcementCategory = "other",
-  isPinned = false,
-}: PostCardProps) {
+  onSave,
+  onCancel,
+  isPending,
+}: {
+  post: Post;
+  onSave: (content: string) => void;
+  onCancel: () => void;
+  isPending: boolean;
+}) {
+  const [content, setContent] = useState(post.content || "");
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl p-6 max-w-lg w-full mx-4 shadow-xl">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Modifier le post
+        </h3>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          rows={4}
+          placeholder="Que voulez-vous dire ?"
+          className="w-full p-3 border border-gray-200 rounded-xl text-sm text-gray-800 resize-none outline-none focus:ring-2 focus:ring-green-950/20 focus:border-green-950"
+        />
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={() => onSave(content)}
+            disabled={isPending || !content.trim()}
+            className="flex-1 px-4 py-2 bg-green-950 hover:bg-green-900 disabled:opacity-50 rounded-xl text-sm font-medium text-white transition"
+          >
+            {isPending ? "Enregistrement..." : "Enregistrer"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── PostCard ─── */
+export function PostCard({ post }: { post: Post }) {
   const { user } = useAuthStore();
   const { deletePost, updatePost } = useFeed();
 
   const [showComments, setShowComments] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showMediaViewer, setShowMediaViewer] = useState(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
 
+  const menuRef = useRef<HTMLDivElement>(null);
   const isOwner = user?.id === post.author?.id;
 
-  // Déterminer le type de post pour l'affichage du badge
-  const postType =
-    post.type ||
-    (post.media_urls?.length
-      ? post.media_urls[0].includes(".mp4")
-        ? "video"
-        : "image"
-      : "text");
+  const mediaItems = (post.media_urls || []).map((url, index) => ({
+    url,
+    type: post.media_types?.[index] || (isVideoFile(url) ? "video" : "image"),
+    mime_type: post.media_mime_types?.[index],
+  }));
 
-  const typeConfig = postTypeConfig[postType] || postTypeConfig.text;
-  const categoryConfig =
-    announcementCategoryConfig[announcementCategory] ||
-    announcementCategoryConfig.other;
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
+        setShowMenu(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
-  const handleDelete = () => {
-    deletePost.mutate(post.id, {
-      onSuccess: () => setShowDeleteModal(false),
-    });
-  };
-
-  const handleSave = (content: string) => {
+  const handleDelete = () =>
+    deletePost.mutate(post.id, { onSuccess: () => setShowDeleteModal(false) });
+  const handleSave = (content: string) =>
     updatePost.mutate(
       { id: post.id, content },
       { onSuccess: () => setShowEditModal(false) },
     );
-  };
-
   const handleMediaClick = (index: number) => {
     setSelectedMediaIndex(index);
     setShowMediaViewer(true);
@@ -163,111 +773,154 @@ export function PostCard({
   return (
     <>
       <div
-        className="rounded-2xl overflow-hidden mx-auto w-full transition-all duration-300 hover:shadow-lg flex flex-col relative"
+        className="rounded-2xl overflow-hidden mx-auto w-full transition-all duration-300 hover:shadow-lg flex flex-col"
         style={{
-          background: isAnnouncement
-          ? "rgba(254,202,202,0.92)"
-            : "rgba(249,250,242,0.92)",
+          background: "rgba(255,255,255,0.95)",
           backdropFilter: "blur(16px)",
-          border: isAnnouncement
-            ? "1px solid rgba(220,38,38,0.2)"
-            : "0.5px solid rgba(0,0,0,0.08)",
+          border: "0.5px solid rgba(0,0,0,0.08)",
           boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
         }}
       >
-        {/* Badges en haut à droite */}
-        <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
-          {/* Badge épinglé */}
-          {isPinned && (
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-sm shadow-sm"
-              style={{
-                background: "rgba(5,150,105,0.95)",
-                border: "1px solid rgba(5,150,105,0.3)",
-                backdropFilter: "blur(8px)",
-              }}
-            >
-              <Pin className="w-3 h-3 text-white" />
-              <span className="text-[10px] font-semibold text-white">
-                Épinglé
-              </span>
-            </div>
-          )}
-
-          {/* Badge annonce officielle */}
-          {isAnnouncement && (
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-sm shadow-sm"
-              style={{
-                background: "rgba(220,38,38,0.95)",
-                border: "1px solid rgba(220,38,38,0.3)",
-                backdropFilter: "blur(8px)",
-              }}
-            >
-              <Megaphone className="w-3 h-3 text-white" />
-              <span className="text-[10px] font-semibold text-white">
-                Annonce
-              </span>
-            </div>
-          )}
-
-          {/* Badge catégorie d'annonce */}
-          {isAnnouncement && announcementCategory !== "other" && (
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-sm shadow-sm"
-              style={{
-                background: categoryConfig.bg,
-                border: `1px solid ${categoryConfig.color}30`,
-                backdropFilter: "blur(8px)",
-              }}
-            >
-              <span style={{ color: categoryConfig.color }}>
-                {categoryConfig.icon}
-              </span>
-              <span
-                className="text-[10px] font-semibold"
-                style={{ color: categoryConfig.color }}
+        {/* Header */}
+        <div className="flex items-start justify-between px-4 pt-4 pb-3 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <Link href={`/community/profile/${post.author?.id}`}>
+              <Avatar
+                src={post.author?.avatar}
+                firstname={post.author?.firstname}
+                size="md"
+                className="ring-2 ring-green-300/50 flex-shrink-0"
+              />
+            </Link>
+            <div>
+              <Link
+                href={`/community/profile/${post.author?.id}`}
+                className="text-sm font-semibold text-gray-900 hover:text-gray-700 transition-colors"
               >
-                {/* {categoryConfig.label} */}
-              </span>
+                {post.author?.firstname} {post.author?.lastname}
+              </Link>
+              <div className="flex items-center gap-1 mt-0.5">
+                {post.author?.headline && (
+                  <p className="text-xs text-gray-500 truncate max-w-[150px]">
+                    {post.author.headline}
+                  </p>
+                )}
+                <span className="text-gray-300 text-xs">·</span>
+                <TimeAgo date={post.created_at} className="text-gray-400" />
+              </div>
+            </div>
+          </div>
+
+          {isOwner && (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowMenu((v) => !v)}
+                className="w-8 h-8 flex items-center justify-center rounded-full transition hover:bg-gray-100"
+              >
+                <MoreHorizontal className="w-4 h-4 text-gray-500" />
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 top-10 z-20 min-w-[150px] animate-slideDown rounded-xl border border-gray-100 bg-white p-1 shadow-sm">
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowEditModal(true);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    <Pencil className="h-3.5 w-3.5 text-gray-400" />
+                    Modifier
+                  </button>
+                  <div className="mx-1 my-0.5 h-px bg-gray-100" />
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowDeleteModal(true);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                    Supprimer
+                  </button>
+                </div>
+              )}
             </div>
           )}
-
-          {/* Badge type de post */}
-          <div
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-sm shadow-sm"
-            style={{
-              background: typeConfig.bg,
-              border: `1px solid ${typeConfig.color}30`,
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <span style={{ color: typeConfig.color }}>{typeConfig.icon}</span>
-            <span
-              className="text-[10px] font-semibold"
-              style={{ color: typeConfig.color }}
-            >
-              {/* {typeConfig.label} */}
-            </span>
-          </div>
         </div>
 
-        <PostCardHeader
-          author={post.author}
-          createdAt={post.created_at}
-          isOwner={isOwner}
-          onEdit={() => setShowEditModal(true)}
-          onDelete={() => setShowDeleteModal(true)}
-        />
+        {/* Content */}
+        <div className="flex-1 px-4">
+          {post.content && <ExpandableText content={post.content} />}
+          {mediaItems.length > 0 && (
+            <MediaGrid
+              mediaItems={mediaItems}
+              onMediaClick={handleMediaClick}
+            />
+          )}
 
-        <PostContent post={post} onMediaClick={handleMediaClick} />
+          {post.shared_post && (
+            <div
+              className="mb-3 rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition"
+              style={{
+                background: "rgba(0,0,0,0.02)",
+                border: "0.5px solid rgba(0,0,0,0.06)",
+              }}
+              onClick={() =>
+                (window.location.href = `/community/post/${post.shared_post?.id}`)
+              }
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Avatar
+                  src={post.shared_post.author?.avatar}
+                  firstname={post.shared_post.author?.firstname}
+                  size="xs"
+                  className="ring-1 ring-green-300/30 flex-shrink-0"
+                />
+                <div>
+                  <p className="text-xs font-semibold text-gray-700">
+                    {post.shared_post.author?.firstname}{" "}
+                    {post.shared_post.author?.lastname}
+                  </p>
+                  <TimeAgo
+                    date={post.shared_post.created_at}
+                    className="text-gray-400 text-xs"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed break-words">
+                {post.shared_post.content}
+              </p>
+            </div>
+          )}
+        </div>
 
+        {/* Footer */}
         <div className="flex-shrink-0">
-          <PostActionsBar
-            likesCount={post.likes_count}
-            commentsCount={post.comments_count}
-            onCommentsToggle={() => setShowComments((v) => !v)}
-          />
+          {(post.likes_count > 0 || post.comments_count > 0) && (
+            <div
+              className="flex items-center justify-between px-4 py-2"
+              style={{ borderTop: "0.5px solid rgba(0,0,0,0.06)" }}
+            >
+              {post.likes_count > 0 && (
+                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
+                  <span>{post.likes_count} j&apos;aime</span>
+                </div>
+              )}
+              {post.comments_count > 0 && (
+                <button
+                  onClick={() => setShowComments((v) => !v)}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition ml-auto"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>
+                    {post.comments_count} commentaire
+                    {post.comments_count > 1 ? "s" : ""}
+                  </span>
+                </button>
+              )}
+            </div>
+          )}
 
           <div
             className="flex items-center"
@@ -300,7 +953,6 @@ export function PostCard({
           isPending={deletePost.isPending}
         />
       )}
-
       {showEditModal && (
         <EditModal
           post={post}
@@ -309,30 +961,15 @@ export function PostCard({
           isPending={updatePost?.isPending ?? false}
         />
       )}
-
       {showMediaViewer && (
         <MediaViewerModal
-          mediaItems={(post.media_urls || []).map((url, index) => ({
-            url,
-            type: post.media_types?.[index],
-            mime_type: post.media_mime_types?.[index],
-          }))}
+          mediaItems={mediaItems}
           initialIndex={selectedMediaIndex}
           onClose={() => setShowMediaViewer(false)}
         />
       )}
 
       <style jsx global>{`
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
         @keyframes slideDown {
           from {
             opacity: 0;
@@ -343,22 +980,21 @@ export function PostCard({
             transform: translateY(0);
           }
         }
-        @keyframes spin {
+        @keyframes slideUp {
           from {
-            transform: rotate(0deg);
+            opacity: 0;
+            transform: translateY(20px);
           }
           to {
-            transform: rotate(360deg);
+            opacity: 1;
+            transform: translateY(0);
           }
+        }
+        .animate-slideDown {
+          animation: slideDown 0.15s ease-out;
         }
         .animate-slideUp {
           animation: slideUp 0.2s ease-out;
-        }
-        .animate-slideDown {
-          animation: slideDown 0.2s ease-out;
-        }
-        .animate-spin {
-          animation: spin 1s linear infinite;
         }
       `}</style>
     </>

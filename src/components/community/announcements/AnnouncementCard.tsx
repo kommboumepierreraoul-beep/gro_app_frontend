@@ -1,324 +1,593 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useState } from "react";
 import {
+  MoreHorizontal,
+  Pencil,
+  Trash2,
   Heart,
   MessageCircle,
-  Share2,
-  Bookmark,
-  Eye,
+  Calendar,
+  MapPin,
   Clock,
-  Pin,
+  Bookmark,
+  Share2,
+  ExternalLink,
   Briefcase,
   CalendarDays,
   Newspaper,
   GraduationCap,
-  MoreHorizontal,
-  Film,
+  Pin,
+  Compass,
+  Eye,
+  Users,
+  Sparkles,
+  Zap,
+  ChevronRight,
+  X,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 
-import { Avatar } from "@/components/community/shared/Avatar";
-import { TimeAgo } from "@/components/community/shared/TimeAgo";
-import { CommentSection } from "@/components/community/feed/CommentSection";
+import { Avatar } from "../shared/Avatar";
+import { useAuthStore } from "@/stores/auth.store";
+import { announcementService } from "@/services/community/announcement.service";
+import type { Announcement } from "@/types/community.types";
+import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
-interface AnnouncementCardProps {
-  announcement: any;
-}
+/* ─────────────────────────── category metadata ─────────────────────────── */
 
-const categoryConfig: Record<
+const CATEGORY_META: Record<
   string,
-  {
-    label: string;
-    color: string;
-    bg: string;
-    border: string;
-    icon: React.ReactNode;
-  }
+  { label: string; icon: React.ElementType; chipClass: string; color: string; bgClass: string }
 > = {
   job: {
-    label: "Offre",
-    color: "#059669",
-    bg: "rgba(5,150,105,0.08)",
-    border: "rgba(5,150,105,0.2)",
-    icon: <Briefcase className="w-3 h-3" />,
+    label: "Offre d'emploi",
+    icon: Briefcase,
+    chipClass: "chip chip--amber",
+    color: "#d97706",
+    bgClass: "bg-amber-50 border-amber-200",
   },
   event: {
     label: "Événement",
-    color: "#d97706",
-    bg: "rgba(217,119,6,0.08)",
-    border: "rgba(217,119,6,0.2)",
-    icon: <CalendarDays className="w-3 h-3" />,
+    icon: CalendarDays,
+    chipClass: "chip chip--green",
+    color: "#059669",
+    bgClass: "bg-green-50 border-green-200",
   },
   news: {
-    label: "News",
-    color: "#2563eb",
-    bg: "rgba(37,99,235,0.08)",
-    border: "rgba(37,99,235,0.2)",
-    icon: <Newspaper className="w-3 h-3" />,
+    label: "Actualité",
+    icon: Newspaper,
+    chipClass: "chip chip--stone",
+    color: "#6b7280",
+    bgClass: "bg-stone-50 border-stone-200",
   },
   training: {
     label: "Formation",
+    icon: GraduationCap,
+    chipClass: "chip chip--lime",
     color: "#7c3aed",
-    bg: "rgba(124,58,237,0.08)",
-    border: "rgba(124,58,237,0.2)",
-    icon: <GraduationCap className="w-3 h-3" />,
+    bgClass: "bg-purple-50 border-purple-200",
   },
   other: {
     label: "Autre",
+    icon: Pin,
+    chipClass: "chip chip--gray",
     color: "#6b7280",
-    bg: "rgba(107,114,128,0.08)",
-    border: "rgba(107,114,128,0.2)",
-    icon: <MoreHorizontal className="w-3 h-3" />,
+    bgClass: "bg-gray-50 border-gray-200",
   },
 };
 
+function getCategoryMeta(value: string) {
+  return (
+    CATEGORY_META[value] ?? {
+      label: value,
+      icon: Compass,
+      chipClass: "chip chip--emerald",
+      color: "#059669",
+      bgClass: "bg-emerald-50 border-emerald-200",
+    }
+  );
+}
+
+/* ─────────────────────────── helpers ─────────────────────────── */
+
+const getFullMediaUrl = (url?: string | null): string => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/storage")) {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    return `${apiUrl}${url}`;
+  }
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  return `${apiUrl}/${url}`;
+};
+
+/* ─────────────────────────── props ─────────────────────────── */
+
+interface AnnouncementCardProps {
+  announcement: Announcement;
+  viewMode?: "grid" | "list";
+  onDelete?: (id: number) => void;
+  onEdit?: (announcement: Announcement) => void;
+}
+
+/* ─────────────────────────── component ─────────────────────────── */
+
 export function AnnouncementCard({
   announcement,
+  viewMode = "grid",
+  onDelete,
+  onEdit,
 }: AnnouncementCardProps) {
-  const [liked, setLiked] = useState(false);
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+  const [liked, setLiked] = useState(announcement.is_liked || false);
+  const [likesCount, setLikesCount] = useState(announcement.likes_count || 0);
   const [saved, setSaved] = useState(false);
-  const [likes, setLikes] = useState(
-    announcement.likes_count || 0
-  );
-  const [showComments, setShowComments] =
-    useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const category =
-    categoryConfig[announcement.category] ||
-    categoryConfig.other;
+  const menuRef = useRef<HTMLDivElement>(null);
+  const isOwner = user?.id === announcement.author?.id;
+  const meta = getCategoryMeta(announcement.category ?? "other");
+  const Icon = meta.icon;
 
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikes((prev: number) =>
-      liked ? prev - 1 : prev + 1
-    );
-  };
+  const timeAgo = formatDistanceToNow(new Date(announcement.created_at), {
+    addSuffix: true,
+    locale: fr,
+  });
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      await navigator.share({
-        title: announcement.title,
-        text: announcement.content,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(
-        window.location.href
-      );
+  const authorName = announcement.author?.firstname && announcement.author?.lastname
+    ? `${announcement.author.firstname} ${announcement.author.lastname}`
+    : "Anonyme";
+
+  const isExpired = announcement.expires_at && new Date(announcement.expires_at) < new Date();
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
+        setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  /* ─── Actions ─── */
+
+  const handleLike = async () => {
+    try {
+      const result = await announcementService.toggleLike(announcement.id);
+      setLiked(result.liked);
+      setLikesCount((prev) => (result.liked ? prev + 1 : prev - 1));
+    } catch {
+      toast.error("Erreur lors du like");
     }
   };
 
-  return (
-    <div
-      className="rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl group"
-      style={{
-        background:
-          "linear-gradient(135deg,#ffffff 0%,#f9fafb 100%)",
-        border: "1px solid rgba(0,0,0,0.06)",
-        boxShadow:
-          "0 4px 10px rgba(0,0,0,0.04)",
-      }}
-    >
-      {/* MEDIA */}
-      {announcement.cover_image && (
-        <div className="relative h-64 overflow-hidden">
-          <img
-            src={announcement.cover_image}
-            alt={announcement.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+  const handleShare = async () => {
+    const url = `${window.location.origin}/announcements/${announcement.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: announcement.title,
+          text: announcement.content,
+          url,
+        });
+      } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Lien copié !");
+      } catch {
+        toast.error("Impossible de copier le lien");
+      }
+    }
+  };
 
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await announcementService.delete(announcement.id);
+      queryClient.invalidateQueries({ queryKey: ["announcements"] });
+      toast.success("Annonce supprimée");
+      if (onDelete) onDelete(announcement.id);
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
-          {/* Category badge */}
-          <div className="absolute top-4 left-4">
-            <div
-              className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-md"
-              style={{
-                background: category.bg,
-                border: `1px solid ${category.border}`,
-              }}
-            >
-              <span style={{ color: category.color }}>
-                {category.icon}
-              </span>
+  const handleEdit = () => {
+    if (onEdit) onEdit(announcement);
+  };
 
-              <span
-                className="text-xs font-semibold"
-                style={{ color: category.color }}
-              >
-                {category.label}
-              </span>
-            </div>
-          </div>
+  /* ─────────────────────────── RENDER ─────────────────────────── */
 
-          {/* Pin badge */}
-          {announcement.is_pinned && (
-            <div className="absolute top-4 right-4">
-              <div className="flex items-center gap-1 bg-emerald-500/90 text-white px-3 py-1 rounded-full backdrop-blur-md">
-                <Pin className="w-3 h-3" />
-                <span className="text-xs font-medium">
-                  Épinglé
-                </span>
-              </div>
-            </div>
-          )}
+  const renderBadge = () => (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${meta.chipClass}`}>
+      <Icon className="h-3 w-3" />
+      {meta.label}
+    </span>
+  );
 
-          {/* Video icon */}
-          {announcement.media_type === "video" && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
-                <Film className="w-7 h-7 text-white" />
-              </div>
-            </div>
-          )}
+  const renderExpiryBadge = () => {
+    if (!announcement.expires_at) return null;
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+        isExpired
+          ? "bg-red-50 text-red-600 border border-red-200"
+          : "bg-amber-50 text-amber-600 border border-amber-200"
+      }`}>
+        <Clock className="h-3 w-3" />
+        {isExpired ? "Expirée" : "Expire bientôt"}
+      </span>
+    );
+  };
+
+  const renderAuthor = (size: "sm" | "md" = "sm") => {
+    const avatarSize = size === "sm" ? "sm" : "md";
+    return (
+      <Link href={`/community/profile/${announcement.author?.id}`} className="flex-shrink-0">
+        <Avatar
+          src={announcement.author?.avatar}
+          firstname={announcement.author?.firstname}
+          size={avatarSize}
+          className="ring-2 ring-[#bcf0ae]/30"
+        />
+      </Link>
+    );
+  };
+
+  const renderAuthorInfo = () => (
+    <div className="min-w-0 flex-1">
+      <Link
+        href={`/community/profile/${announcement.author?.id}`}
+        className="text-sm font-medium text-[#191c18] hover:text-[#154212] transition-colors truncate block"
+      >
+        {authorName}
+      </Link>
+      <div className="flex items-center gap-1.5 text-xs text-[#72796e]">
+        <Clock className="h-3 w-3" />
+        {timeAgo}
+        {announcement.location && (
+          <>
+            <span>·</span>
+            <MapPin className="h-3 w-3" />
+            <span className="truncate max-w-[100px]">{announcement.location}</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderMenu = () => (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setMenuOpen(!menuOpen)}
+        className="w-8 h-8 flex items-center justify-center rounded-full transition hover:bg-[#f9faf2]"
+      >
+        <MoreHorizontal className="w-4 h-4 text-[#72796e]" />
+      </button>
+      {menuOpen && (
+        <div className="absolute right-0 top-10 z-20 min-w-[160px] rounded-xl border border-[#c2c9bb]/20 bg-white p-1 shadow-lg shadow-[#154212]/10 animate-slide-down">
+          <button
+            onClick={() => {
+              setMenuOpen(false);
+              handleEdit();
+            }}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-xs font-medium text-[#42493e] transition-colors hover:bg-[#f9faf2]"
+          >
+            <Pencil className="h-3.5 w-3.5 text-[#72796e]" />
+            Modifier
+          </button>
+          <div className="mx-1 my-0.5 h-px bg-[#c2c9bb]/20" />
+          <button
+            onClick={() => {
+              setMenuOpen(false);
+              setShowDeleteConfirm(true);
+            }}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+          >
+            <Trash2 className="h-3.5 w-3.5 text-red-400" />
+            Supprimer
+          </button>
         </div>
       )}
+    </div>
+  );
 
-      {/* CONTENT */}
-      <div className="p-5">
-        {/* AUTHOR */}
-        <div className="flex items-center gap-3 mb-4">
-          <Avatar
-            src={announcement.author.avatar}
-            firstname={
-              announcement.author.firstname
-            }
-            size="sm"
+  const renderActions = () => (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={handleLike}
+        className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+          liked
+            ? "bg-rose-50 text-rose-500"
+            : "text-[#72796e] hover:text-[#191c18] hover:bg-[#f9faf2]"
+        }`}
+      >
+        <Heart className={`h-4 w-4 ${liked ? "fill-rose-500 text-rose-500" : ""}`} />
+        <span>{likesCount}</span>
+      </button>
+
+      <button
+        onClick={handleShare}
+        className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-[#72796e] hover:text-[#191c18] hover:bg-[#f9faf2] transition-colors"
+      >
+        <Share2 className="h-4 w-4" />
+      </button>
+
+      <Link
+        href={`/announcements/${announcement.id}`}
+        className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-[#72796e] hover:text-[#191c18] hover:bg-[#f9faf2] transition-colors"
+      >
+        <MessageCircle className="h-4 w-4" />
+      </Link>
+
+      <button
+        onClick={() => setSaved(!saved)}
+        className={`flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs transition-colors ${
+          saved
+            ? "text-[#154212]"
+            : "text-[#72796e] hover:text-[#191c18] hover:bg-[#f9faf2]"
+        }`}
+      >
+        <Bookmark className={`h-4 w-4 ${saved ? "fill-[#154212]" : ""}`} />
+      </button>
+    </div>
+  );
+
+  /* ─── LIST MODE ─── */
+  if (viewMode === "list") {
+    return (
+      <>
+        <div className="group rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg bg-white border border-[#c2c9bb]/20">
+          <div className="flex items-start gap-4 p-4 sm:p-5">
+            {renderAuthor("md")}
+
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                {renderBadge()}
+                {renderExpiryBadge()}
+                {announcement.is_pinned && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#eaf3de] text-[#154212] border border-[#bcf0ae]/30">
+                    <Pin className="h-3 w-3" />
+                    Épinglé
+                  </span>
+                )}
+              </div>
+
+              <Link href={`/announcements/${announcement.id}`}>
+                <h3 className="text-base font-semibold text-[#191c18] hover:text-[#154212] transition-colors line-clamp-1">
+                  {announcement.title}
+                </h3>
+              </Link>
+
+              <p className="text-sm text-[#42493e] line-clamp-2 mt-1">
+                {announcement.content}
+              </p>
+
+              <div className="flex items-center gap-4 mt-2 text-xs text-[#72796e]">
+                <span className="flex items-center gap-1">
+                  <Eye className="h-3 w-3" />
+                  {announcement.views || 0}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Heart className="h-3 w-3" />
+                  {likesCount}
+                </span>
+                {announcement.expires_at && (
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {new Date(announcement.expires_at).toLocaleDateString("fr-FR")}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {isOwner && renderMenu()}
+          </div>
+
+          <div className="flex items-center justify-between px-4 sm:px-5 py-2 border-t border-[#c2c9bb]/10">
+            {renderActions()}
+            <Link
+              href={`/announcements/${announcement.id}`}
+              className="text-xs font-medium text-[#154212] hover:underline flex items-center gap-1"
+            >
+              Voir détails
+              <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+
+        {showDeleteConfirm && (
+          <DeleteConfirm
+            loading={isDeleting}
+            onConfirm={handleDelete}
+            onCancel={() => setShowDeleteConfirm(false)}
           />
+        )}
+      </>
+    );
+  }
 
-          <div>
-            <p className="font-semibold text-sm text-gray-900">
-              {announcement.author.firstname}{" "}
-              {announcement.author.lastname}
-            </p>
-
-            <TimeAgo
-              date={announcement.created_at}
-              className="text-xs text-gray-400"
+  /* ─── GRID MODE ─── */
+  return (
+    <>
+      <div className="group rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg bg-white border border-[#c2c9bb]/20 flex flex-col h-full">
+        {/* Media */}
+        <div className="relative h-48 bg-gradient-to-br from-[#154212] to-[#2d6a4f] overflow-hidden">
+          {announcement.cover_image ? (
+            <img
+              src={getFullMediaUrl(announcement.cover_image)}
+              alt={announcement.title}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
-          </div>
-        </div>
-
-        {/* TITLE */}
-        <Link
-          href={`/announcements/${announcement.id}`}
-        >
-          <h2 className="text-xl font-bold text-gray-900 mb-3 hover:text-emerald-600 transition">
-            {announcement.title}
-          </h2>
-        </Link>
-
-        {/* CONTENT */}
-        <p className="text-sm text-gray-600 leading-relaxed line-clamp-3 mb-4">
-          {announcement.content}
-        </p>
-
-        {/* STATS */}
-        <div className="flex items-center gap-4 text-xs text-gray-400 mb-4">
-          {announcement.views_count > 0 && (
-            <div className="flex items-center gap-1">
-              <Eye className="w-3.5 h-3.5" />
-              <span>
-                {announcement.views_count} vues
-              </span>
+          ) : (
+            <div className="h-full w-full flex items-center justify-center">
+              <Icon className="h-12 w-12 text-white/30" />
             </div>
           )}
 
+          {/* Overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+
+          {/* Badges */}
+          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+            {renderBadge()}
+            {announcement.is_pinned && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#154212]/80 text-white backdrop-blur-sm border border-white/20">
+                <Pin className="h-3 w-3" />
+                Épinglé
+              </span>
+            )}
+          </div>
+
+          {/* Expiry badge */}
           {announcement.expires_at && (
-            <div className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              <span>
-                Expire le{" "}
-                {new Date(
-                  announcement.expires_at
-                ).toLocaleDateString("fr-FR")}
-              </span>
+            <div className="absolute top-3 right-3">
+              {renderExpiryBadge()}
             </div>
           )}
-        </div>
 
-        {/* COUNTERS */}
-        <div className="flex items-center justify-between border-t border-b border-gray-100 py-2 mb-3">
-          <div className="flex items-center gap-1 text-sm text-gray-500">
-            <Heart className="w-4 h-4 fill-red-500 text-red-500" />
-            <span>{likes}</span>
-          </div>
-
-          <button
-            onClick={() =>
-              setShowComments(!showComments)
-            }
-            className="text-sm text-gray-500 hover:text-gray-700"
-          >
-            {announcement.comments_count || 0}{" "}
-            commentaires
-          </button>
-        </div>
-
-        {/* ACTIONS */}
-        <div className="flex items-center justify-between">
-          {/* LIKE */}
-          <button
-            onClick={handleLike}
-            className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all ${
-              liked
-                ? "bg-red-50 text-red-600"
-                : "text-gray-500 hover:bg-gray-100"
-            }`}
-          >
-            <Heart
-              className="w-4 h-4"
-              fill={liked ? "#dc2626" : "none"}
-            />
-            <span className="text-sm font-medium">
-              Aimer
-            </span>
-          </button>
-
-          {/* COMMENT */}
-          <button
-            onClick={() =>
-              setShowComments(!showComments)
-            }
-            className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-500 hover:bg-gray-100 transition-all"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span className="text-sm font-medium">
-              Commenter
-            </span>
-          </button>
-
-          {/* SAVE */}
+          {/* Sauvegarder */}
           <button
             onClick={() => setSaved(!saved)}
-            className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-500 hover:bg-gray-100 transition-all"
+            className={`absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-xl transition-all ${
+              saved
+                ? "bg-[#154212] text-white shadow-sm"
+                : "bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
+            }`}
           >
-            <Bookmark
-              className="w-4 h-4"
-              fill={saved ? "#059669" : "none"}
-            />
-          </button>
-
-          {/* SHARE */}
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-500 hover:bg-gray-100 transition-all"
-          >
-            <Share2 className="w-4 h-4" />
+            <Bookmark className={`h-4 w-4 ${saved ? "fill-white" : ""}`} />
           </button>
         </div>
 
-        {/* COMMENTS */}
-        {showComments && (
-          <div className="mt-5 pt-4 border-t border-gray-100">
-            <CommentSection
-              postId={announcement.id}
-            />
+        {/* Body */}
+        <div className="p-4 sm:p-5 flex-1 flex flex-col">
+          {/* Auteur */}
+          <div className="flex items-center gap-2.5 mb-3">
+            {renderAuthor("sm")}
+            {renderAuthorInfo()}
+            {isOwner && renderMenu()}
           </div>
-        )}
+
+          {/* Titre */}
+          <Link href={`/announcements/${announcement.id}`}>
+            <h3 className="text-base font-semibold text-[#191c18] hover:text-[#154212] transition-colors line-clamp-2 mb-1">
+              {announcement.title}
+            </h3>
+          </Link>
+
+          {/* Contenu */}
+          <p className="text-sm text-[#42493e] line-clamp-3 flex-1">
+            {announcement.content}
+          </p>
+
+          {/* Stats */}
+          <div className="flex items-center gap-4 mt-3 text-xs text-[#72796e]">
+            <span className="flex items-center gap-1">
+              <Eye className="h-3 w-3" />
+              {announcement.views || 0}
+            </span>
+            <span className="flex items-center gap-1">
+              <Heart className="h-3 w-3" />
+              {likesCount}
+            </span>
+            {announcement.expires_at && (
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {new Date(announcement.expires_at).toLocaleDateString("fr-FR")}
+              </span>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-3 mt-3 border-t border-[#c2c9bb]/10">
+            {renderActions()}
+            <Link
+              href={`/announcements/${announcement.id}`}
+              className="text-xs font-medium text-[#154212] hover:underline flex items-center gap-1"
+            >
+              Lire plus
+              <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {showDeleteConfirm && (
+        <DeleteConfirm
+          loading={isDeleting}
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+
+      <style jsx global>{`
+        @keyframes slide-down {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-down {
+          animation: slide-down 0.15s ease-out;
+        }
+      `}</style>
+    </>
+  );
+}
+
+/* ─────────────────────────── Delete Confirm Modal ─────────────────────────── */
+
+function DeleteConfirm({
+  loading,
+  onConfirm,
+  onCancel,
+}: {
+  loading: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl animate-scale-in">
+        <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-3">
+          <Trash2 className="h-6 w-6 text-red-500" />
+        </div>
+        <h3 className="text-lg font-semibold text-[#191c18] text-center mb-2">
+          Supprimer cette annonce ?
+        </h3>
+        <p className="text-sm text-[#72796e] text-center mb-6">
+          Cette action est irréversible.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-2 border border-[#c2c9bb]/30 rounded-xl text-sm font-medium text-[#42493e] hover:bg-[#f9faf2] transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-xl text-sm font-medium text-white transition-colors"
+          >
+            {loading ? "Suppression..." : "Supprimer"}
+          </button>
+        </div>
       </div>
     </div>
   );

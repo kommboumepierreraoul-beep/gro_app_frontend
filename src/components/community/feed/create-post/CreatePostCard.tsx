@@ -166,7 +166,7 @@ export function CreatePostCard() {
   const canSubmit =
     (content.trim().length > 0 || mediaItems.length > 0) &&
     !createPost.isPending;
-  const remaining = 500 - content.length;
+  const remaining = 10000 - content.length;
   const imageItems = mediaItems.filter((m) => m.type === "image");
   const gridCols = imageItems.length === 1 ? "grid-cols-1" : "grid-cols-2";
 
@@ -382,7 +382,7 @@ export function CreatePostCard() {
                 placeholder={`Quoi de neuf, ${displayUser.firstname} ?`}
                 autoFocus
                 rows={3}
-                maxLength={500}
+                maxLength={10000}
                 className="w-full resize-none outline-none text-sm leading-relaxed min-h-[88px] bg-transparent"
                 style={{ color: "#191c18", fontFamily: "'Inter', sans-serif" }}
               />

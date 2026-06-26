@@ -1,6 +1,21 @@
 "use client";
 import Link from "next/link";
-import { User, Lock, Bell, Shield, ChevronRight, Settings } from "lucide-react";
+import {
+  User,
+  Lock,
+  Bell,
+  Shield,
+  ChevronRight,
+  Settings,
+  Briefcase,
+  MapPin,
+  Clock,
+  DollarSign,
+  Users,
+  Globe,
+  BellRing,
+  Settings2,
+} from "lucide-react";
 
 const SETTINGS_LINKS = [
   {
@@ -39,6 +54,15 @@ const SETTINGS_LINKS = [
     bg: "bg-purple-50",
     hoverBg: "group-hover:bg-purple-100",
   },
+  {
+    href: "/missions/settings",
+    icon: Briefcase,
+    title: "Missions",
+    desc: "Préférences, notifications, visibilité des missions",
+    color: "text-green-700",
+    bg: "bg-green-50",
+    hoverBg: "group-hover:bg-green-100",
+  },
 ];
 
 export default function SettingsPage() {
@@ -47,14 +71,14 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl bg-[#154212]/10 flex items-center justify-center">
-            <Settings size={20} className="text-[#154212]" />
+          <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
+            <Settings size={20} className="text-green-950" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#191c18]">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             Paramètres
           </h1>
         </div>
-        <p className="text-sm text-[#72796e] ml-13 sm:ml-13">
+        <p className="text-sm text-gray-500 ml-13 sm:ml-13">
           Gérez vos préférences et informations personnelles
         </p>
       </div>
@@ -70,10 +94,10 @@ export default function SettingsPage() {
               href={item.href}
               className="
                 flex items-center gap-4 
-                bg-white rounded-xl sm:rounded-2xl 
+                rounded-xl sm:rounded-2xl 
                 p-3 sm:p-4 
-                shadow-sm border border-[#c2c9bb]/30 
-                hover:shadow-md hover:border-[#c2c9bb]/50 
+                shadow-sm border border-gray-100
+                hover:shadow-md hover:border-gray-200 
                 transition-all duration-200 group
               "
             >
@@ -92,10 +116,10 @@ export default function SettingsPage() {
 
               {/* Texte */}
               <div className="flex-1">
-                <p className="font-semibold text-[#191c18] group-hover:text-[#154212] transition-colors text-sm sm:text-base">
+                <p className="font-semibold text-gray-900 group-hover:text-green-950 transition-colors text-sm sm:text-base">
                   {item.title}
                 </p>
-                <p className="text-xs sm:text-sm text-[#72796e] mt-0.5">
+                <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
                   {item.desc}
                 </p>
               </div>
@@ -103,7 +127,7 @@ export default function SettingsPage() {
               {/* Flèche */}
               <ChevronRight
                 size={16}
-                className="text-[#c2c9bb] group-hover:text-[#154212] transition-colors sm:w-5 sm:h-5"
+                className="text-gray-300 group-hover:text-green-950 transition-colors sm:w-5 sm:h-5"
               />
             </Link>
           );
@@ -111,8 +135,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Footer informatif */}
-      <div className="mt-8 p-4 bg-[#f3f4ed] rounded-xl border border-[#c2c9bb]/20">
-        <p className="text-xs text-[#72796e] text-center">
+      <div className="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-100">
+        <p className="text-xs text-gray-500 text-center">
           Vos paramètres sont sauvegardés automatiquement
         </p>
       </div>

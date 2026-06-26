@@ -203,22 +203,6 @@ export default function MissionsPage() {
             value: missions.filter((m) => m.status === "published").length,
             icon: <Clock size={14} className="sm:h-4 sm:w-4" />,
           },
-          {
-            label: "Candidatures",
-            value: missions.reduce((acc, m) => acc + m.applications_count, 0),
-            icon: <Users size={14} className="sm:h-4 sm:w-4" />,
-          },
-          {
-            label: "Bénévolat",
-            value: missions.filter((m) => m.remuneration_type === "volunteer")
-              .length,
-            icon: <Star size={14} className="sm:h-4 sm:w-4" />,
-          },
-          {
-            label: "Catégories",
-            value: categories?.data?.length ?? 5,
-            icon: <Filter size={14} className="sm:h-4 sm:w-4" />,
-          },
         ].map((stat) => (
           <div
             key={stat.label}

@@ -13,6 +13,8 @@ import {
   Clock3,
   CheckCircle2,
   Settings,
+  Calendar,
+  HelpCircleIcon,
 } from "lucide-react";
 
 const links = [
@@ -20,6 +22,11 @@ const links = [
     href: "/missions/dashboard",
     label: "Tableau de bord",
     icon: LayoutDashboard,
+  },
+  {
+    href: "/missions/agenda",
+    label: "Agenda",
+    icon: Calendar
   },
   {
     href: "/missions/map",
@@ -47,14 +54,9 @@ const links = [
     icon: Users,
   },
   {
-    href: "/missions/in-progress",
-    label: "En cours",
-    icon: Clock3,
-  },
-  {
-    href: "/missions/completed",
-    label: "Terminées",
-    icon: CheckCircle2,
+    href: "/support/mission-support",
+    label: "Support",
+    icon: HelpCircleIcon,
   },
   {
     href: "/missions/settings",

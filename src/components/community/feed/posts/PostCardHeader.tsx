@@ -114,33 +114,28 @@ export function PostCardHeader({
           </button>
 
           {showMenu && (
-            <div
-              className="absolute right-0 top-10 rounded-2xl py-1 z-20 min-w-[150px] animate-slideDown"
-              style={{
-                background: "white",
-                backdropFilter: "blur(20px)",
-                border: "0.5px solid rgba(0,0,0,0.1)",
-                boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
-              }}
-            >
+            <div className="absolute right-0 top-10 z-20 min-w-[150px] animate-slideDown rounded-xl border border-gray-100 p-1 shadow-sm">
               <button
                 onClick={() => {
                   setShowMenu(false);
                   onEdit();
                 }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition rounded-xl"
+                className="flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
-                <Pencil className="w-3.5 h-3.5" />
+                <Pencil className="h-3.5 w-3.5 text-gray-400" />
                 Modifier
               </button>
+
+              <div className="mx-1 my-0.5 h-px bg-gray-100" />
+
               <button
                 onClick={() => {
                   setShowMenu(false);
                   onDelete();
                 }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50 transition rounded-xl"
+                className="flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="h-3.5 w-3.5 text-red-400" />
                 Supprimer
               </button>
             </div>

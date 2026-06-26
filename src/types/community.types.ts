@@ -21,7 +21,66 @@ export interface CommunityUser {
   created_at: string;
 }
 
-export type PostType = "text" | "image" | "video" | "pdf" | "announcement" | "shared";
+export type PostType =
+  | "text"
+  | "image"
+  | "video"
+  | "pdf"
+  | "announcement"
+  | "shared";
+
+// ─── MODERATION TYPES ──────────────────────────────────────────────────────
+
+export type ModerationStatus = "pending" | "approved" | "review" | "rejected";
+
+export interface ModerationScores {
+  toxicity: number;
+  spam: number;
+  hate: number;
+  violence: number;
+}
+
+export interface ModerationData {
+  status: ModerationStatus;
+  reason?: string;
+  moderated_at?: string;
+  scores?: ModerationScores;
+}
+
+export interface PostWithModeration extends Post {
+  moderation_status: ModerationStatus;
+  toxicity_score?: number;
+  spam_score?: number;
+  hate_score?: number;
+  violence_score?: number;
+  moderation_reason?: string;
+  moderated_at?: string;
+  moderation?: ModerationData;
+}
+
+export interface CommentWithModeration extends Comment {
+  moderation_status: ModerationStatus;
+  toxicity_score?: number;
+  spam_score?: number;
+  hate_score?: number;
+  violence_score?: number;
+  moderation_reason?: string;
+  moderated_at?: string;
+  moderation?: ModerationData;
+}
+
+export interface MessageWithModeration extends Message {
+  moderation_status: ModerationStatus;
+  toxicity_score?: number;
+  spam_score?: number;
+  hate_score?: number;
+  violence_score?: number;
+  moderation_reason?: string;
+  moderated_at?: string;
+  moderation?: ModerationData;
+}
+
+// ─── POST ──────────────────────────────────────────────────────────────────
 
 export interface Post {
   id: number;
@@ -41,7 +100,17 @@ export interface Post {
   shared_post?: Post;
   created_at: string;
   updated_at: string;
+  // Modération
+  moderation_status?: ModerationStatus;
+  toxicity_score?: number;
+  spam_score?: number;
+  hate_score?: number;
+  violence_score?: number;
+  moderation_reason?: string;
+  moderated_at?: string;
 }
+
+// ─── COMMENT ──────────────────────────────────────────────────────────────
 
 export interface Comment {
   id: number;
@@ -53,7 +122,17 @@ export interface Comment {
   is_liked: boolean;
   replies?: Comment[];
   created_at: string;
+  // Modération
+  moderation_status?: ModerationStatus;
+  toxicity_score?: number;
+  spam_score?: number;
+  hate_score?: number;
+  violence_score?: number;
+  moderation_reason?: string;
+  moderated_at?: string;
 }
+
+// ─── MESSAGE ──────────────────────────────────────────────────────────────
 
 export type MessageStatus = "sent" | "delivered" | "read";
 
@@ -67,6 +146,14 @@ export interface Message {
   media_url?: string;
   is_mine: boolean;
   created_at: string;
+  // Modération
+  moderation_status?: ModerationStatus;
+  toxicity_score?: number;
+  spam_score?: number;
+  hate_score?: number;
+  violence_score?: number;
+  moderation_reason?: string;
+  moderated_at?: string;
 }
 
 export interface Conversation {
@@ -114,7 +201,6 @@ export type AnnouncementCategory =
   | "other";
 
 export interface Announcement {
-  [x: string]: import("react/jsx-runtime").JSX.Element;
   id: number;
   title: string;
   content: string;
@@ -135,4 +221,3 @@ export interface Paginated<T> {
   total: number;
   next_page_url: string | null;
 }
-

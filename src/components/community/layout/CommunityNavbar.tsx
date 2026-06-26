@@ -22,7 +22,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useCommunityStore } from "@/stores/community.store";
 import { useAuth } from "@/hooks/useAuth";
 import { profileService } from "@/services/community/profile.service";
-
+import Image from "next/image";
 // Fonction pour obtenir l'URL complète de l'avatar
 const getAvatarUrl = (avatar?: string | null): string | undefined => {
   if (!avatar) return undefined;
@@ -101,27 +101,13 @@ export function CommunityNavbar() {
               href="/community"
               className="flex items-center gap-2.5 group flex-shrink-0"
             >
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm transition-all duration-200 group-hover:shadow-md"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #3b6934 0%, #154212 100%)",
-                }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.8}
-                  stroke="white"
-                  className="w-4.5 h-4.5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 3v2.25M12 21v-2.25M18.75 12H21M3 12h2.25M18.75 12a6.75 6.75 0 01-13.5 0 6.75 6.75 0 0113.5 0zM12 9.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z"
-                  />
-                </svg>
+              <div className="w-10 h-10 relative">
+                <Image
+                  src="/logo_agri_pulse.png"
+                  alt="AgriPulse"
+                  fill
+                  className="object-contain"
+                />
               </div>
               <span
                 className="font-bold text-lg hidden sm:inline"
@@ -369,7 +355,10 @@ export function CommunityNavbar() {
             }}
           >
             <div className="flex items-center gap-2">
-              <Search placeholder="Rechercher..." className="flex-1 bg-transparent" />
+              <Search
+                placeholder="Rechercher..."
+                className="flex-1 bg-transparent"
+              />
               <button
                 onClick={() => setShowMobileSearch(false)}
                 className="p-2 rounded-xl transition-all duration-150"

@@ -273,7 +273,7 @@ export function ChatInterface() {
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
-                Assistant IA
+                AgriPulse IA
               </p>
               <p
                 className="text-xs truncate"

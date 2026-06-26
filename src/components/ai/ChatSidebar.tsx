@@ -227,7 +227,7 @@ export function ChatSidebar({
                   fontFamily: "'Inter', sans-serif",
                 }}
               >
-                Commencez une nouvelle discussion avec l'assistant IA
+                Commencez une nouvelle discussion avec AgriPulse IA
               </p>
             </div>
           ) : (
@@ -311,7 +311,7 @@ export function ChatSidebar({
             style={{ color: "#72796e", fontFamily: "'Inter', sans-serif" }}
           >
             <Bot size={14} />
-            <span>Assistant IA v1.0</span>
+            <span>AgriPulse IA v1.0</span>
             <span className="opacity-30">•</span>
             <span className="opacity-60">Communauté</span>
           </div>
