@@ -25,7 +25,8 @@ import MissionStatusBadge from "../MissionStatusBadge";
 import MissionMap from "../Map/MissionDetailMap";
 
 interface Props {
-  mission: Mission; // mission partielle depuis la liste
+  mission: Mission;
+  isOpen: boolean;
   onClose: () => void;
 }
 
@@ -40,6 +41,7 @@ const REMUNERATION_LABELS: Record<string, string> = {
 
 export default function MissionDetailModal({
   mission: partialMission,
+  isOpen,
   onClose,
 }: Props) {
   const openApplyModal = useMissionStore((s) => s.openApplyModal);
@@ -53,9 +55,17 @@ export default function MissionDetailModal({
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+    if (isOpen) {
+      window.addEventListener("keydown", handler);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
 
   const remuLabel = mission.remuneration_amount
     ? `${Number(mission.remuneration_amount).toLocaleString("fr-FR")} ${mission.remuneration_currency}`
@@ -72,12 +82,12 @@ export default function MissionDetailModal({
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-[#2e312c]/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-[#2e312c]/40 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onClose}
       />
 
-      {/* Contenu */}
-      <div className="relative bg-[#f9faf2] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col md:flex-row border border-[#c2c9bb]/30">
+      {/* Contenu - Animation */}
+      <div className="relative bg-[#f9faf2] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col md:flex-row border border-[#c2c9bb]/30 animate-in zoom-in-95 duration-200">
         {/* ── Colonne gauche : image + infos auteur ──────────────────── */}
         <div className="md:w-5/12 bg-[#edefe7] relative flex flex-col">
           {/* Image ou fond catégorie */}
@@ -96,7 +106,7 @@ export default function MissionDetailModal({
                   backgroundColor: mission.category?.color ?? "#154212",
                 }}
               >
-                {mission.category?.name?.[0] ?? mission.title[0]}
+                {mission.category?.name?.[0] ?? mission.title?.[0] ?? "?"}
               </div>
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-[#2e312c]/50 to-transparent" />
@@ -121,37 +131,37 @@ export default function MissionDetailModal({
               Publié par
             </p>
             <div className="flex items-center gap-3">
-              {mission.author.avatar ? (
+              {mission.author?.avatar ? (
                 <img
                   src={mission.author.avatar}
-                  alt={mission.author.firstname}
+                  alt={mission.author?.firstname || "Auteur"}
                   className="w-10 h-10 rounded-full object-cover border-2 border-[#bcf0ae]"
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-[#2d5a27] flex items-center justify-center text-white font-bold border-2 border-[#bcf0ae]">
-                  {mission.author.lastname}
+                  {mission.author?.lastname?.[0] || "A"}
                 </div>
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-[#191c18] text-sm">
-                  {mission.author.firstname}
+                  {mission.author?.firstname || "Auteur"}
                 </p>
-                {mission.author.rating > 0 && (
+                {mission.author?.rating && mission.author.rating > 0 && (
                   <div className="flex items-center gap-1 mt-0.5">
                     {[1, 2, 3, 4, 5].map((i) => (
                       <Star
                         key={i}
                         size={10}
                         className={
-                          i <= Math.round(mission.author.rating ?? 10)
+                          i <= Math.round(mission.author?.rating ?? 0)
                             ? "fill-amber-400 text-amber-400"
                             : "text-[#c2c9bb]"
                         }
                       />
                     ))}
                     <span className="text-[10px] text-[#72796e] ml-1">
-                      {mission.author.rating.toFixed(1) || '4/5'} (
-                      {mission.author.reviews_count ?? 10})
+                      {mission.author?.rating?.toFixed(1) || "4.0"} (
+                      {mission.author?.reviews_count ?? 0})
                     </span>
                   </div>
                 )}
@@ -163,18 +173,18 @@ export default function MissionDetailModal({
           <div className="grid grid-cols-2 gap-2 px-5 pb-5">
             <div className="bg-white/60 rounded-xl p-3 text-center">
               <p className="text-xl font-bold text-[#154212] font-[Inter]">
-                {mission.applications_count}
+                {mission.applications_count ?? 0}
               </p>
               <p className="text-[10px] text-[#72796e]">
-                Candidature{mission.applications_count > 1 ? "s" : ""}
+                Candidature{(mission.applications_count ?? 0) > 1 ? "s" : ""}
               </p>
             </div>
             <div className="bg-white/60 rounded-xl p-3 text-center">
               <p className="text-xl font-bold text-[#154212] font-[Inter]">
-                {mission.views_count}
+                {mission.views_count ?? 0}
               </p>
               <p className="text-[10px] text-[#72796e]">
-                Vue{mission.views_count > 1 ? "s" : ""}
+                Vue{(mission.views_count ?? 0) > 1 ? "s" : ""}
               </p>
             </div>
           </div>
@@ -189,7 +199,7 @@ export default function MissionDetailModal({
                 Rémunération
               </p>
               <p className="font-[Inter] text-3xl font-bold text-[#154212] mt-1">
-                {remuLabel}
+                {remuLabel || "À définir"}
                 {mission.remuneration_type === "daily_rate" && (
                   <span className="text-sm font-normal text-[#72796e] ml-1">
                     / jour
@@ -255,7 +265,7 @@ export default function MissionDetailModal({
                   <p className="text-sm text-[#191c18] font-medium">
                     {mission.duration_type === "flexible"
                       ? "Flexible"
-                      : `${mission.duration_value} ${mission.duration_type}`}
+                      : `${mission.duration_value ?? ""} ${mission.duration_type ?? ""}`}
                   </p>
                 </div>
               </div>
@@ -286,13 +296,14 @@ export default function MissionDetailModal({
                       Places
                     </p>
                     <p className="text-sm text-[#191c18] font-medium">
-                      {mission.applications_count} / {mission.max_applications}
+                      {mission.applications_count ?? 0} /{" "}
+                      {mission.max_applications}
                     </p>
                     <div className="h-1 bg-[#e2e3dc] rounded-full mt-1 w-20">
                       <div
                         className="h-1 bg-[#154212] rounded-full"
                         style={{
-                          width: `${Math.min(100, (mission.applications_count / mission.max_applications) * 100)}%`,
+                          width: `${Math.min(100, ((mission.applications_count ?? 0) / mission.max_applications) * 100)}%`,
                         }}
                       />
                     </div>
@@ -383,10 +394,10 @@ export default function MissionDetailModal({
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-6 h-6 rounded-full bg-[#2d5a27] flex items-center justify-center text-white text-[10px] font-bold">
-                          {review.reviewer.name[0]}
+                          {review.reviewer?.name?.[0] || "A"}
                         </div>
                         <span className="text-xs font-medium text-[#191c18]">
-                          {review.reviewer.name}
+                          {review.reviewer?.name || "Anonyme"}
                         </span>
                         <div className="flex ml-auto">
                           {[1, 2, 3, 4, 5].map((i) => (
@@ -394,7 +405,7 @@ export default function MissionDetailModal({
                               key={i}
                               size={10}
                               className={
-                                i <= review.rating
+                                i <= (review.rating || 0)
                                   ? "fill-amber-400 text-amber-400"
                                   : "text-[#c2c9bb]"
                               }
@@ -420,7 +431,7 @@ export default function MissionDetailModal({
               <div className="flex gap-3">
                 {whatsappContact?.value && (
                   <a
-                    href={`https://wa.me/${whatsappContact.value.replace(/\D/g, "")}?text=${encodeURIComponent(`Bonjour, je suis intéressé par votre mission "${mission.title}" sur AgriPulse. Pouvons-nous en parler? `)}`}
+                    href={`https://wa.me/${whatsappContact.value.replace(/\D/g, "")}?text=${encodeURIComponent(`Bonjour, je suis intéressé par votre mission "${mission.title}" sur AgriPulse. Pouvons-nous en parler?`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 px-4 py-3 bg-green-500 text-white text-xs font-semibold rounded-xl hover:bg-green-600 transition-all"
