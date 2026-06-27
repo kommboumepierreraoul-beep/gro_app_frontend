@@ -160,8 +160,7 @@ export default function MissionDetailModal({
                       />
                     ))}
                     <span className="text-[10px] text-[#72796e] ml-1">
-                      {mission.author?.rating?.toFixed(1) || "4.0"} (
-                      {mission.author?.reviews_count ?? 0})
+                      {mission.author?.rating?.toFixed(1) || "4.0"}
                     </span>
                   </div>
                 )}

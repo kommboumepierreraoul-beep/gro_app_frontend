@@ -136,25 +136,7 @@ export default function MissionDetailModal({
                 <p className="font-semibold text-[#191c18] text-sm">
                   {mission.author.firstname}
                 </p>
-                {mission.author.rating > 0 && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Star
-                        key={i}
-                        size={10}
-                        className={
-                          i <= Math.round(mission.author.rating ?? 10)
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-[#c2c9bb]"
-                        }
-                      />
-                    ))}
-                    <span className="text-[10px] text-[#72796e] ml-1">
-                      {mission.author.rating.toFixed(1) || '4/5'} (
-                      {mission.author.reviews_count ?? 10})
-                    </span>
-                  </div>
-                )}
+              
               </div>
             </div>
           </div>
