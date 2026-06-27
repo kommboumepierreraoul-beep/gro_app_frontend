@@ -329,7 +329,7 @@ export default function AnnouncementPage() {
                         {announcement.author.firstname} {announcement.author.lastname}
                       </Link>
                       <div className="flex items-center gap-2 mt-1">
-                        <TimeAgo date={announcement.created_at} className="text-xs" style={{ color: "#72796e" }} />
+                        <TimeAgo date={announcement.created_at} className="text-xs" />
                         {announcement.is_pinned && (
                           <>
                             <span className="text-xs" style={{ color: "#cbd5e1" }}>·</span>
