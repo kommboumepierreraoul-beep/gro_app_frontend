@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -23,6 +24,7 @@ import { useMyMissions } from "@/hooks/missions/useMissions";
 import { missionService } from "@/services/mission/mission.service";
 import Agenda from "@/components/missions/Agenda";
 import MyMissionCard from "@/components/missions/Card/MyMissionCard";
+import { Mission } from "@/lib/missions/types";
 import CreateMissionModal from "@/components/missions/Form/CreateMissionModal";
 
 type ViewMode = "agenda" | "grid" | "list";
@@ -30,7 +32,7 @@ type ViewMode = "agenda" | "grid" | "list";
 export default function MissionsAgendaPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("agenda");
   const [createOpen, setCreateOpen] = useState(false);
-  const [selectedMission, setSelectedMission] = useState(null);
+  const [selectedMission, setSelectedMission] = useState<any>(null);
 
   const { data: missionsData, isLoading } = useMyMissions();
 
