@@ -187,25 +187,7 @@ export default function MissionDetailPage() {
                 <p className="font-semibold text-[#191c18] text-sm">
                   {mission.author.firstname}
                 </p>
-                {mission.author.rating > 0 && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Star
-                        key={i}
-                        size={11}
-                        className={
-                          i <= Math.round(mission.author.rating)
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-[#c2c9bb]"
-                        }
-                      />
-                    ))}
-                    <span className="text-[11px] text-[#72796e] ml-1">
-                      {mission.author.rating.toFixed(1)} (
-                      {mission.author.reviews_count} avis)
-                    </span>
-                  </div>
-                )}
+                
               </div>
             </div>
 

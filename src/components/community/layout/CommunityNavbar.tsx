@@ -215,7 +215,7 @@ export function CommunityNavbar() {
                     src={displayUser.avatar}
                     firstname={displayUser.firstname}
                     size="sm"
-                    withRing={false}
+                    ring={false}
                   />
                   <ChevronDown
                     className={`w-3.5 h-3.5 transition-transform duration-200 ${
@@ -250,7 +250,7 @@ export function CommunityNavbar() {
                           src={displayUser.avatar}
                           firstname={displayUser.firstname}
                           size="md"
-                          withRing={true}
+                          ring={true}
                         />
                         <div className="min-w-0">
                           <p

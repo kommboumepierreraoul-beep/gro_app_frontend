@@ -163,7 +163,7 @@ export default function MissionCard({
               {remuLabel}
             </span>
             <div className="flex gap-2">
-              {mission.status === "published" && mission.isOpen && (
+              {mission.status === "published"  && (
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -275,12 +275,6 @@ export default function MissionCard({
           <span className="text-xs text-gray-600 font-medium">
             {mission.author?.firstname} {mission.author?.lastname}
           </span>
-          {mission.author?.rating > 0 && (
-            <span className="flex items-center gap-0.5 ml-auto text-xs text-gray-500">
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              {mission.author.rating.toFixed(1)}
-            </span>
-          )}
         </div>
 
         {/* Actions */}
@@ -288,7 +282,7 @@ export default function MissionCard({
           <span className="flex-1 py-3 border border-green-950 text-green-950 font-semibold text-xs tracking-widest uppercase rounded-xl hover:bg-green-950 hover:text-white transition-all duration-200 text-center">
             Voir les détails
           </span>
-          {mission.status === "published" && mission.isOpen && (
+          {mission.status === "published" && (
             <button
               onClick={(e) => {
                 e.preventDefault();

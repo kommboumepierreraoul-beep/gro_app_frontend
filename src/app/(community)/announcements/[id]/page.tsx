@@ -329,16 +329,8 @@ export default function AnnouncementPage() {
                         {announcement.author.firstname} {announcement.author.lastname}
                       </Link>
                       <div className="flex items-center gap-2 mt-1">
-                        <TimeAgo date={announcement.created_at} className="text-xs" style={{ color: "#72796e" }} />
-                        {announcement.is_pinned && (
-                          <>
-                            <span className="text-xs" style={{ color: "#cbd5e1" }}>·</span>
-                            <div className="flex items-center gap-1">
-                              <Pin className="w-3 h-3" style={{ color: "#059669" }} />
-                              <span className="text-xs font-medium" style={{ color: "#059669" }}>Épinglé</span>
-                            </div>
-                          </>
-                        )}
+                        <TimeAgo date={announcement.created_at} className="text-xs" />
+                      
                       </div>
                     </div>
                   </div>
@@ -368,7 +360,6 @@ export default function AnnouncementPage() {
                 {/* Média */}
                 <AnnouncementMediaDisplay
                   coverImage={announcement.cover_image}
-                  mediaType={announcement.media_type}
                   title={announcement.title}
                 />
 
@@ -385,12 +376,7 @@ export default function AnnouncementPage() {
                     <Heart className="w-4 h-4" style={{ color: "#dc2626" }} />
                     <span className="text-sm" style={{ color: "#72796e" }}>{announcement.likes_count} j'aime</span>
                   </div>
-                  {announcement.views_count > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Eye className="w-4 h-4" style={{ color: "#72796e" }} />
-                      <span className="text-sm" style={{ color: "#72796e" }}>{announcement.views_count} vues</span>
-                    </div>
-                  )}
+            
                   {announcement.expires_at && (
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4" style={{ color: isExpired ? "#dc2626" : "#d97706" }} />
