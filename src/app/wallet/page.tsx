@@ -11,7 +11,7 @@ import {
 type Transaction = {
   id: number;
   amount: number;
-  type: 'credit' | 'debit';
+  type: 'credit' | 'debit' | 'deposit' | 'withdraw';
   description: string;
   created_at: string;
   order_id?: number;
@@ -39,8 +39,8 @@ function WalletContent() {
   const [withdrawChannel, setWithdrawChannel] = useState('mtn');
   const [paymentMethod, setPaymentMethod] = useState('notchpay');
   const [loadingAction, setLoadingAction] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'credit' | 'debit'>('all');
-  
+  const [activeTab, setActiveTab] = useState<'all' | 'credit' | 'debit' | 'deposit'>('all');
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -71,6 +71,7 @@ function WalletContent() {
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('trxref') || urlParams.get('reference')) {
+      toast.success('Paiement reçu, vérification en cours…');
       const interval = setInterval(() => {
         fetchWalletData();
         fetchTransactions();
@@ -89,17 +90,22 @@ function WalletContent() {
     setLoadingAction(true);
     try {
       const payload: any = { amount: amountNum, method: paymentMethod };
-      if (paymentMethod === 'momo' && phoneNumber) payload.phone = phoneNumber;
+      if (phoneNumber) payload.phone = phoneNumber;
+
       const res = await api.post('/wallet/deposit', payload);
-      if (res.data.authorization_url) {
-        window.location.href = res.data.authorization_url;
-      } else {
-        toast.success('Dépôt demandé');
+
+      // NotchPay retourne l'URL dans res.data.data.authorization_url
+      const authUrl =
+        res.data?.data?.authorization_url ||
+        res.data?.authorization_url ||
+        null;
+
+      if (authUrl) {
+        toast.success('Redirection vers la page de paiement…');
         setDepositModal(false);
-        setAmount('');
-        setPhoneNumber('');
-        fetchWalletData();
-        fetchTransactions();
+        window.location.href = authUrl;
+      } else {
+        toast.error('Impossible d\'obtenir l\'URL de paiement');
       }
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Erreur lors du dépôt');
@@ -139,9 +145,16 @@ function WalletContent() {
     }
   };
 
+  const isDeposit = (tx: Transaction) =>
+    tx.type === 'deposit' || (tx.type === 'credit' && tx.description?.toLowerCase().includes('dépôt'));
+
+  const isCredit = (tx: Transaction) =>
+    tx.type === 'credit' && !isDeposit(tx);
+
   const filteredTransactions = transactions.filter(t => {
-    if (activeTab === 'credit') return t.type === 'credit';
-    if (activeTab === 'debit') return t.type === 'debit';
+    if (activeTab === 'credit') return isCredit(t);
+    if (activeTab === 'debit') return t.type === 'debit' || t.type === 'withdraw';
+    if (activeTab === 'deposit') return isDeposit(t);
     return true;
   });
 
@@ -162,7 +175,7 @@ function WalletContent() {
     transactions.forEach(t => {
       const day = t.created_at.split('T')[0];
       if (!grouped[day]) grouped[day] = { credit: 0, debit: 0 };
-      if (t.type === 'credit') grouped[day].credit += t.amount;
+      if (t.type === 'credit' || t.type === 'deposit') grouped[day].credit += t.amount;
       else grouped[day].debit += t.amount;
     });
     return last30Days.map(day => ({
@@ -170,6 +183,39 @@ function WalletContent() {
       credit: grouped[day]?.credit || 0,
       debit: grouped[day]?.debit || 0,
     }));
+  };
+
+  const getTxLabel = (tx: Transaction) => {
+    if (isDeposit(tx)) return 'Dépôt via NotchPay';
+    if (tx.type === 'withdraw') return 'Retrait';
+    if (tx.type === 'credit' && tx.order_number)
+      return `Vente de ${tx.product_name || 'Produit'} #${tx.order_number}`;
+    return tx.description;
+  };
+
+  const getTxSign = (tx: Transaction) => {
+    if (tx.type === 'credit' || tx.type === 'deposit') return '+';
+    return '-';
+  };
+
+  const getTxColor = (tx: Transaction) => {
+    if (tx.type === 'credit' || tx.type === 'deposit') return 'text-lime-400';
+    return 'text-white';
+  };
+
+  const getStatusLabel = (tx: Transaction) => {
+    if (tx.status === 'completed') return isDeposit(tx) || tx.type === 'deposit' ? 'Succès' : 'Effectué';
+    if (tx.status === 'pending') return 'En attente';
+    return 'Échec';
+  };
+
+  const getStatusClass = (tx: Transaction) => {
+    if (tx.status === 'completed')
+      return (tx.type === 'credit' || tx.type === 'deposit')
+        ? 'bg-lime-500/20 text-lime-400'
+        : 'bg-cyan-500/20 text-cyan-400';
+    if (tx.status === 'pending') return 'bg-yellow-500/20 text-yellow-400';
+    return 'bg-red-500/20 text-red-400';
   };
 
   if (loading) {
@@ -242,7 +288,7 @@ function WalletContent() {
               { icon: 'add_circle', label: 'Déposer', onClick: () => setDepositModal(true) },
               { icon: 'sync_alt', label: 'Transférer', onClick: () => toast('Bientôt disponible') },
               { icon: 'description', label: 'Relevés', onClick: () => toast('Export PDF bientôt') },
-              { icon: 'grid_view', label: 'Plus', onClick: () => toast('Plus d’options à venir') },
+              { icon: 'grid_view', label: 'Plus', onClick: () => toast('Plus d\'options à venir') },
             ].map(action => (
               <button key={action.label} onClick={action.onClick} className="flex flex-col items-center gap-2 min-w-[70px] group">
                 <div className="w-14 h-14 rounded-full bg-white/5 backdrop-blur border border-white/10 flex items-center justify-center group-hover:bg-lime-500/20 transition">
@@ -277,7 +323,7 @@ function WalletContent() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={val => val.slice(5)} />
-                <YAxis tickFormatter={val => `${(val/1000).toFixed(0)}k`} tick={{ fill: '#94a3b8' }} />
+                <YAxis tickFormatter={val => `${(val / 1000).toFixed(0)}k`} tick={{ fill: '#94a3b8' }} />
                 <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px' }} />
                 <Area type="monotone" dataKey="credit" stroke="#a3e635" fill="url(#creditGrad)" name="Entrées" />
                 <Area type="monotone" dataKey="debit" stroke="#06b6d4" fill="url(#debitGrad)" name="Sorties" />
@@ -290,7 +336,7 @@ function WalletContent() {
           </div>
         </div>
 
-        {/* Historique des transactions avec pagination */}
+        {/* Historique des transactions */}
         <div>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-white">Activités</h2>
@@ -301,16 +347,16 @@ function WalletContent() {
               { key: 'all', label: 'Tout' },
               { key: 'credit', label: 'Ventes' },
               { key: 'debit', label: 'Retraits' },
-              { key: 'credit', label: 'Dépôts' },
+              { key: 'deposit', label: 'Dépôts' },
             ].map(tab => (
               <button
-                key={tab.label}
+                key={tab.key}
                 onClick={() => {
                   setActiveTab(tab.key as any);
                   setCurrentPage(1);
                 }}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
-                  activeTab === tab.key || (tab.label === 'Dépôts' && activeTab === 'credit')
+                  activeTab === tab.key
                     ? 'bg-lime-500 text-slate-950'
                     : 'bg-white/5 text-slate-300 hover:bg-white/10'
                 }`}
@@ -329,36 +375,28 @@ function WalletContent() {
               paginatedTransactions.map(tx => (
                 <div key={tx.id} className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-4 flex items-center justify-between hover:bg-white/10 transition">
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tx.type === 'credit' ? 'bg-lime-500/20' : 'bg-white/10'}`}>
-                      <span className="material-symbols-outlined text-2xl">{tx.type === 'credit' ? 'eco' : 'payments'}</span>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      tx.type === 'credit' || tx.type === 'deposit' ? 'bg-lime-500/20' : 'bg-white/10'
+                    }`}>
+                      <span className="material-symbols-outlined text-2xl">
+                        {tx.type === 'credit' || tx.type === 'deposit' ? 'eco' : 'payments'}
+                      </span>
                     </div>
                     <div>
-                      <p className="font-medium text-white">
-                        {tx.type === 'credit' && tx.order_number
-                          ? `Vente de ${tx.product_name || 'Produit'} #${tx.order_number}`
-                          : tx.description}
-                      </p>
+                      <p className="font-medium text-white">{getTxLabel(tx)}</p>
                       <p className="text-xs text-slate-400">
-                        {new Date(tx.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {new Date(tx.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                        })}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`font-semibold ${tx.type === 'credit' ? 'text-lime-400' : 'text-white'}`}>
-                      {tx.type === 'credit' ? '+' : '-'}{tx.amount.toLocaleString()} FCFA
+                    <p className={`font-semibold ${getTxColor(tx)}`}>
+                      {getTxSign(tx)}{tx.amount.toLocaleString()} FCFA
                     </p>
-                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mt-1 ${
-                      tx.status === 'completed'
-                        ? (tx.type === 'credit' ? 'bg-lime-500/20 text-lime-400' : 'bg-cyan-500/20 text-cyan-400')
-                        : tx.status === 'pending'
-                        ? 'bg-yellow-500/20 text-yellow-400'
-                        : 'bg-red-500/20 text-red-400'
-                    }`}>
-                      {tx.status === 'completed'
-                        ? (tx.type === 'credit' ? 'Succès' : 'Effectué')
-                        : tx.status === 'pending'
-                        ? 'En attente'
-                        : 'Échec'}
+                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mt-1 ${getStatusClass(tx)}`}>
+                      {getStatusLabel(tx)}
                     </span>
                   </div>
                 </div>
@@ -390,7 +428,7 @@ function WalletContent() {
           )}
         </div>
 
-        {/* Bento stats (inchangé) */}
+        {/* Bento stats */}
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white/5 backdrop-blur rounded-2xl p-4">
             <span className="material-symbols-outlined text-cyan-400">monitoring</span>
@@ -405,7 +443,7 @@ function WalletContent() {
         </div>
       </div>
 
-      {/* Modales (inchangées) */}
+      {/* Modal Dépôt */}
       {depositModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setDepositModal(false)}>
           <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl border border-white/10" onClick={e => e.stopPropagation()}>
@@ -450,13 +488,14 @@ function WalletContent() {
                 disabled={loadingAction}
                 className="w-full py-3 bg-lime-500 hover:bg-lime-400 text-slate-950 font-semibold rounded-xl transition disabled:opacity-50"
               >
-                {loadingAction ? 'Traitement...' : 'Continuer vers le paiement'}
+                {loadingAction ? 'Traitement...' : 'Continuer vers le paiement →'}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Modal Retrait */}
       {withdrawModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setWithdrawModal(false)}>
           <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl border border-white/10" onClick={e => e.stopPropagation()}>

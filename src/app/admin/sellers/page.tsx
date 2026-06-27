@@ -1,4 +1,3 @@
-// src/app/admin/sellers/page.tsx
 'use client';
 
 import VendorLayout from '@/components/layouts/VendorLayout';
@@ -52,7 +51,6 @@ function SellerOrdersContent() {
     fetchSellerOrders();
   }, []);
 
-  
   const fetchSellerOrders = async () => {
     setLoading(true);
     try {
@@ -242,14 +240,12 @@ function SellerOrdersContent() {
     );
   };
 
-  // Formatage du numéro de commande plus professionnel (ex: #AGRI-1234)
   const formatOrderNumber = (id: string) => {
     return `#AGR-${id.slice(-6).padStart(6, '0')}`;
   };
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">Commandes reçues</h1>
@@ -265,7 +261,6 @@ function SellerOrdersContent() {
         </div>
       </div>
 
-      {/* Cartes statistiques */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
@@ -285,14 +280,12 @@ function SellerOrdersContent() {
         })}
       </div>
 
-      {/* Vue responsive : tableau sur desktop, cartes sur mobile */}
       {loading ? (
         <div className="text-center py-12 text-gray-500">Chargement...</div>
       ) : orders.length === 0 ? (
         <div className="text-center py-12 text-gray-500">Aucune commande pour le moment.</div>
       ) : (
         <>
-          {/* Version desktop (tableau) */}
           <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
@@ -342,7 +335,6 @@ function SellerOrdersContent() {
             </table>
           </div>
 
-          {/* Version mobile (cartes) */}
           <div className="space-y-3 md:hidden">
             {orders.map(order => (
               <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 cursor-pointer" onClick={() => openDetails(order)}>
@@ -380,7 +372,6 @@ function SellerOrdersContent() {
             ))}
           </div>
 
-          {/* Pagination simplifiée */}
           <div className="flex justify-center items-center gap-3 text-sm text-gray-500">
             <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center disabled:opacity-40"><ChevronLeft size={14} /></button>
             <span className="font-medium">1 / 1</span>
@@ -389,7 +380,7 @@ function SellerOrdersContent() {
         </>
       )}
 
-      {/* Modales (inchangées mais raccourcies) */}
+      {/* Modales */}
       {modalOpen && selectedOrder && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setModalOpen(false)}>
           <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>

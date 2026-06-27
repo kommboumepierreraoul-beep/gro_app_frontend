@@ -7,6 +7,17 @@ import toast from 'react-hot-toast';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 
+// ✅ CORRECTION : Utiliser l'IP au lieu de localhost
+const getImageUrl = (imagePath: string | undefined) => {
+  if (!imagePath) return '/placeholder.png';
+  if (imagePath.startsWith('http')) return imagePath;
+  
+  const clean = imagePath.replace(/^\/+/, '');
+  // ✅ Utilise la même base que votre API
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://10.0.0.118:8000';
+  return `${baseUrl}/${clean}`;
+};
+
 interface Category {
   id: number;
   name: string;
@@ -83,7 +94,11 @@ export default function MarketplacePage() {
           categoriesData = [];
         }
 
-        setProducts(Array.isArray(productsData) ? productsData : []);
+        const parsedProducts = (Array.isArray(productsData) ? productsData : []).map((p: any) => ({
+          ...p,
+          images: typeof p.images === 'string' ? JSON.parse(p.images) : (p.images || [])
+        }));
+        setProducts(parsedProducts);
         setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } catch (err: any) {
         console.error('Erreur chargement marketplace:', err);
@@ -281,7 +296,7 @@ export default function MarketplacePage() {
                     <span className="material-symbols-outlined text-[12px]">local_fire_department</span> Tendance
                   </div>
                   <div className="relative h-48 overflow-hidden bg-slate-100">
-                    <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
+                    <img src={getImageUrl(product.images?.[0])} alt={product.name} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition" />
                   </div>
                   <div className="p-4">
@@ -332,7 +347,7 @@ export default function MarketplacePage() {
                     {isNew && <div className="absolute top-2 right-12 z-10"><div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" /></div>}
                     <button className="absolute right-2 top-2 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur flex items-center justify-center shadow-sm hover:bg-white transition"><span className="material-symbols-outlined text-emerald-600 text-base">favorite</span></button>
                     <div className="h-48 rounded-xl overflow-hidden bg-slate-100">
-                      <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
+                      <img src={getImageUrl(product.images?.[0])} alt={product.name} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
                     </div>
                   </div>
                   <div className="mt-3">
@@ -355,24 +370,24 @@ export default function MarketplacePage() {
         </section>
       </main>
 
-      {/* BOTTOM NAVIGATION - UNIQUE ET RESPONSIVE */}
+      {/* BOTTOM NAVIGATION */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6 sm:gap-10 md:gap-14 bg-slate-800/90 backdrop-blur-md px-5 py-2 rounded-full shadow-lg border border-white/10">
         <Link href="/marketplace" className="flex flex-col items-center text-emerald-400">
           <span className="material-symbols-outlined text-xl sm:text-2xl">storefront</span>
           <span className="text-[9px] sm:text-[10px] font-semibold mt-0.5">Market</span>
         </Link>
-        <button className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition">
-          <span className="material-symbols-outlined text-xl sm:text-2xl">explore</span>
-          <span className="text-[9px] sm:text-[10px] font-semibold mt-0.5">Explore</span>
-        </button>
-        <Link href="/create-shop" className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition">
+        <Link href="/my-shop" className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition">
           <span className="material-symbols-outlined text-xl sm:text-2xl">store</span>
           <span className="text-[9px] sm:text-[10px] font-semibold mt-0.5">Ma boutique</span>
         </Link>
-        <button className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition">
+        <Link href="/orders" className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition">
+          <span className="material-symbols-outlined text-xl sm:text-2xl">shopping_bag</span>
+          <span className="text-[9px] sm:text-[10px] font-semibold mt-0.5">Commandes</span>
+        </Link>
+        <Link href="/profile" className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition">
           <span className="material-symbols-outlined text-xl sm:text-2xl">person</span>
           <span className="text-[9px] sm:text-[10px] font-semibold mt-0.5">Profil</span>
-        </button>
+        </Link>
       </div>
 
       <style jsx>{`

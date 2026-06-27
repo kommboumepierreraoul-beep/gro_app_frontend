@@ -23,45 +23,56 @@ export default function LoginPage() {
     if (val.length < 6) return "Minimum 6 caractères requis.";
     return undefined;
   };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setTouched({ email: true, password: true });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setTouched({ email: true, password: true });
+  const emailErr = validateEmail(email);
+  const passErr = validatePassword(password);
 
-    const emailErr = validateEmail(email);
-    const passErr = validatePassword(password);
+  if (emailErr || passErr) {
+    setErrors({ email: emailErr, password: passErr });
+    return;
+  }
 
-    if (emailErr || passErr) {
-      setErrors({ email: emailErr, password: passErr });
-      return;
-    }
+  setErrors({});
+  setIsLoading(true);
 
-    setErrors({});
-    setIsLoading(true);
+  try {
+    const response = await fetch('http://localhost:8000/api/auth/login', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-    try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+    const data = await response.json();
+    
+    console.log('Réponse login:', data); // ← debug temporaire
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Stocker le token (par exemple dans localStorage ou cookies)
-        localStorage.setItem('auth_token', data.token);
-        // Rediriger vers le tableau de bord ou la page souhaitée
+    if (response.ok && data.token) {
+      // ✅ Sauvegarder dans cookie (pas localStorage) pour que le middleware fonctionne
+      document.cookie = `auth_token=${data.token}; path=/; max-age=${7 * 24 * 3600}`;
+      
+      // ✅ Redirection selon email vérifié et rôle
+      if (!data.user?.email_verified_at) {
+        window.location.href = '/verify-email';
+      } else if (data.user?.role === 'admin') {
         window.location.href = '/dashboard';
       } else {
-        setErrors({ general: data.message || 'Identifiants incorrects' });
+        window.location.href = '/community';
       }
-    } catch (error) {
-      setErrors({ general: 'Erreur de connexion au serveur' });
-    } finally {
-      setIsLoading(false);
+    } else {
+      setErrors({ general: data.message || 'Identifiants incorrects' });
     }
-  };
+  } catch (error) {
+    setErrors({ general: 'Erreur de connexion au serveur' });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const emailError = touched.email ? validateEmail(email) : errors.email;
   const passwordError = touched.password ? validatePassword(password) : errors.password;

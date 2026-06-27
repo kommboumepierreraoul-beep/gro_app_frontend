@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import VendorLayout from '@/components/layouts/VendorLayout';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 
@@ -83,48 +84,32 @@ export default function AdminUsersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#e6fff4] flex items-center justify-center">
-        <div className="text-primary text-lg">Chargement...</div>
-      </div>
+      <VendorLayout>
+        <div className="min-h-screen bg-[#e6fff4] flex items-center justify-center">
+          <div className="text-primary text-lg">Chargement...</div>
+        </div>
+      </VendorLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#e6fff4] text-[#002118] selection:bg-primary-container selection:text-on-primary-container">
-      {/* TopAppBar identique au code.html */}
-      <nav className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm shadow-secondary/5">
-        <div className="flex items-center justify-between px-4 md:px-12 h-20 max-w-[1536px] mx-auto">
-          <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-primary-container/20 rounded-full transition-colors active:scale-95">
-              <span className="material-symbols-outlined text-primary">arrow_back</span>
-            </button>
-            <h1 className="font-bold text-2xl text-primary tracking-tight">Gestion des Utilisateurs</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
-              <input
-                type="text"
-                placeholder="Rechercher par nom ou email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 rounded-full bg-surface-container-low border border-outline-variant/30 focus:ring-2 focus:ring-primary/30 outline-none"
-              />
-            </div>
-            <div className="hidden md:flex items-center gap-3 pl-4 border-l border-outline-variant/30">
-              <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden border border-outline-variant/20">
-                <img
-                  alt="Admin Profile"
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCUxwMAAavCGMwx3mVFywU5upB8IjBHTZszMHHV2h6wQL2YTer5UHPyG-m_sjI6Nawnz9ecM53PgMOi06wVwj0dlMQ5XDUiqrqlIpM3-7OGLeO9sC6vPjyBgcTn3faBMWTQrAoaXcYBJwGZKGtAWiAsGfbp8nMMOxI7Gy9GqGA7McgSBAk1wl5ohyBaZDNUsTCcjhAgCgstua_1NDuiHEU18rM_IR2hpn4bzBXqF6YdVvXfK0ZevMe1olX0xmnBZd__ZiU8B0GIete"
-                />
-              </div>
-            </div>
-          </div>
+    <VendorLayout>
+    <div className="min-h-screen bg-[#e6fff4] text-[#002118] selection:bg-primary-container selection:text-on-primary-container -m-4 sm:-m-6 lg:-m-8 p-4 sm:p-6 lg:p-8">
+      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+        <h1 className="font-bold text-2xl text-primary tracking-tight">Gestion des Utilisateurs</h1>
+        <div className="relative">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+          <input
+            type="text"
+            placeholder="Rechercher par nom ou email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 pr-4 py-2 rounded-full bg-surface-container-low border border-outline-variant/30 focus:ring-2 focus:ring-primary/30 outline-none"
+          />
         </div>
-      </nav>
+      </div>
 
-      <main className="pt-24 pb-32 max-w-[1536px] mx-auto px-4 md:px-12">
+      <main className="max-w-[1536px] mx-auto">
         {/* Stats Cards */}
        <section className="mb-8">
   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -281,5 +266,6 @@ export default function AdminUsersPage() {
         </button>
       </nav>
     </div>
+    </VendorLayout>
   );
 }

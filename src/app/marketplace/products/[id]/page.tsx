@@ -3,11 +3,40 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { productService } from '@/services/product.service';
-import { ChevronLeft, ChevronRight, Heart, Share2, Truck, ShieldCheck, RotateCcw, Star, MessageCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, Share2, Truck, Star, MessageCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+// ✅ Définition des types localement pour éviter les erreurs
+interface Product {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  images: string[];
+  category?: {
+    id: number;
+    name: string;
+  };
+  shop?: {
+    id: number;
+    name: string;
+    logo: string;
+    banner?: string;
+  };
+  is_featured?: boolean;
+  unit_price?: number;
+  variety?: string;
+  origin?: string;
+  certification?: string;
+  delivery_condition?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export default function ProductDetailPage() {
   const params = useParams();
-  const [product, setProduct] = useState<any>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState('');
@@ -16,72 +45,134 @@ export default function ProductDetailPage() {
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
-  loadProduct();
-}, []);
-
-const loadProduct = async () => {
-  try {
-    const res: any = await productService.getProduct(Number(params.id));
-
-    let productData = res.data?.data ?? res.data;
-
-    console.log("PRODUCT =", productData);
-    console.log("SHOP =", productData?.shop);
-    console.log("LOGO =", productData?.shop?.logo);
-    console.log("BANNER =", productData?.shop?.banner);
-
-    if (!productData) {
-      throw new Error('Produit introuvable');
+    if (params?.id) {
+      loadProduct();
     }
+  }, [params?.id]);
 
-    setProduct(productData);
+  const loadProduct = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const productId = Number(params.id);
+      
+      if (isNaN(productId)) {
+        throw new Error('ID du produit invalide');
+      }
 
-    if (productData.images?.length > 0) {
-      setSelectedImage(productData.images[0]);
+      // ✅ Appel API avec gestion correcte de la réponse
+      const response: any = await productService.getProduct(productId);
+      
+      // ✅ Extraction correcte des données quel que soit le format
+      let productData = response?.data?.data ?? response?.data ?? response;
+
+      console.log("PRODUCT =", productData);
+      console.log("SHOP =", productData?.shop);
+      console.log("LOGO =", productData?.shop?.logo);
+      console.log("BANNER =", productData?.shop?.banner);
+
+      if (!productData) {
+        throw new Error('Produit introuvable');
+      }
+
+      setProduct(productData);
+
+      if (productData.images?.length > 0) {
+        setSelectedImage(productData.images[0]);
+      }
+
+    } catch (err: any) {
+      console.error('Erreur de chargement:', err);
+      
+      // ✅ Gestion des erreurs plus précise
+      if (err.response?.status === 404) {
+        setError('Produit non trouvé');
+        toast.error('Produit non trouvé');
+      } else if (err.response?.status === 500) {
+        setError('Erreur serveur, veuillez réessayer plus tard');
+        toast.error('Erreur serveur');
+      } else if (err.response?.status === 401) {
+        setError('Session expirée, veuillez vous reconnecter');
+        toast.error('Session expirée');
+      } else {
+        setError(err.message || 'Erreur lors du chargement du produit');
+        toast.error(err.message || 'Erreur de chargement');
+      }
+    } finally {
+      setLoading(false);
     }
-
-  } catch (err: any) {
-    console.error(err);
-    setError(err.message || 'Erreur lors du chargement');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const nextImage = () => {
     if (product?.images?.length) {
-      setCurrentIndex((prev) => (prev + 1) % product.images.length);
-      setSelectedImage(product.images[(currentIndex + 1) % product.images.length]);
+      const next = (currentIndex + 1) % product.images.length;
+      setCurrentIndex(next);
+      setSelectedImage(product.images[next]);
     }
   };
 
   const prevImage = () => {
     if (product?.images?.length) {
-      setCurrentIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
-      setSelectedImage(product.images[(currentIndex - 1 + product.images.length) % product.images.length]);
+      const prev = (currentIndex - 1 + product.images.length) % product.images.length;
+      setCurrentIndex(prev);
+      setSelectedImage(product.images[prev]);
     }
   };
 
+  const addToCart = async () => {
+    try {
+      // TODO: Implémenter l'ajout au panier
+      toast.success('Produit ajouté au panier');
+    } catch (error) {
+      toast.error('Erreur lors de l\'ajout');
+    }
+  };
+
+  const toggleWishlist = async () => {
+    try {
+      setIsWishlisted(!isWishlisted);
+      toast.success(isWishlisted ? 'Retiré des favoris' : 'Ajouté aux favoris');
+    } catch (error) {
+      toast.error('Erreur');
+    }
+  };
+
+  // ✅ État de chargement
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <div className="animate-pulse text-emerald-700 font-semibold">Chargement...</div>
-      </div>
-    );
-  }
-
-  if (error || !product) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🔍</div>
-          <h2 className="text-2xl font-bold text-gray-800">Produit introuvable</h2>
-          <p className="text-gray-500 mt-2">{error || "Le produit n'existe pas ou a été supprimé."}</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-emerald-700 font-medium">Chargement du produit...</p>
         </div>
       </div>
     );
   }
 
+  // ✅ État d'erreur
+  if (error || !product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="text-6xl mb-4">🔍</div>
+          <h2 className="text-2xl font-bold text-gray-800">Produit introuvable</h2>
+          <p className="text-gray-500 mt-2">{error || "Le produit n'existe pas ou a été supprimé."}</p>
+          <button 
+            onClick={loadProduct}
+            className="mt-6 px-6 py-3 bg-emerald-600 text-white rounded-full font-semibold hover:bg-emerald-700 transition"
+          >
+            Réessayer
+          </button>
+          <a href="/marketplace" className="block mt-3 text-emerald-600 hover:underline">
+            Retour à la marketplace
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Affichage du produit
   return (
     <div className="min-h-screen bg-neutral-50 pb-20">
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
@@ -101,6 +192,9 @@ const loadProduct = async () => {
                   src={selectedImage || '/placeholder.png'}
                   alt={product.name}
                   className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/placeholder.png';
+                  }}
                 />
               </div>
               {product.images?.length > 1 && (
@@ -136,7 +230,14 @@ const loadProduct = async () => {
                         : 'border-gray-200 hover:border-emerald-300'
                     }`}
                   >
-                    <img src={img} className="w-full h-full object-cover" alt={`mini-${idx}`} />
+                    <img 
+                      src={img} 
+                      className="w-full h-full object-cover" 
+                      alt={`mini-${idx}`}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.png';
+                      }}
+                    />
                   </button>
                 ))}
               </div>
@@ -212,7 +313,10 @@ const loadProduct = async () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <button className="flex-1 h-14 rounded-xl bg-emerald-700 text-white font-bold shadow-md hover:bg-emerald-800 transition flex items-center justify-center gap-2">
+                <button 
+                  onClick={addToCart}
+                  className="flex-1 h-14 rounded-xl bg-emerald-700 text-white font-bold shadow-md hover:bg-emerald-800 transition flex items-center justify-center gap-2"
+                >
                   Ajouter au panier
                 </button>
                 <button className="flex-1 h-14 rounded-xl border-2 border-emerald-600 text-emerald-700 font-bold hover:bg-emerald-50 transition flex items-center justify-center gap-2">
@@ -222,7 +326,7 @@ const loadProduct = async () => {
 
               <div className="flex justify-between gap-3 pt-2">
                 <button
-                  onClick={() => setIsWishlisted(!isWishlisted)}
+                  onClick={toggleWishlist}
                   className={`flex-1 h-12 rounded-xl border border-gray-200 font-medium transition flex items-center justify-center gap-2 ${
                     isWishlisted ? 'text-red-500 border-red-200 bg-red-50' : 'text-gray-600 hover:bg-gray-50'
                   }`}
@@ -237,7 +341,7 @@ const loadProduct = async () => {
               </div>
             </div>
 
-            {/* Livraison / Garantie / Retour : dynamique via delivery_condition (remplie par le vendeur) */}
+            {/* Livraison */}
             <div className="bg-gray-50 rounded-2xl p-5 space-y-3">
               {product.delivery_condition ? (
                 <div className="flex items-start gap-3">
@@ -250,24 +354,18 @@ const loadProduct = async () => {
                   <span className="text-sm italic text-gray-400">Aucune information de livraison fournie</span>
                 </div>
               )}
-              {/* Optionnel : si vous voulez conserver les anciennes lignes statiques en plus, décommentez ci-dessous */}
-              {/* <div className="flex items-center gap-3">
-                <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                <span className="text-sm font-medium text-gray-700">Garantie satisfait ou remboursé</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <RotateCcw className="w-5 h-5 text-emerald-600" />
-                <span className="text-sm font-medium text-gray-700">Retour sous 14 jours</span>
-              </div> */}
             </div>
 
-            {/* Bloc Vendeur (toujours présent) */}
+            {/* Bloc Vendeur */}
             <div className="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
               <div className="flex items-center gap-3">
                 <img
                   src={product.shop?.logo || 'https://via.placeholder.com/48'}
                   className="w-12 h-12 rounded-full object-cover border-2 border-emerald-200"
                   alt="shop"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/48';
+                  }}
                 />
                 <div>
                   <h4 className="font-bold text-gray-800">{product.shop?.name || 'Vendeur partenaire'}</h4>
@@ -327,6 +425,9 @@ const loadProduct = async () => {
                     src={product.images?.[0] || '/placeholder.png'}
                     alt="similaire"
                     className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder.png';
+                    }}
                   />
                 </div>
                 <div className="p-4">

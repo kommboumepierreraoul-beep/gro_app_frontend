@@ -156,37 +156,23 @@ function OrdersContent() {
     } finally { setPaymentLoading(false); }
   };
 
-const payWithMonetbil = async () => {
-  if (!pendingOrderId || !currentCartItemId) return;
-  setPaymentLoading(true);
-  try {
-    const res = await api.post(`/orders/${pendingOrderId}/pay/monetbil`);
-    window.location.href = res.data.authorization_url;
-  } catch (err: any) {
-    toast.error(err?.response?.data?.message || "Erreur Mobile Money");
-    setPaymentLoading(false);
-  }
-};
-
-const payWithNotchPay = async () => {
-  if (!pendingOrderId || !currentCartItemId) return;
-  setPaymentLoading(true);
-  try {
-    const res = await api.post(`/orders/${pendingOrderId}/pay/notchpay`);
-    const item = items.find(i => i.id === currentCartItemId);
-    localStorage.setItem("pending_cart_item", JSON.stringify({
-      cartItemId: currentCartItemId,
-      address: currentAddress,
-      orderId: pendingOrderId,
-      reference: res.data.reference,
-      orderNumber: res.data.order_number,
-    }));
-    window.location.href = res.data.authorization_url;
-  } catch (err: any) {
-    toast.error(err?.response?.data?.message || "Erreur NotchPay");
-    setPaymentLoading(false);
-  }
-};
+  const payWithMonetbil = async () => {
+    if (!pendingOrderId) return;
+    setPaymentLoading(true);
+    try {
+      const res = await api.post(`/orders/${pendingOrderId}/pay/monetbil`);
+      if (res.data.success) {
+        toast.success(`Paiement initié ! Composez ${res.data.ussd} sur votre téléphone pour confirmer.`);
+        setPaymentModalOpen(false);
+      } else {
+        toast.error(res.data.message || 'Erreur Monetbil');
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Erreur Mobile Money');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
 
   const handleConfirmDelivery = async (orderId: number) => {
     try {
@@ -380,7 +366,7 @@ const payWithNotchPay = async () => {
                       )}
 
                       {/* Signaler un problème - visible pour paid, preparing, shipping, delivered (mais pas completed ni cancelled) */}
-                      {(order.status === 'paid' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered') && order.status !== 'refunded' && order.status !== 'replaced' && (
+                      {(order.status === 'paid' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered') && (
                         <Link href={`/disputes/create/${order.id}`}>
                           <button className="px-4 py-2 border border-red-200 text-red-600 text-sm rounded-full flex items-center gap-1 hover:bg-red-50 transition">
                             <AlertCircle size={16} /> Signaler un problème

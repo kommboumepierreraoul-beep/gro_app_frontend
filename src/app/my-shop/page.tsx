@@ -51,7 +51,11 @@ function MyShopContent() {
         const shopData = parse(shopRes.data)?.data ?? parse(shopRes.data);
         const productsData = parse(productsRes.data)?.data ?? parse(productsRes.data);
         setShop(shopData?.id ? shopData : null);
-        setProducts(Array.isArray(productsData) ? productsData : []);
+        const parsed = (Array.isArray(productsData) ? productsData : []).map((p: any) => ({
+          ...p,
+          images: typeof p.images === "string" ? JSON.parse(p.images) : (p.images || [])
+        }));
+        setProducts(parsed);
       } catch (err: any) {
         setError(err?.response?.data?.message || 'Erreur de chargement');
         toast.error('Erreur de chargement');
