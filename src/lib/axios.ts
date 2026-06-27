@@ -1,26 +1,40 @@
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import axios from "axios";
+import { tokenService } from "@/lib/auth-token";
 
 const api = axios.create({
- baseURL: 'http://localhost:8000/api',
-    headers: { 
-        'Content-Type': 'application/json', 
-        'Accept': 'application/json'
-    },
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    Authorization: "Bearer " + tokenService.get(),
+  },
 });
 
+// REQUEST INTERCEPTOR
 api.interceptors.request.use((config) => {
-    const token = Cookies.get('auth_token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+  const token = tokenService.get();
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
 });
 
-// ✅ Intercepteur response simplifié — axios parse déjà le JSON automatiquement
+// RESPONSE INTERCEPTOR
 api.interceptors.response.use(
-    (response) => response,  // ← ne touche plus à response.data
-    (error) => Promise.reject(error)
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      tokenService.remove();
+
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
+
+    return Promise.reject(error);
+  },
 );
 
 export default api;

@@ -55,6 +55,10 @@ const token = request.cookies.get("auth_token")?.value; // Mettez "auth_token" i
   // /if (isPublicRoute && token) {
   //   return NextResponse.redirect(new URL("/dashboard", request.url));
   // }
+  // if (isPublicRoute && token) {
+  //   return NextResponse.redirect(new URL( request.url));
+  // }
+
   /*
     |--------------------------------------------------------------------------
     | 6. VALIDATION OPTIONNELLE DU TOKEN
