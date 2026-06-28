@@ -5,6 +5,9 @@ import { aiService } from "@/services/Ai/ai.service";
 import { ChatRequest, AIConversation, AIMessage } from "@/types/ai.types";
 import { tokenService } from "@/lib/auth-token";
 
+// ✅ Définir le type des langues supportées
+type SupportedLanguage = "fr" | "en" | "es" | "de";
+
 export function useAIChat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +20,6 @@ export function useAIChat() {
     last_page: 1,
   });
 
-  // ✅ Éviter les appels multiples
   const hasLoaded = useRef(false);
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -86,14 +88,18 @@ export function useAIChat() {
 
   // ── Résumé ──────────────────────────────────────────────────────────────────
 
+  // ✅ Correction du type language
   const summarize = useCallback(
-    async (content: string, language = "fr"): Promise<string> => {
+    async (
+      content: string,
+      language: SupportedLanguage = "fr",
+    ): Promise<string> => {
       setLoading(true);
       setError(null);
       try {
         const response = await aiService.summarizeContent({
           content,
-          language,
+          language, // ✅ Maintenant typé correctement
         });
         return response.summary;
       } catch (err: any) {
@@ -108,12 +114,19 @@ export function useAIChat() {
 
   // ── Amélioration ────────────────────────────────────────────────────────────
 
+  // ✅ Correction du type language
   const improveText = useCallback(
-    async (content: string, language = "fr"): Promise<string> => {
+    async (
+      content: string,
+      language: SupportedLanguage = "fr",
+    ): Promise<string> => {
       setLoading(true);
       setError(null);
       try {
-        const response = await aiService.improveText({ content, language });
+        const response = await aiService.improveText({
+          content,
+          language, // ✅ Maintenant typé correctement
+        });
         return response.improved;
       } catch (err: any) {
         handleError(err, "Erreur lors de l'amélioration du texte");
@@ -200,7 +213,7 @@ export function useAIChat() {
     [currentConversation, handleError],
   );
 
-  // ── Auto-chargement (CORRIGÉ) ─────────────────────────────────────────────
+  // ── Auto-chargement ─────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (tokenService.get() && !hasLoaded.current) {

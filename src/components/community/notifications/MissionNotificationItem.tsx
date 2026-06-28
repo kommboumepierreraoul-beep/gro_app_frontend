@@ -17,12 +17,15 @@ import {
   Flag,
   Bell,
 } from "lucide-react";
-import { MissionNotification } from "@/lib/missions/notification.type";
+import {
+  MissionNotification,
+  MissionNotificationType,
+} from "@/lib/missions/notification.type";
 
 // ─── Configuration des icônes ───────────────────────────────────────────────
 
 const iconConfig: Record<
-  string,
+  MissionNotificationType,
   { icon: React.ReactNode; bg: string; color: string }
 > = {
   new_mission: {
@@ -87,6 +90,18 @@ const iconConfig: Record<
   },
 };
 
+// ─── Fonction utilitaire pour obtenir la configuration ──────────────────────
+
+function getIconConfig(type: MissionNotificationType) {
+  return (
+    iconConfig[type] ?? {
+      icon: <Bell size={12} strokeWidth={2.5} />,
+      bg: "rgba(114,121,110,0.1)",
+      color: "#72796e",
+    }
+  );
+}
+
 // ─── Composant Notification Item ────────────────────────────────────────────
 
 interface MissionNotificationItemProps {
@@ -109,14 +124,11 @@ export function MissionNotificationItem({
     router.push(missionNotificationService.resolveUrl(notification));
   };
 
-  const cfg = iconConfig[notification.type] ?? {
-    icon: <Bell size={12} strokeWidth={2.5} />,
-    bg: "rgba(114,121,110,0.1)",
-    color: "#72796e",
-  };
-
+  // ✅ Typer correctement le type de notification
+  const notificationType = notification.type as MissionNotificationType;
+  const cfg = getIconConfig(notificationType);
   const isRead = !!notification.read_at;
-  const iconEmoji = missionNotificationService.iconFor(notification.type);
+  const iconEmoji = missionNotificationService.iconFor(notificationType);
 
   return (
     <div
@@ -198,7 +210,7 @@ export function MissionNotificationItem({
               color: "#72796e",
             }}
           >
-            {missionNotificationService.labelFor(notification.type)}
+            {missionNotificationService.labelFor(notificationType)}
           </span>
         </div>
       </div>

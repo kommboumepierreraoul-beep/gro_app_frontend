@@ -10,7 +10,6 @@ import {
   Info,
   MoreHorizontal,
   CheckCheck,
-  Clock,
   Download,
   RotateCw,
   ChevronDown,
@@ -68,7 +67,8 @@ export default function MessageBubble({
   const [showStatusTooltip, setShowStatusTooltip] = useState(false);
   const [rotation, setRotation] = useState(0);
   const actionButtonRef = useRef<HTMLDivElement>(null);
-  const statusTimeoutRef = useRef<NodeJS.Timeout>();
+  // React 19 : useRef exige une valeur initiale explicite
+  const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -100,11 +100,12 @@ export default function MessageBubble({
           window.open(message.media_url, "_blank");
         }
         break;
-      case "rotate":
+      case "rotate": {
         const newRotation = (rotation + 90) % 360;
         setRotation(newRotation);
         onRotate?.(message.id, newRotation);
         break;
+      }
       case "transfer":
         onTransfer?.(message);
         break;
@@ -168,87 +169,81 @@ export default function MessageBubble({
     });
   };
 
+  const startStatusTooltip = () => {
+    statusTimeoutRef.current = setTimeout(
+      () => setShowStatusTooltip(true),
+      300,
+    );
+  };
+
+  const clearStatusTooltip = () => {
+    if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+    setShowStatusTooltip(false);
+  };
+
   const getStatusIcon = () => {
     if (!message.isOwn) return null;
-    
-    // Message lu (read)
+
+    const tooltipNode = showStatusTooltip ? (
+      <div
+        className="absolute bottom-full right-0 mb-1 px-2 py-1 rounded-lg text-[10px] whitespace-nowrap z-10 shadow-lg"
+        style={{ background: "#191c18", color: "#fff" }}
+      >
+        {message.status === "read"
+          ? "Lu"
+          : message.status === "delivered"
+            ? "Délivré"
+            : "Envoyé"}
+      </div>
+    ) : null;
+
     if (message.status === "read") {
       return (
-        <div 
-          className="relative flex items-center cursor-pointer group/status"
-          onMouseEnter={() => {
-            statusTimeoutRef.current = setTimeout(() => setShowStatusTooltip(true), 300);
-          }}
-          onMouseLeave={() => {
-            clearTimeout(statusTimeoutRef.current);
-            setShowStatusTooltip(false);
-          }}
+        <div
+          className="relative flex items-center cursor-pointer"
+          onMouseEnter={startStatusTooltip}
+          onMouseLeave={clearStatusTooltip}
         >
           <CheckCheck size={12} style={{ color: "#34b7f1" }} />
-          <span className="text-[9px] ml-0.5" style={{ color: "#34b7f1" }}>Lu</span>
-          
-          {showStatusTooltip && (
-            <div className="absolute bottom-full right-0 mb-1 px-2 py-1 rounded-lg text-[10px] whitespace-nowrap z-10 shadow-lg"
-              style={{ background: "#191c18", color: "#fff" }}>
-              Lu
-            </div>
-          )}
+          <span className="text-[9px] ml-0.5" style={{ color: "#34b7f1" }}>
+            Lu
+          </span>
+          {tooltipNode}
         </div>
       );
     }
-    
-    // Message délivré (delivered)
+
     if (message.status === "delivered") {
       return (
-        <div 
-          className="relative flex items-center cursor-pointer group/status"
-          onMouseEnter={() => {
-            statusTimeoutRef.current = setTimeout(() => setShowStatusTooltip(true), 300);
-          }}
-          onMouseLeave={() => {
-            clearTimeout(statusTimeoutRef.current);
-            setShowStatusTooltip(false);
-          }}
+        <div
+          className="relative flex items-center cursor-pointer"
+          onMouseEnter={startStatusTooltip}
+          onMouseLeave={clearStatusTooltip}
         >
           <CheckCheck size={12} style={{ color: "#72796e" }} />
-          <span className="text-[9px] ml-0.5" style={{ color: "#72796e" }}>Délivré</span>
-          
-          {showStatusTooltip && (
-            <div className="absolute bottom-full right-0 mb-1 px-2 py-1 rounded-lg text-[10px] whitespace-nowrap z-10 shadow-lg"
-              style={{ background: "#191c18", color: "#fff" }}>
-              Délivré
-            </div>
-          )}
+          <span className="text-[9px] ml-0.5" style={{ color: "#72796e" }}>
+            Délivré
+          </span>
+          {tooltipNode}
         </div>
       );
     }
-    
-    // Message envoyé (sent) - statut par défaut
+
     return (
-      <div 
-        className="relative flex items-center cursor-pointer group/status"
-        onMouseEnter={() => {
-          statusTimeoutRef.current = setTimeout(() => setShowStatusTooltip(true), 300);
-        }}
-        onMouseLeave={() => {
-          clearTimeout(statusTimeoutRef.current);
-          setShowStatusTooltip(false);
-        }}
+      <div
+        className="relative flex items-center cursor-pointer"
+        onMouseEnter={startStatusTooltip}
+        onMouseLeave={clearStatusTooltip}
       >
         <Check size={12} style={{ color: "#72796e" }} />
-        <span className="text-[9px] ml-0.5" style={{ color: "#72796e" }}>Envoyé</span>
-        
-        {showStatusTooltip && (
-          <div className="absolute bottom-full right-0 mb-1 px-2 py-1 rounded-lg text-[10px] whitespace-nowrap z-10 shadow-lg"
-            style={{ background: "#191c18", color: "#fff" }}>
-            Envoyé
-          </div>
-        )}
+        <span className="text-[9px] ml-0.5" style={{ color: "#72796e" }}>
+          Envoyé
+        </span>
+        {tooltipNode}
       </div>
     );
   };
 
-  // Empêcher le scroll du body quand le modal est ouvert
   useEffect(() => {
     if (showMediaModal) {
       document.body.style.overflow = "hidden";
@@ -257,11 +252,10 @@ export default function MessageBubble({
     }
     return () => {
       document.body.style.overflow = "unset";
-      clearTimeout(statusTimeoutRef.current);
+      if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
     };
   }, [showMediaModal]);
 
-  // Détection si le message reply contient un média
   const hasRepliedMedia = message.reply_to?.media_url;
   const isRepliedVideo = message.reply_to?.media_type === "video";
 
@@ -274,14 +268,13 @@ export default function MessageBubble({
         }`}
         onContextMenu={handleContextMenu}
       >
-        {/* ================= MESSAGE RÉPONDU (REPLY QUOTE) ================= */}
+        {/* REPLY QUOTE */}
         {message.reply_to && (
           <div
             onClick={scrollToRepliedMessage}
             className="relative group cursor-pointer mb-1 max-w-full transition-all duration-200 hover:opacity-80"
             style={{ maxWidth: "280px" }}
           >
-            {/* Ligne de connexion verticale */}
             <div
               className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full"
               style={{
@@ -290,7 +283,6 @@ export default function MessageBubble({
                   : "#154212",
               }}
             />
-
             <div
               className="pl-2.5 py-1.5 pr-2 rounded-lg"
               style={{
@@ -299,37 +291,26 @@ export default function MessageBubble({
                   : "rgba(21,66,18,0.06)",
               }}
             >
-              {/* En-tête de la réponse */}
               <div className="flex items-center gap-1.5 mb-0.5">
                 <Reply
                   size={10}
-                  style={{
-                    color: message.isOwn ? "#bcf0ae" : "#154212",
-                  }}
+                  style={{ color: message.isOwn ? "#bcf0ae" : "#154212" }}
                 />
                 <span
                   className="text-[10px] font-semibold truncate"
-                  style={{
-                    color: message.isOwn ? "#bcf0ae" : "#154212",
-                  }}
+                  style={{ color: message.isOwn ? "#bcf0ae" : "#154212" }}
                 >
                   {message.reply_to.sender?.firstname || "Utilisateur"}
                 </span>
               </div>
-
-              {/* Contenu du message répondu */}
               <div className="flex items-center gap-1.5">
                 {hasRepliedMedia && (
                   <div className="flex-shrink-0">
-                    {isRepliedVideo ? (
-                      <div className="w-3 h-3 rounded bg-black/20 flex items-center justify-center">
-                        <span className="text-[8px]">🎬</span>
-                      </div>
-                    ) : (
-                      <div className="w-3 h-3 rounded bg-black/20 flex items-center justify-center">
-                        <span className="text-[8px]">🖼️</span>
-                      </div>
-                    )}
+                    <div className="w-3 h-3 rounded bg-black/20 flex items-center justify-center">
+                      <span className="text-[8px]">
+                        {isRepliedVideo ? "🎬" : "🖼️"}
+                      </span>
+                    </div>
                   </div>
                 )}
                 <p
@@ -345,7 +326,7 @@ export default function MessageBubble({
           </div>
         )}
 
-        {/* ================= MÉDIA DU MESSAGE ================= */}
+        {/* MÉDIA */}
         {message.media_url && (
           <div
             className="mb-1 rounded-xl overflow-hidden cursor-pointer group relative"
@@ -387,7 +368,7 @@ export default function MessageBubble({
           </div>
         )}
 
-        {/* ================= BULLE DU MESSAGE ================= */}
+        {/* BULLE */}
         <div className="relative group max-w-full">
           <div
             className="px-3.5 py-2.5 text-sm leading-relaxed relative break-words"
@@ -410,10 +391,8 @@ export default function MessageBubble({
                   }
             }
           >
-            {/* Contenu du message */}
             {message.content || (message.media_url && "📎 Média")}
 
-            {/* Chevron pour ouvrir le menu d'actions */}
             <button
               onClick={() => setShowActions(true)}
               className="absolute -bottom-2 -right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-md hover:scale-105 active:scale-95"
@@ -430,14 +409,15 @@ export default function MessageBubble({
           </div>
         </div>
 
-        {/* ================= TIMESTAMP & STATUS ================= */}
+        {/* TIMESTAMP & STATUS */}
         <div className="flex items-center gap-1.5 px-1 mt-0.5">
-          <span 
+          <span
             className="text-[10px] cursor-pointer hover:underline"
             style={{ color: "#72796e" }}
             onClick={() => {
-              const fullDate = formatFullDate(message.createdAt);
-              toast.success(`Message du ${fullDate}`, { duration: 2000 });
+              toast.success(`Message du ${formatFullDate(message.createdAt)}`, {
+                duration: 2000,
+              });
             }}
           >
             {formatTime(message.createdAt)}
@@ -446,7 +426,7 @@ export default function MessageBubble({
         </div>
       </div>
 
-      {/* ================= MODAL D'ACTIONS ================= */}
+      {/* MODAL ACTIONS */}
       {showActions && (
         <>
           <div
@@ -464,7 +444,6 @@ export default function MessageBubble({
             }}
           >
             <div className="py-2 max-h-[80vh] overflow-y-auto">
-              {/* Info utilisateur */}
               {!message.isOwn && message.sender && (
                 <div
                   className="flex items-center gap-3 px-4 py-3 border-b"
@@ -493,7 +472,6 @@ export default function MessageBubble({
                 </div>
               )}
 
-              {/* Info statut pour les messages envoyés */}
               {message.isOwn && (
                 <div
                   className="px-4 py-2 border-b"
@@ -501,38 +479,44 @@ export default function MessageBubble({
                 >
                   <p className="text-xs" style={{ color: "#72796e" }}>
                     <span className="font-semibold">Statut :</span>{" "}
-                    {message.status === "read" 
-                      ? "Lu ✓✓" 
-                      : message.status === "delivered" 
-                        ? "Délivré ✓✓" 
+                    {message.status === "read"
+                      ? "Lu ✓✓"
+                      : message.status === "delivered"
+                        ? "Délivré ✓✓"
                         : "Envoyé ✓"}
                   </p>
-                  <p className="text-[10px] mt-0.5" style={{ color: "#72796e" }}>
+                  <p
+                    className="text-[10px] mt-0.5"
+                    style={{ color: "#72796e" }}
+                  >
                     {formatFullDate(message.createdAt)}
                   </p>
                 </div>
               )}
 
-              {/* Actions principales */}
-              <button
-                onClick={() => handleAction("reply")}
-                className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 active:bg-gray-100"
-              >
-                <Reply size={18} style={{ color: "#72796e" }} />
-                <span className="text-sm" style={{ color: "#191c18" }}>
-                  Répondre
-                </span>
-              </button>
-
-              <button
-                onClick={() => handleAction("forward")}
-                className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 active:bg-gray-100"
-              >
-                <Forward size={18} style={{ color: "#72796e" }} />
-                <span className="text-sm" style={{ color: "#191c18" }}>
-                  Transférer
-                </span>
-              </button>
+              {[
+                {
+                  action: "reply",
+                  icon: <Reply size={18} style={{ color: "#72796e" }} />,
+                  label: "Répondre",
+                },
+                {
+                  action: "forward",
+                  icon: <Forward size={18} style={{ color: "#72796e" }} />,
+                  label: "Transférer",
+                },
+              ].map(({ action, icon, label }) => (
+                <button
+                  key={action}
+                  onClick={() => handleAction(action)}
+                  className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 active:bg-gray-100"
+                >
+                  {icon}
+                  <span className="text-sm" style={{ color: "#191c18" }}>
+                    {label}
+                  </span>
+                </button>
+              ))}
 
               {message.media_url && (
                 <>
@@ -545,7 +529,6 @@ export default function MessageBubble({
                       Télécharger
                     </span>
                   </button>
-
                   {message.media_type !== "video" && (
                     <button
                       onClick={() => handleAction("rotate")}
@@ -560,25 +543,29 @@ export default function MessageBubble({
                 </>
               )}
 
-              <button
-                onClick={() => handleAction("copy")}
-                className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 active:bg-gray-100"
-              >
-                <Copy size={18} style={{ color: "#72796e" }} />
-                <span className="text-sm" style={{ color: "#191c18" }}>
-                  Copier
-                </span>
-              </button>
-
-              <button
-                onClick={() => handleAction("info")}
-                className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 active:bg-gray-100"
-              >
-                <Info size={18} style={{ color: "#72796e" }} />
-                <span className="text-sm" style={{ color: "#191c18" }}>
-                  Informations
-                </span>
-              </button>
+              {[
+                {
+                  action: "copy",
+                  icon: <Copy size={18} style={{ color: "#72796e" }} />,
+                  label: "Copier",
+                },
+                {
+                  action: "info",
+                  icon: <Info size={18} style={{ color: "#72796e" }} />,
+                  label: "Informations",
+                },
+              ].map(({ action, icon, label }) => (
+                <button
+                  key={action}
+                  onClick={() => handleAction(action)}
+                  className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 active:bg-gray-100"
+                >
+                  {icon}
+                  <span className="text-sm" style={{ color: "#191c18" }}>
+                    {label}
+                  </span>
+                </button>
+              ))}
 
               {message.isOwn && (
                 <>
@@ -595,7 +582,6 @@ export default function MessageBubble({
               )}
             </div>
 
-            {/* Bouton Annuler */}
             <div className="border-t" style={{ borderColor: "#f0f0f0" }}>
               <button
                 onClick={() => setShowActions(false)}
@@ -609,7 +595,7 @@ export default function MessageBubble({
         </>
       )}
 
-      {/* ================= MODAL MÉDIA PLEIN ÉCRAN ================= */}
+      {/* MODAL MÉDIA PLEIN ÉCRAN */}
       {showMediaModal && message.media_url && (
         <>
           <div
@@ -629,20 +615,17 @@ export default function MessageBubble({
                   className="max-w-full max-h-[90vh] rounded-2xl"
                 />
               ) : (
-                <div className="relative">
-                  <Image
-                    src={message.media_url}
-                    alt="Media plein écran"
-                    width={800}
-                    height={800}
-                    className="object-contain rounded-2xl"
-                    style={{ transform: `rotate(${rotation}deg)` }}
-                    unoptimized
-                  />
-                </div>
+                <Image
+                  src={message.media_url}
+                  alt="Media plein écran"
+                  width={800}
+                  height={800}
+                  className="object-contain rounded-2xl"
+                  style={{ transform: `rotate(${rotation}deg)` }}
+                  unoptimized
+                />
               )}
 
-              {/* Boutons de contrôle */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-black/50 rounded-full p-2 backdrop-blur-md">
                 {message.media_type !== "video" && (
                   <button
@@ -681,7 +664,7 @@ export default function MessageBubble({
         </>
       )}
 
-      {/* ================= MODAL DE CONFIRMATION SUPPRESSION ================= */}
+      {/* MODAL SUPPRESSION */}
       {showDeleteConfirm && (
         <>
           <div
@@ -736,8 +719,12 @@ export default function MessageBubble({
 
       <style jsx global>{`
         @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
         }
         @keyframes slideUp {
           from {
