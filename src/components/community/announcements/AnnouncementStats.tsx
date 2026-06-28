@@ -19,12 +19,6 @@ export function AnnouncementStats({
         <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
         <span className="text-sm text-gray-600">{likesCount} j'aime</span>
       </div>
-      {viewsCount && viewsCount > 0 && (
-        <div className="flex items-center gap-2">
-          <Eye className="w-5 h-5 text-gray-400" />
-          <span className="text-sm text-gray-600">{viewsCount} vues</span>
-        </div>
-      )}
       {expiresAt && (
         <div className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-orange-400" />

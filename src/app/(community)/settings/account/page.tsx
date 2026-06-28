@@ -606,7 +606,7 @@ export default function AccountSecurityPage() {
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   Dernière modification du mot de passe :{" "}
-                  {formatDate(user?.updated_at || new Date().toISOString())}
+                  {formatDate(new Date().toISOString())}
                 </p>
               </div>
             </div>

@@ -1,11 +1,12 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import type { CropState } from "./types";
 
 export function useCropCanvas(
   src: string,
-  cropState: CropState
+  cropState: CropState,
 ): React.RefObject<HTMLCanvasElement> {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // ✅ Correction : Utiliser le type non-nullable avec un cast
+  const canvasRef = useRef<HTMLCanvasElement>(null!); // Ajout de "null!"
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -20,10 +21,7 @@ export function useCropCanvas(
       canvas.height = SIZE;
       ctx.clearRect(0, 0, SIZE, SIZE);
       ctx.save();
-      ctx.translate(
-        SIZE / 2 + cropState.offsetX,
-        SIZE / 2 + cropState.offsetY
-      );
+      ctx.translate(SIZE / 2 + cropState.offsetX, SIZE / 2 + cropState.offsetY);
       ctx.rotate((cropState.rotation * Math.PI) / 180);
       ctx.scale(cropState.scale, cropState.scale);
       const aspect = img.width / img.height;

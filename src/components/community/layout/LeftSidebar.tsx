@@ -15,6 +15,7 @@ import {
   Target,
   HelpCircle,
   LogOut,
+  Search,
 } from "lucide-react";
 
 import { useAuthStore } from "@/stores/auth.store";
@@ -93,6 +94,11 @@ export function LeftSidebar() {
       href: "/missions",
       icon: Target,
       label: "Missions",
+    },
+    {
+      href: "/search",
+      icon: Search,
+      label: "Recherche",
     },
   ];
 
@@ -175,7 +181,7 @@ export function LeftSidebar() {
                 badge={badge}
                 icon={
                   <Icon
-                    className="w-6 h-6"
+                    className="w-4 h-4"
                     strokeWidth={isActive(href) ? 2.2 : 1.8}
                   />
                 }
@@ -205,7 +211,7 @@ export function LeftSidebar() {
                 active={isActive(href)}
                 icon={
                   <Icon
-                    className="w-5 h-5"
+                    className="w-4 h-4"
                     strokeWidth={isActive(href) ? 2.2 : 1.8}
                   />
                 }

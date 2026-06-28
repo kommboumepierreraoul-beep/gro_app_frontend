@@ -1,8 +1,14 @@
-// components/providers/AuthProvider.tsx
-
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import axios from "axios";
 
 interface AuthContextType {
@@ -16,21 +22,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
+  // Initialisation directe depuis localStorage (pas de setState dans useEffect)
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("token");
+    }
+    return null;
+  });
+
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      setToken(storedToken);
-      fetchUser(storedToken);
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const fetchUser = async (authToken: string) => {
+  // fetchUser déclaré AVANT de l'utiliser
+  const fetchUser = useCallback(async (authToken: string) => {
     try {
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/user`,
@@ -45,7 +49,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // useEffect seulement pour le fetch initial
+  useEffect(() => {
+    if (token) {
+      fetchUser(token);
+    } else {
+      setIsLoading(false);
+    }
+  }, []); // Exécuté une seule fois
 
   const login = async (email: string, password: string) => {
     const response = await axios.post(

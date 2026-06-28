@@ -3,6 +3,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { TrendingDown, TrendingUp } from "lucide-react";
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "default" | "outlined" | "ghost";
@@ -225,7 +226,7 @@ export function CardStat({
               <TrendingDown size={16} style={{ color: "#b91c1c" }} />
             )}
             {trend.direction === "neutral" && (
-              <span size={16} style={{ color: "#72796e" }}>
+              <span  style={{ color: "#72796e" }}>
                 —
               </span>
             )}

@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
+  Bell,
 } from "lucide-react";
 
 const links = [
@@ -32,11 +33,6 @@ const links = [
     label: "Agenda",
     icon: Calendar,
     color: "#805533",
-  },
-  {
-    href: "/missions/agenda",
-    label: "Agenda",
-    icon: Calendar
   },
   {
     href: "/missions/map",
@@ -60,6 +56,12 @@ const links = [
     href: "/missions/applications",
     label: "Candidatures",
     icon: Users,
+    color: "#7c3aed",
+  },
+  {
+    href: "/missions/notification",
+    label: "Notifications",
+    icon: Bell,
     color: "#7c3aed",
   },
   {
@@ -252,13 +254,6 @@ export default function MissionNavbar() {
               })}
             </div>
 
-            {/* Footer mobile */}
-            <div className="mt-4 pt-3 border-t border-[rgba(194,201,187,0.2)]">
-              <div className="flex items-center justify-between px-2">
-                <span className="text-xs text-[#72796e]">Version 1.0.0</span>
-                <span className="text-xs text-[#72796e]">© 2024 Missions</span>
-              </div>
-            </div>
           </div>
         </div>
       </>
@@ -515,20 +510,6 @@ export default function MissionNavbar() {
               );
             })}
           </div>
-
-          {/* Footer desktop */}
-          {!isCollapsed && (
-            <div className="pt-2 pb-3 mt-1 border-t border-[rgba(194,201,187,0.2)]">
-              <div className="flex items-center justify-between px-3">
-                <span className="text-[10px] text-[#72796e] font-medium">
-                  {links.length} sections
-                </span>
-                <span className="text-[10px] text-[#72796e] font-medium">
-                  v1.0.0
-                </span>
-              </div>
-            </div>
-          )}
         </aside>
       )}
     </>

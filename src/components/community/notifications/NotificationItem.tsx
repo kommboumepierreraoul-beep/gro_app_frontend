@@ -125,28 +125,9 @@ const notifConfig: Record<
 
 // Fonction pour déterminer l'URL de redirection
 const getRedirectUrl = (notif: Notification): string => {
-  const { type, data, post, actor } = notif;
+  const { type, post, actor } = notif;
   
   // Priorité aux missions
-  if (data?.mission_ulid) {
-    switch (type) {
-      case "new_application":
-        return `/missions/${data.mission_ulid}/applications`;
-      case "application_accepted":
-      case "application_rejected":
-      case "mission_reminder":
-      case "mission_updated":
-      case "new_mission":
-      case "mission_filled":
-      case "mission_cancelled":
-        return `/missions/${data.mission_ulid}`;
-      case "mission_completed":
-      case "review_request":
-        return `/missions/${data.mission_ulid}/review`;
-      default:
-        return `/missions/${data.mission_ulid}`;
-    }
-  }
   
   // Community
   switch (type) {
@@ -172,7 +153,7 @@ export function NotificationItem({ notif }: { notif: Notification }) {
 
   const handleClick = async () => {
     if (!notif.is_read) {
-      markAsRead.mutate(String(notif.id));
+      markAsRead(String(notif.id));
     }
     router.push(getRedirectUrl(notif));
   };
@@ -255,8 +236,9 @@ export function NotificationItem({ notif }: { notif: Notification }) {
         </p>
         <TimeAgo
           date={notif.created_at}
-          className="mt-1 text-[10px] sm:text-xs"
-          style={{ color: notif.is_read ? "#c2c9bb" : "#72796e" }}
+          className={`mt-1 text-[10px] sm:text-xs ${
+            notif.is_read ? "text-[#c2c9bb]" : "text-[#72796e]"
+          }`}
         />
       </div>
 

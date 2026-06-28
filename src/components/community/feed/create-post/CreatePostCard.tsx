@@ -1,6 +1,7 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
   Image as ImageIcon,
@@ -11,6 +12,10 @@ import {
   SmilePlus,
   Crop,
   Check,
+  AlertCircle,
+  Clock,
+  Shield,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCreatePostStore } from "@/stores/createpost.store";
@@ -21,6 +26,8 @@ import type { MediaItem } from "./types";
 import { Avatar } from "../../shared/Avatar";
 import { useQuery } from "@tanstack/react-query";
 import { profileService } from "@/services/community/profile.service";
+import { postService } from "@/services/community/post.service";
+import toast from "react-hot-toast";
 
 // Fonction pour obtenir l'URL complète de l'avatar
 const getAvatarUrl = (avatar?: string | null): string | undefined => {
@@ -31,6 +38,282 @@ const getAvatarUrl = (avatar?: string | null): string | undefined => {
   return `${apiUrl}${cleanPath}`;
 };
 
+interface PublishingStatus {
+  can_publish: boolean;
+  blocked_until?: string;
+  remaining_time?: string;
+  stats?: {
+    total_recent: number;
+    rejected_count: number;
+    rejection_rate: number;
+    pending_count: number;
+    consecutive_rejected: number;
+  };
+  reasons?: Array<{
+    reason: string;
+    type: "permanent" | "temporary";
+    action: string;
+  }>;
+  estimated_wait_time?: string;
+}
+
+// ─── MODAL DE BLOCAGE ──────────────────────────────────────────────────────────
+interface BlockedModalProps {
+  publishingStatus: PublishingStatus;
+  onClose: () => void;
+  onRetry: () => void;
+}
+
+function BlockedModal({
+  publishingStatus,
+  onClose,
+  onRetry,
+}: BlockedModalProps) {
+  if (!publishingStatus) return null;
+
+  const isPermanent = publishingStatus.reasons?.some(
+    (r) => r.type === "permanent",
+  );
+  const Icon = isPermanent ? Shield : AlertCircle;
+  const title = isPermanent
+    ? "Compte bloqué"
+    : "Publication temporairement bloquée";
+  const color = isPermanent ? "text-red-600" : "text-amber-600";
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{
+        background: "rgba(15,25,12,0.7)",
+        backdropFilter: "blur(8px)",
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl overflow-hidden"
+        style={{
+          background: "rgba(255,255,255,0.98)",
+          backdropFilter: "blur(24px)",
+          border: "1px solid rgba(194,201,187,0.5)",
+          boxShadow: "0 24px 60px rgba(21,66,18,0.25)",
+          animation: "groSlideUp 0.25s ease-out",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center gap-3 px-6 py-4"
+          style={{
+            borderBottom: "1px solid rgba(194,201,187,0.2)",
+            background: isPermanent
+              ? "rgba(220,38,38,0.08)"
+              : "rgba(245,158,11,0.08)",
+          }}
+        >
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{
+              background: isPermanent
+                ? "rgba(220,38,38,0.15)"
+                : "rgba(245,158,11,0.15)",
+            }}
+          >
+            <Icon className={`w-5 h-5 ${color}`} />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-gray-900">{title}</h3>
+            {publishingStatus.remaining_time && (
+              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                <Clock className="w-3 h-3" />
+                Temps restant estimé : {publishingStatus.remaining_time}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          {publishingStatus.reasons && publishingStatus.reasons.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">
+                Raisons du blocage :
+              </p>
+              <ul className="space-y-2">
+                {publishingStatus.reasons.map((reason, index) => (
+                  <li
+                    key={index}
+                    className="flex items-start gap-2.5 text-sm text-gray-600"
+                  >
+                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p>{reason.reason}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {reason.action}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {publishingStatus.stats && (
+            <div
+              className="rounded-xl p-4"
+              style={{
+                background: "rgba(249,250,242,0.8)",
+                border: "1px solid rgba(194,201,187,0.2)",
+              }}
+            >
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Statistiques de modération
+              </p>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-lg font-bold text-gray-800">
+                    {publishingStatus.stats.rejected_count}
+                  </p>
+                  <p className="text-[10px] text-gray-400">Rejets</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-gray-800">
+                    {publishingStatus.stats.pending_count}
+                  </p>
+                  <p className="text-[10px] text-gray-400">En attente</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-gray-800">
+                    {publishingStatus.stats.rejection_rate}%
+                  </p>
+                  <p className="text-[10px] text-gray-400">Taux rejet</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {publishingStatus.estimated_wait_time && (
+            <div
+              className="flex items-center gap-2 p-3 rounded-xl"
+              style={{
+                background: "rgba(188,240,174,0.15)",
+                border: "1px solid rgba(188,240,174,0.3)",
+              }}
+            >
+              <Clock className="w-4 h-4 text-green-700" />
+              <p className="text-sm text-green-800">
+                Temps d'attente estimé :{" "}
+                <strong>{publishingStatus.estimated_wait_time}</strong>
+              </p>
+            </div>
+          )}
+
+          {isPermanent && (
+            <div
+              className="flex items-center gap-2 p-3 rounded-xl"
+              style={{
+                background: "rgba(220,38,38,0.08)",
+                border: "1px solid rgba(220,38,38,0.2)",
+              }}
+            >
+              <Shield className="w-4 h-4 text-red-600" />
+              <p className="text-sm text-red-700">
+                Contactez un administrateur pour résoudre ce problème.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="flex gap-3 px-6 py-4"
+          style={{
+            borderTop: "1px solid rgba(194,201,187,0.2)",
+            background: "rgba(249,250,242,0.5)",
+          }}
+        >
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150"
+            style={{
+              background: "rgba(194,201,187,0.15)",
+              color: "#42493e",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background =
+                "rgba(194,201,187,0.25)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background =
+                "rgba(194,201,187,0.15)";
+            }}
+          >
+            Fermer
+          </button>
+          {!isPermanent && publishingStatus.can_publish === false && (
+            <button
+              onClick={onRetry}
+              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition-all duration-150"
+              style={{
+                background: "linear-gradient(135deg, #3b6934 0%, #154212 100%)",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.transform =
+                  "scale(1.02)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+              }}
+            >
+              Vérifier à nouveau
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SKELETON ──────────────────────────────────────────────────────────────────
+function CreatePostSkeleton() {
+  return (
+    <div
+      className="rounded-2xl overflow-hidden animate-pulse"
+      style={{
+        background: "rgba(255,255,255,0.7)",
+        backdropFilter: "blur(12px)",
+        border: "1px solid rgba(194,201,187,0.4)",
+        boxShadow: "0 2px 12px rgba(21,66,18,0.04)",
+      }}
+    >
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0" />
+        <div className="flex-1 h-10 rounded-full bg-gray-200" />
+      </div>
+
+      <div
+        className="flex items-center px-2 pb-2"
+        style={{ borderTop: "1px solid rgba(194,201,187,0.25)" }}
+      >
+        <div className="flex flex-1 items-center justify-center gap-2 py-2.5">
+          <div className="w-4 h-4 rounded bg-gray-200" />
+          <div className="w-20 h-3 rounded bg-gray-200" />
+        </div>
+
+        <div
+          className="w-px h-4"
+          style={{ background: "rgba(194,201,187,0.5)" }}
+        />
+
+        <div className="flex flex-1 items-center justify-center gap-2 py-2.5">
+          <div className="w-4 h-4 rounded bg-gray-200" />
+          <div className="w-14 h-3 rounded bg-gray-200" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── COMPOSANT PRINCIPAL ──────────────────────────────────────────────────────
 export function CreatePostCard() {
   const { user } = useAuthStore();
   const { createPost } = useFeed();
@@ -40,16 +323,29 @@ export function CreatePostCard() {
   const [content, setContent] = useState("");
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [showBlockedModal, setShowBlockedModal] = useState(false);
+  const [publishingStatus, setPublishingStatus] =
+    useState<PublishingStatus | null>(null);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Récupérer le profil complet de l'utilisateur
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["myProfile"],
     queryFn: profileService.getMe,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
+
+  // Simuler un chargement initial pour le skeleton
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Construire les données utilisateur pour l'affichage
   const displayUser = {
@@ -57,15 +353,18 @@ export function CreatePostCard() {
     firstname: profile?.firstname ?? user?.firstname,
     lastname: profile?.lastname ?? user?.lastname,
     avatar: getAvatarUrl(profile?.avatar ?? user?.avatar),
-    headline: profile?.headline ??  "Membre de la communauté",
+    headline: profile?.headline ?? "Membre de la communauté",
   };
 
-  // Prefill depuis l'AI assistant
+  // ✅ CORRECTION : Prefill depuis l'AI assistant avec setTimeout
   useEffect(() => {
     if (open && prefillContent) {
-      setContent(prefillContent);
-      clearPrefill();
-      setTimeout(() => textareaRef.current?.focus(), 80);
+      const timer = setTimeout(() => {
+        setContent(prefillContent);
+        clearPrefill();
+        textareaRef.current?.focus();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [open, prefillContent, clearPrefill]);
 
@@ -86,7 +385,36 @@ export function CreatePostCard() {
     textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
   }, [content]);
 
-  const handleFiles = (files: FileList | null) => {
+  // Vérifier le statut de publication
+  const checkPublishingStatus = useCallback(async () => {
+    setIsCheckingStatus(true);
+    try {
+      const response = await postService.checkPublishingStatus();
+      setPublishingStatus(response.data);
+
+      if (!response.data.can_publish) {
+        setShowBlockedModal(true);
+      } else {
+        // Si l'utilisateur peut publier, ouvrir le modal normal
+        openModal();
+        setTimeout(() => textareaRef.current?.focus(), 80);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la vérification du statut:", error);
+      // En cas d'erreur, on ouvre quand même le modal
+      openModal();
+    } finally {
+      setIsCheckingStatus(false);
+    }
+  }, [openModal]);
+
+  // Re-vérifier le statut
+  const handleRetry = useCallback(() => {
+    setShowBlockedModal(false);
+    setTimeout(() => checkPublishingStatus(), 500);
+  }, [checkPublishingStatus]);
+
+  const handleFiles = useCallback((files: FileList | null) => {
     if (!files) return;
     const items: MediaItem[] = Array.from(files)
       .slice(0, 4)
@@ -96,29 +424,32 @@ export function CreatePostCard() {
         type: file.type.startsWith("video/") ? "video" : "image",
       }));
     setMediaItems(items);
-  };
+  }, []);
 
-  const removeMedia = (i: number) => {
+  const removeMedia = useCallback((i: number) => {
     setMediaItems((prev) => {
       URL.revokeObjectURL(prev[i].preview);
       if (prev[i].edited) URL.revokeObjectURL(prev[i].edited!);
       return prev.filter((_, j) => j !== i);
     });
-  };
+  }, []);
 
-  const applyEdit = (blobUrl: string) => {
-    if (editingIndex === null) return;
-    setMediaItems((prev) =>
-      prev.map((item, i) => {
-        if (i !== editingIndex) return item;
-        if (item.edited) URL.revokeObjectURL(item.edited);
-        return { ...item, edited: blobUrl };
-      }),
-    );
-    setEditingIndex(null);
-  };
+  const applyEdit = useCallback(
+    (blobUrl: string) => {
+      if (editingIndex === null) return;
+      setMediaItems((prev) =>
+        prev.map((item, i) => {
+          if (i !== editingIndex) return item;
+          if (item.edited) URL.revokeObjectURL(item.edited);
+          return { ...item, edited: blobUrl };
+        }),
+      );
+      setEditingIndex(null);
+    },
+    [editingIndex],
+  );
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     const hasContent = content.trim().length > 0;
     const hasMedia = mediaItems.length > 0;
     if (!hasContent && !hasMedia) return;
@@ -161,7 +492,7 @@ export function CreatePostCard() {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [content, mediaItems, createPost, closeModal]);
 
   const canSubmit =
     (content.trim().length > 0 || mediaItems.length > 0) &&
@@ -170,6 +501,12 @@ export function CreatePostCard() {
   const imageItems = mediaItems.filter((m) => m.type === "image");
   const gridCols = imageItems.length === 1 ? "grid-cols-1" : "grid-cols-2";
 
+  // ── AFFICHAGE DU SKELETON ──
+  if (isLoading || profileLoading) {
+    return <CreatePostSkeleton />;
+  }
+
+  // ── RENDU PRINCIPAL ──
   return (
     <>
       {/* ── Trigger card ── */}
@@ -189,8 +526,9 @@ export function CreatePostCard() {
             size="md"
           />
           <button
-            onClick={() => openModal()}
-            className="flex-1 text-left px-4 py-2.5 rounded-full text-sm transition-all duration-200"
+            onClick={checkPublishingStatus}
+            disabled={isCheckingStatus}
+            className="flex-1 text-left px-4 py-2.5 rounded-full text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               background: "rgba(249,250,242,0.8)",
               border: "1px solid rgba(194,201,187,0.4)",
@@ -198,10 +536,12 @@ export function CreatePostCard() {
               fontFamily: "'Inter', sans-serif",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background =
-                "rgba(188,240,174,0.2)";
-              (e.currentTarget as HTMLElement).style.borderColor =
-                "rgba(161,212,148,0.5)";
+              if (!isCheckingStatus) {
+                (e.currentTarget as HTMLElement).style.background =
+                  "rgba(188,240,174,0.2)";
+                (e.currentTarget as HTMLElement).style.borderColor =
+                  "rgba(161,212,148,0.5)";
+              }
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.background =
@@ -210,7 +550,14 @@ export function CreatePostCard() {
                 "rgba(194,201,187,0.4)";
             }}
           >
-            Quoi de neuf, {displayUser.firstname} ?
+            {isCheckingStatus ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                Vérification...
+              </span>
+            ) : (
+              `Quoi de neuf, ${displayUser.firstname} ?`
+            )}
           </button>
         </div>
 
@@ -220,7 +567,7 @@ export function CreatePostCard() {
         >
           <button
             onClick={() => {
-              openModal();
+              checkPublishingStatus();
               setTimeout(() => fileRef.current?.click(), 80);
             }}
             className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-xl transition-all duration-150"
@@ -250,7 +597,7 @@ export function CreatePostCard() {
           />
 
           <button
-            onClick={() => openModal()}
+            onClick={checkPublishingStatus}
             className="flex flex-1 items-center justify-center gap-2 py-2.5 rounded-xl transition-all duration-150"
             style={{ color: "#42493e" }}
             onMouseEnter={(e) => {
@@ -274,7 +621,7 @@ export function CreatePostCard() {
         </div>
       </div>
 
-      {/* ── Modal ── */}
+      {/* ── Modal de création ── */}
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -571,6 +918,15 @@ export function CreatePostCard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Modal de blocage ── */}
+      {showBlockedModal && publishingStatus && (
+        <BlockedModal
+          publishingStatus={publishingStatus}
+          onClose={() => setShowBlockedModal(false)}
+          onRetry={handleRetry}
+        />
       )}
 
       {/* ── Éditeur d'image (portal) ── */}

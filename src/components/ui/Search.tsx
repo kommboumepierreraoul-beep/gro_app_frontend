@@ -208,7 +208,7 @@ export function Search({
           {/* Footer voir tous les résultats */}
           {!isLoading && users.length > 0 && (
             <Link
-              href={`/community/search?q=${encodeURIComponent(query)}`}
+              href={`/search?q=${encodeURIComponent(query)}`}
               onClick={handleResultClick}
               className="block px-4 py-3 text-center text-sm text-green-600 hover:bg-green-50 transition font-medium border-t border-gray-100 sticky bottom-0 bg-white"
             >

@@ -6,7 +6,7 @@ import { tokenService } from "@/lib/auth-token";
 // ─────────────────────────────────────────────
 
 export interface User {
-  id: number | string;
+  id: number;
   firstname: string;
   lastname: string;
   email: string;

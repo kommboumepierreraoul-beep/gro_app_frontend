@@ -233,7 +233,7 @@ export function AnnouncementCard({
   const renderAuthor = (size: "sm" | "md" = "sm") => {
     const avatarSize = size === "sm" ? "sm" : "md";
     return (
-      <Link href={`/community/profile/${announcement.author?.id}`} className="flex-shrink-0">
+      <Link href={`/profile/${announcement.author?.id}`} className="flex-shrink-0">
         <Avatar
           src={announcement.author?.avatar}
           firstname={announcement.author?.firstname}
@@ -247,7 +247,7 @@ export function AnnouncementCard({
   const renderAuthorInfo = () => (
     <div className="min-w-0 flex-1">
       <Link
-        href={`/community/profile/${announcement.author?.id}`}
+        href={`/profile/${announcement.author?.id}`}
         className="text-sm font-medium text-[#191c18] hover:text-[#154212] transition-colors truncate block"
       >
         {authorName}
@@ -255,13 +255,7 @@ export function AnnouncementCard({
       <div className="flex items-center gap-1.5 text-xs text-[#72796e]">
         <Clock className="h-3 w-3" />
         {timeAgo}
-        {announcement.location && (
-          <>
-            <span>·</span>
-            <MapPin className="h-3 w-3" />
-            <span className="truncate max-w-[100px]">{announcement.location}</span>
-          </>
-        )}
+  
       </div>
     </div>
   );
@@ -355,12 +349,7 @@ export function AnnouncementCard({
               <div className="flex flex-wrap items-center gap-2 mb-1.5">
                 {renderBadge()}
                 {renderExpiryBadge()}
-                {announcement.is_pinned && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#eaf3de] text-[#154212] border border-[#bcf0ae]/30">
-                    <Pin className="h-3 w-3" />
-                    Épinglé
-                  </span>
-                )}
+               
               </div>
 
               <Link href={`/announcements/${announcement.id}`}>
@@ -376,7 +365,6 @@ export function AnnouncementCard({
               <div className="flex items-center gap-4 mt-2 text-xs text-[#72796e]">
                 <span className="flex items-center gap-1">
                   <Eye className="h-3 w-3" />
-                  {announcement.views || 0}
                 </span>
                 <span className="flex items-center gap-1">
                   <Heart className="h-3 w-3" />
@@ -441,12 +429,7 @@ export function AnnouncementCard({
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
             {renderBadge()}
-            {announcement.is_pinned && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#154212]/80 text-white backdrop-blur-sm border border-white/20">
-                <Pin className="h-3 w-3" />
-                Épinglé
-              </span>
-            )}
+        
           </div>
 
           {/* Expiry badge */}
@@ -494,7 +477,6 @@ export function AnnouncementCard({
           <div className="flex items-center gap-4 mt-3 text-xs text-[#72796e]">
             <span className="flex items-center gap-1">
               <Eye className="h-3 w-3" />
-              {announcement.views || 0}
             </span>
             <span className="flex items-center gap-1">
               <Heart className="h-3 w-3" />

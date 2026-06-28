@@ -503,7 +503,7 @@ function UserCard({
   };
 
   const handleCardClick = () => {
-    router.push(`/community/profile/${user.id}`);
+    router.push(`/profile/${user.id}`);
   };
 
   if (viewMode === "list") {

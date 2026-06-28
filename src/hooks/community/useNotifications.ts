@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationService } from "@/services/community/notification.service";
 import { useCommunityStore } from "@/stores/community.store";
@@ -10,19 +11,20 @@ export function useNotifications() {
     queryKey: ["notifications"],
     queryFn: async () => {
       const result = await notificationService.getNotifications();
-      // result = { success: true, data: { data: [...], unread_count: X } }
-
-      setUnreadNotifs(result.data?.unread_count ?? 0); // ✅
-
+      setUnreadNotifs(result.data?.unread_count ?? 0);
       return result;
     },
-    refetchInterval: 30_000,
+    refetchInterval: 30000,
   });
 
   const markAsRead = useMutation({
     mutationFn: (id: string) => notificationService.markAsRead(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications-unread-count"],
+      });
+    },
   });
 
   const markAllRead = useMutation({
@@ -30,23 +32,31 @@ export function useNotifications() {
     onSuccess: () => {
       setUnreadNotifs(0);
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications-unread-count"],
+      });
     },
   });
 
   const deleteNotif = useMutation({
     mutationFn: (id: string) => notificationService.deleteNotification(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications-unread-count"],
+      });
+    },
   });
 
   return {
-    notifications: query.data?.data?.data ?? [], // ✅ .data.data = tableau
-    unreadCount: query.data?.data?.unread_count ?? 0, // ✅ .data.unread_count
+    notifications: query.data?.data?.data ?? [],
+    unreadCount: query.data?.data?.unread_count ?? 0,
     isLoading: query.isLoading,
-    markAsRead,
-    markAllRead,
-    deleteNotif,
+    markAsRead: markAsRead.mutate,
+    markAllRead: markAllRead.mutate,
+    markAllReadLoading: markAllRead.isPending, // ✅ Ajout du loading
+    deleteNotif: deleteNotif.mutate,
+    deleteNotifLoading: deleteNotif.isPending,
+    refetch: query.refetch,
   };
-
-  
 }
