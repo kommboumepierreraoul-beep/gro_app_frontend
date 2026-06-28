@@ -1,26 +1,44 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  Polyline,
-} from "react-leaflet";
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+
+// ✅ Importer dynamiquement react-leaflet avec ssr: false
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false },
+);
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false },
+);
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false },
+);
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
+  ssr: false,
+});
+const Polyline = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Polyline),
+  { ssr: false },
+);
 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+// ✅ Configuration des icônes Leaflet (côté client uniquement)
+if (typeof window !== "undefined") {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl:
+      "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  });
+}
 
 interface Props {
   missionTitle: string;
@@ -28,17 +46,24 @@ interface Props {
   missionLng: number;
 }
 
-export default function MissionMap({
+export default function MissionDetailMap({
   missionTitle,
   missionLat,
   missionLng,
 }: Props) {
+  const [isClient, setIsClient] = useState(false);
   const [userPosition, setUserPosition] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
 
+  // ✅ Vérifier que nous sommes côté client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const getMyLocation = () => {
+    if (typeof navigator === "undefined") return;
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setUserPosition({
@@ -53,6 +78,7 @@ export default function MissionMap({
   };
 
   const openGoogleMaps = () => {
+    if (typeof window === "undefined") return;
     window.open(
       `https://www.google.com/maps/dir/?api=1&destination=${missionLat},${missionLng}`,
       "_blank",
@@ -67,6 +93,28 @@ export default function MissionMap({
         ) * 111,
       )
     : null;
+
+  // ✅ Rendu du skeleton pendant le SSR
+  if (!isClient) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold text-[#191c18]">Localisation</h4>
+          <div className="flex gap-2">
+            <div className="px-3 py-2 rounded-lg text-xs font-medium bg-[#e7e9e1] text-transparent animate-pulse w-24">
+              Chargement...
+            </div>
+            <div className="px-3 py-2 rounded-lg text-xs font-medium border border-[#e7e9e1] text-transparent animate-pulse w-24">
+              Chargement...
+            </div>
+          </div>
+        </div>
+        <div className="rounded-2xl overflow-hidden border border-[#c2c9bb]/30 bg-[#e7e9e1] animate-pulse h-[320px] flex items-center justify-center">
+          <p className="text-[#72796e]">Chargement de la carte...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -83,6 +131,8 @@ export default function MissionMap({
               font-medium
               bg-[#154212]
               text-white
+              hover:bg-[#2d5a27]
+              transition-colors
             "
           >
             Ma position
@@ -98,6 +148,9 @@ export default function MissionMap({
               border
               border-[#154212]
               text-[#154212]
+              hover:bg-[#154212]
+              hover:text-white
+              transition-colors
             "
           >
             Itinéraire
@@ -112,35 +165,37 @@ export default function MissionMap({
       )}
 
       <div className="rounded-2xl overflow-hidden border border-[#c2c9bb]/30">
-        <MapContainer
-          center={[missionLat, missionLng]}
-          zoom={14}
-          style={{
-            width: "100%",
-            height: "320px",
-          }}
-        >
-          <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        {isClient && (
+          <MapContainer
+            center={[missionLat, missionLng]}
+            zoom={14}
+            style={{
+              width: "100%",
+              height: "320px",
+            }}
+          >
+            <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-          <Marker position={[missionLat, missionLng]}>
-            <Popup>{missionTitle}</Popup>
-          </Marker>
+            <Marker position={[missionLat, missionLng]}>
+              <Popup>{missionTitle}</Popup>
+            </Marker>
 
-          {userPosition && (
-            <>
-              <Marker position={[userPosition.lat, userPosition.lng]}>
-                <Popup>Votre position</Popup>
-              </Marker>
+            {userPosition && (
+              <>
+                <Marker position={[userPosition.lat, userPosition.lng]}>
+                  <Popup>Votre position</Popup>
+                </Marker>
 
-              <Polyline
-                positions={[
-                  [userPosition.lat, userPosition.lng],
-                  [missionLat, missionLng],
-                ]}
-              />
-            </>
-          )}
-        </MapContainer>
+                <Polyline
+                  positions={[
+                    [userPosition.lat, userPosition.lng],
+                    [missionLat, missionLng],
+                  ]}
+                />
+              </>
+            )}
+          </MapContainer>
+        )}
       </div>
     </div>
   );

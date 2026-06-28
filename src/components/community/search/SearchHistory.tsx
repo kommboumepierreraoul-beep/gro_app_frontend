@@ -1,4 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,7 +10,6 @@ import {
   Trash2,
   TrendingUp,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 interface SearchHistoryProps {
   onSearch: (query: string) => void;
@@ -17,7 +17,6 @@ interface SearchHistoryProps {
 }
 
 export function SearchHistory({ onSearch, currentQuery }: SearchHistoryProps) {
-  const router = useRouter();
   const [history, setHistory] = useState<string[]>([]);
   const [trending, setTrending] = useState<string[]>([
     "agriculture",
@@ -30,7 +29,6 @@ export function SearchHistory({ onSearch, currentQuery }: SearchHistoryProps) {
     "bio",
   ]);
 
-  // Charger l'historique depuis le localStorage
   useEffect(() => {
     const saved = localStorage.getItem("searchHistory");
     if (saved) {
@@ -43,12 +41,10 @@ export function SearchHistory({ onSearch, currentQuery }: SearchHistoryProps) {
     }
   }, []);
 
-  // Sauvegarder l'historique dans le localStorage
   const saveHistory = (newHistory: string[]) => {
     localStorage.setItem("searchHistory", JSON.stringify(newHistory));
   };
 
-  // Ajouter une recherche à l'historique
   const addToHistory = (query: string) => {
     if (!query || query.trim().length < 2) return;
     const cleanQuery = query.trim();
@@ -60,7 +56,6 @@ export function SearchHistory({ onSearch, currentQuery }: SearchHistoryProps) {
     });
   };
 
-  // Supprimer un élément de l'historique
   const removeFromHistory = (query: string) => {
     setHistory((prev) => {
       const newHistory = prev.filter((item) => item !== query);
@@ -69,7 +64,6 @@ export function SearchHistory({ onSearch, currentQuery }: SearchHistoryProps) {
     });
   };
 
-  // Effacer tout l'historique
   const clearHistory = () => {
     setHistory([]);
     saveHistory([]);
@@ -136,7 +130,7 @@ export function SearchHistory({ onSearch, currentQuery }: SearchHistoryProps) {
         </div>
       )}
 
-      {/* Tendances / Suggestions populaires */}
+      {/* Tendances */}
       <div
         className="rounded-2xl p-4"
         style={{
