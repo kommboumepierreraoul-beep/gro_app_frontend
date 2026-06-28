@@ -102,12 +102,7 @@ export default function ApplicationCard({
             {applicant.firstname}
           </p>
           <div className="flex items-center gap-2 mt-0.5">
-            {applicant.rating > 0 && (
-              <span className="flex items-center gap-0.5 text-[11px] text-[#72796e]">
-                <Star size={10} className="fill-amber-400 text-amber-400" />
-                {applicant.rating.toFixed(1)}
-              </span>
-            )}
+            
             <span className="text-[10px] text-[#72796e]">
               via {METHOD_LABELS[application.method] ?? application.method}
             </span>

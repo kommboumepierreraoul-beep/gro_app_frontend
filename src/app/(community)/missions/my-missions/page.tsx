@@ -109,6 +109,9 @@ export default function MyMissionPage() {
       const pending = data.filter(
         (m: any) => m.status === "pending_review",
       ).length;
+      const in_progress = missions.filter(
+        (m: any) => m.status === "in_progress",
+      ).length;
 
       setStats({
         total,
@@ -118,6 +121,7 @@ export default function MyMissionPage() {
         completed,
         pending,
         suspended,
+        in_progress,
       });
     } catch (err) {
       console.error("Erreur chargement missions:", err);

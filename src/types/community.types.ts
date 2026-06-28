@@ -1,7 +1,7 @@
 // src/types/community.types.ts
 
 export interface CommunityUser {
-  id: number;
+  id: number ;
   firstname: string;
   lastname: string;
   email: string;
@@ -115,7 +115,7 @@ export interface Post {
 export interface Comment {
   id: number;
   content: string;
-  author: Pick<CommunityUser, "id" | "firstname" | "lastname" | "avatar">;
+  author: Pick<CommunityUser, "id" | "firstname" | "lastname" | "avatar" | "headline">;
   post_id: number;
   parent_id?: number;
   likes_count: number;
@@ -146,14 +146,6 @@ export interface Message {
   media_url?: string;
   is_mine: boolean;
   created_at: string;
-  // Modération
-  moderation_status?: ModerationStatus;
-  toxicity_score?: number;
-  spam_score?: number;
-  hate_score?: number;
-  violence_score?: number;
-  moderation_reason?: string;
-  moderated_at?: string;
 }
 
 export interface Conversation {

@@ -122,6 +122,36 @@ class PostService {
     }
   }
 
+  async updatePost(
+    postId: string | number,
+    data: {
+      content: string;
+      media?: File[];
+      removeMedia?: string[];
+    },
+  ) {
+    const formData = new FormData();
+    formData.append("content", data.content);
+
+    if (data.media) {
+      data.media.forEach((file) => {
+        formData.append("media[]", file);
+      });
+    }
+
+    if (data.removeMedia) {
+      data.removeMedia.forEach((url) => {
+        formData.append("remove_media[]", url);
+      });
+    }
+
+    const response = await api.post(`/community/posts/${postId}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      params: { _method: "PUT" },
+    });
+    return response.data;
+  }
+
   async toggleLike(postId: string | number) {
     try {
       const response = await api.post(`/community/posts/${postId}/like`);
@@ -158,6 +188,7 @@ class PostService {
 
   async searchPosts(query: string, page: number = 1) {
     try {
+      // ✅ URL correcte
       const response = await api.get(`/community/posts/search`, {
         params: { q: query, page },
       });
@@ -165,6 +196,37 @@ class PostService {
     } catch (error) {
       console.error("Error searching posts:", error);
       return { data: [] };
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // PUBLISHING STATUS
+  // ────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Vérifier si l'utilisateur peut publier
+   * Utilise la route /moderation/publishing-status
+   */
+  async checkPublishingStatus(): Promise<any> {
+    try {
+      // ✅ CORRECTION : Utiliser la bonne route
+      const response = await api.get("/moderation/publishing-status");
+      return response.data;
+    } catch (error: any) {
+      console.error("Error checking publishing status:", error);
+
+      // Gestion des erreurs
+      if (error.response?.status === 401) {
+        throw new Error("Vous devez être connecté pour vérifier votre statut");
+      }
+      if (error.response?.status === 403) {
+        throw new Error("Accès non autorisé");
+      }
+      if (error.response?.status === 404) {
+        throw new Error("Service de vérification indisponible");
+      }
+
+      throw error;
     }
   }
 
@@ -247,10 +309,6 @@ class PostService {
       throw error;
     }
   }
-
-  // ❌ SUPPRIMER les méthodes pour les commentaires et messages
-  // async getCommentReviewQueue() { ... }
-  // async getMessageReviewQueue() { ... }
 
   // ────────────────────────────────────────────────────────────────────────────
   // MODÉRATION - MES CONTENUS (POSTS UNIQUEMENT)

@@ -25,6 +25,16 @@ interface ModerationPanelProps {
   className?: string;
 }
 
+// ✅ Map pour convertir les actions en statuts
+const actionToStatusMap: Record<
+  "approve" | "reject" | "review",
+  ModerationStatus
+> = {
+  approve: "approved",
+  reject: "rejected",
+  review: "review",
+};
+
 export function ModerationPanel({
   contentType,
   contentId,
@@ -36,14 +46,15 @@ export function ModerationPanel({
   onReanalyze,
   className = "",
 }: ModerationPanelProps) {
-  const [status, setStatus] = useState(currentStatus);
+  const [status, setStatus] = useState<ModerationStatus>(currentStatus);
 
   const handleAction = async (
     action: "approve" | "reject" | "review",
     reason?: string,
   ) => {
     await onAction(action, reason);
-    setStatus(action);
+    // ✅ Convertir l'action en statut
+    setStatus(actionToStatusMap[action]);
   };
 
   const getStatusIcon = () => {

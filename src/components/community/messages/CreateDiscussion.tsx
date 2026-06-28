@@ -1,18 +1,46 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Avatar } from "../shared/Avatar";
 import { useAuthStore } from "@/stores/auth.store";
 import { X, Search, Users, Loader2, MessageCircle } from "lucide-react";
 import { CreateGroupModal } from "./CreateGroupModal";
 import toast from "react-hot-toast";
+import { CommunityUser, Conversation } from "@/types/community.types";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface CreateDiscussionProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (conversationId: number) => void;
 }
+
+// ─── Helper pour obtenir les données utilisateur ────────────────────────────
+
+interface UserData {
+  id: number;
+  firstname: string;
+  lastname: string;
+  avatar?: string | null;
+  headline?: string | null;
+  email?: string;
+}
+
+function extractUserData(item: any): UserData {
+  const userData = item.follower || item;
+  return {
+    id: userData.id,
+    firstname: userData.firstname || "",
+    lastname: userData.lastname || "",
+    avatar: userData.avatar,
+    headline: userData.headline,
+    email: userData.email,
+  };
+}
+
+// ─── Composant principal ──────────────────────────────────────────────────────
 
 export function CreateDiscussion({
   isOpen,
@@ -29,65 +57,157 @@ export function CreateDiscussion({
   );
   const [showCreateGroup, setShowCreateGroup] = useState(false);
 
-  const loadUserProfile = async (userId: number | string) => {
-    if (userAvatars[userId]) return;
+  // ✅ Refs pour éviter les dépendances problématiques
+  const isMountedRef = useRef(true);
+  const usersRef = useRef(users);
+  const userAvatarsRef = useRef(userAvatars);
+
+  // ✅ Mettre à jour les refs quand les états changent
+  useEffect(() => {
+    usersRef.current = users;
+  }, [users]);
+
+  useEffect(() => {
+    userAvatarsRef.current = userAvatars;
+  }, [userAvatars]);
+
+  // ── Nettoyage au démontage ──────────────────────────────────────────────────
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // ── Charger le profil d'un utilisateur ─────────────────────────────────────
+
+  const loadUserProfile = useCallback(async (userId: number) => {
+    if (!isMountedRef.current) return;
+
+    // ✅ Utiliser la ref au lieu de l'état
+    if (userAvatarsRef.current[userId]) return;
+
     try {
       const { profileService } =
         await import("@/services/community/profile.service");
       const profile = await profileService.getProfile(userId);
-      setUserAvatars((prev) => ({ ...prev, [userId]: profile.avatar }));
-      setUserHeadlines((prev) => ({ ...prev, [userId]: profile.headline }));
+
+      if (isMountedRef.current) {
+        setUserAvatars((prev) => {
+          const newState = { ...prev };
+          if (profile.avatar) {
+            newState[userId] = profile.avatar;
+          }
+          return newState;
+        });
+
+        setUserHeadlines((prev) => {
+          const newState = { ...prev };
+          if (profile.headline) {
+            newState[userId] = profile.headline;
+          }
+          return newState;
+        });
+      }
     } catch (error) {
       console.error("Error loading profile:", error);
     }
-  };
+  }, []); // ✅ Dépendances vides car on utilise les refs
 
-  const loadUsers = async () => {
-    if (users.length > 0) return;
+  // ── Charger la liste des utilisateurs ──────────────────────────────────────
+
+  const loadUsers = useCallback(async () => {
+    if (!isMountedRef.current) return;
+    if (usersRef.current.length > 0) return;
+
     setUsersLoading(true);
     try {
       const { followService } =
         await import("@/services/community/follow.service");
-      const response = await followService.getFollowers(user?.id);
-      const followersList = response?.data?.data ?? response?.data ?? [];
-      const suggestionsRes = await followService.getSuggestions();
+
+      const userId = user?.id;
+      if (!userId) {
+        console.warn("User ID not available");
+        return;
+      }
+
+      const [followersRes, suggestionsRes] = await Promise.all([
+        followService.getFollowers(userId),
+        followService.getSuggestions(),
+      ]);
+
+      const followersList =
+        followersRes?.data?.data ?? followersRes?.data ?? [];
       const suggestionsList =
         suggestionsRes?.data?.data ?? suggestionsRes?.data ?? [];
+
       const allUsers = [...followersList, ...suggestionsList];
-      const uniqueUsers = allUsers.filter(
-        (u: any, index: number, self: any[]) => {
-          const userId = u.follower?.id || u.id;
-          return (
-            userId !== user?.id &&
-            self.findIndex((x: any) => (x.follower?.id || x.id) === userId) ===
-              index
-          );
-        },
-      );
-      for (const userItem of uniqueUsers) {
-        const userData = userItem.follower || userItem;
+      const seen = new Set<number>();
+      const uniqueUsers = allUsers.filter((item: any) => {
+        const userData = extractUserData(item);
+        if (userData.id === user?.id) return false;
+        if (seen.has(userData.id)) return false;
+        seen.add(userData.id);
+        return true;
+      });
+
+      for (const item of uniqueUsers) {
+        if (!isMountedRef.current) break;
+        const userData = extractUserData(item);
         await loadUserProfile(userData.id);
       }
-      setUsers(uniqueUsers);
+
+      if (isMountedRef.current) {
+        setUsers(uniqueUsers);
+      }
     } catch (error) {
       console.error("Error loading users:", error);
+      if (isMountedRef.current) {
+        toast.error("Impossible de charger les utilisateurs");
+      }
     } finally {
-      setUsersLoading(false);
+      if (isMountedRef.current) {
+        setUsersLoading(false);
+      }
     }
-  };
+  }, [user, loadUserProfile]); // ✅ Ajouter 'user' aux dépendances
+
+  // ── Effet pour charger les utilisateurs à l'ouverture ─────────────────────
 
   useEffect(() => {
-    if (isOpen && users.length === 0 && !usersLoading) {
-      loadUsers();
-    }
+    const timer = setTimeout(() => {
+      if (isOpen && users.length === 0 && !usersLoading && user?.id) {
+        loadUsers();
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, users.length, usersLoading, user?.id, loadUsers]);
+
+  // ── Réinitialiser la recherche à la fermeture ─────────────────────────────
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!isOpen) {
+        setSearchQuery("");
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [isOpen]);
 
-  const filteredUsers = users.filter((item: any) => {
-    const userData = item.follower || item;
-    const name =
-      `${userData.firstname || ""} ${userData.lastname || ""}`.toLowerCase();
-    return name.includes(searchQuery.toLowerCase());
-  });
+  // ── Filtrer les utilisateurs ──────────────────────────────────────────────
+
+  const filteredUsers = useCallback(() => {
+    return users.filter((item: any) => {
+      const userData = extractUserData(item);
+      const name = `${userData.firstname} ${userData.lastname}`.toLowerCase();
+      return name.includes(searchQuery.toLowerCase());
+    });
+  }, [users, searchQuery]);
+
+  // ── Démarrer une conversation ─────────────────────────────────────────────
 
   const handleStartConversation = async (userId: number) => {
     try {
@@ -103,19 +223,26 @@ export function CreateDiscussion({
     }
   };
 
+  // ── Gestion de la création de groupe ──────────────────────────────────────
+
   const handleGroupCreated = (conversationId: number) => {
     if (onSuccess) onSuccess(conversationId);
     setShowCreateGroup(false);
     onClose();
   };
 
+  // ─── Rendu ──────────────────────────────────────────────────────────────────
+
   if (!isOpen) return null;
+
+  const filteredUsersList = filteredUsers();
 
   return (
     <>
       <div
-        className="fixed inset-0 z-1 flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
         style={{ background: "rgba(0,0,0,0.32)", backdropFilter: "blur(4px)" }}
+        onClick={onClose}
       >
         <div
           className="w-full max-w-md rounded-2xl overflow-hidden max-h-[90vh] flex flex-col"
@@ -124,6 +251,7 @@ export function CreateDiscussion({
             border: "1px solid rgba(194,201,187,0.5)",
             boxShadow: "0 12px 48px rgba(21,66,18,0.14)",
           }}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div
@@ -257,7 +385,7 @@ export function CreateDiscussion({
                     style={{ color: "#154212" }}
                   />
                 </div>
-              ) : filteredUsers.length === 0 ? (
+              ) : filteredUsersList.length === 0 ? (
                 <div className="text-center py-6">
                   <p className="text-sm" style={{ color: "#72796e" }}>
                     {searchQuery
@@ -272,8 +400,8 @@ export function CreateDiscussion({
                   )}
                 </div>
               ) : (
-                filteredUsers.map((item: any) => {
-                  const userData = item.follower || item;
+                filteredUsersList.map((item: any) => {
+                  const userData = extractUserData(item);
                   const userId = userData.id;
                   const userAvatar = userAvatars[userId] || userData.avatar;
                   const userHeadline =
@@ -305,7 +433,7 @@ export function CreateDiscussion({
                             fontFamily: "'Plus Jakarta Sans', sans-serif",
                           }}
                         >
-                          {userData.firstname} {userData.lastname || ""}
+                          {userData.firstname} {userData.lastname}
                         </p>
                         {userHeadline && (
                           <p

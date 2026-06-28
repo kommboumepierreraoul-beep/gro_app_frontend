@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useEffect, useRef, useState } from "react";
@@ -42,7 +43,12 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [replyTo, setReplyTo] = useState<any>(null);
+
+  // Refs pour mesurer les zones fixes
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const inputZoneRef = useRef<HTMLDivElement>(null);
+
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const isGroup = conversation?.is_group || false;
@@ -79,7 +85,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
     }
   }, [messages, isInitialLoad]);
 
-  // Scroll vers le bas quand replyTo est annulé ou envoyé
+  // Scroll vers le bas quand replyTo change
   useEffect(() => {
     if (!replyTo && messagesContainerRef.current) {
       setTimeout(() => {
@@ -157,7 +163,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
     if (inputElement) inputElement.focus();
   };
 
-  const handleForward = async (message: any) => {
+  const handleForward = async (_message: any) => {
     toast.success("Fonctionnalité à venir");
   };
 
@@ -218,12 +224,24 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
   }
 
   return (
-    <div className="flex flex-col h-screen md:h-full bg-[#f9faf2]">
-      {/* ================= HEADER FIXE ================= */}
+    /*
+     * Layout : colonne flex qui occupe tout l'espace disponible.
+     * Sur mobile (h-[100dvh]) on utilise dvh pour éviter le problème
+     * de la barre d'adresse Safari qui rétrécit la fenêtre.
+     * Sur md+ on laisse le parent gérer la hauteur (h-full).
+     */
+    <div className="flex flex-col h-[100dvh] md:h-full bg-[#f9faf2] overflow-hidden">
+      {/* ================= HEADER ================= */}
+      {/*
+       * Plus de `fixed` ici : on laisse le header dans le flux normal.
+       * flex-shrink-0 empêche le header de se comprimer.
+       * Le z-10 reste pour que le dropdown reste visible au-dessus des messages.
+       */}
       <div
-        className="flex fixed w-full items-center justify-between px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0 z-10"
+        ref={headerRef}
+        className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0 z-10 relative"
         style={{
-          background: "rgba(249,250,242,0.95)",
+          background: "rgba(249,250,242,0.97)",
           backdropFilter: "blur(12px)",
           borderBottom: "1px solid rgba(194,201,187,0.4)",
         }}
@@ -512,9 +530,14 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
       )}
 
       {/* ================= MESSAGES ================= */}
+      {/*
+       * flex-1 + min-h-0 : la zone de messages prend tout l'espace restant
+       * entre le header et l'input, et peut scroller librement.
+       * min-h-0 est ESSENTIEL en flex column pour que overflow-y-auto fonctionne.
+       */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-2 sm:px-4 py-3 sm:py-4 space-y-2 sm:space-y-3 gro-chat-scroll"
+        className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 py-3 sm:py-4 space-y-2 sm:space-y-3 gro-chat-scroll"
         style={{ background: "rgba(243,244,237,0.6)" }}
         onScroll={handleScroll}
       >
@@ -573,8 +596,6 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
                   media_type: msg.media_url?.match(/\.(mp4|mov|webm)$/i)
                     ? "video"
                     : "image",
-                  is_read: msg.is_read,
-                  is_delivered: msg.is_delivered,
                   reply_to: msg.reply_to,
                 }}
                 onReply={handleReply}
@@ -589,8 +610,19 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
       </div>
 
       {/* ================= INPUT ZONE ================= */}
-      <div className="flex-shrink-0 bg-[#f9faf2] border-t border-[rgba(194,201,187,0.4)]">
-        {/* REPLY BAR - Placée juste au-dessus du MessageInput */}
+      {/*
+       * flex-shrink-0 : l'input zone ne se comprime jamais.
+       * Sur mobile le safe-area-inset-bottom (notch / barre home) est géré
+       * via pb-safe en Tailwind ou padding-bottom inline.
+       * On supprime le mb-24 mobile qui causait un espace fantôme,
+       * puisque le header n'est plus fixed.
+       */}
+      <div
+        ref={inputZoneRef}
+        className="flex-shrink-0 bg-[#f9faf2] border-t border-[rgba(194,201,187,0.4)]"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
+        {/* REPLY BAR */}
         {replyTo && (
           <div
             className="px-3 sm:px-4 pt-2 pb-1 flex items-center justify-between gap-2 animate-slide-up"
@@ -626,7 +658,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
         )}
 
         {/* Message Input */}
-        <div className="px-2 sm:px-4 mb-24 md:mb-4 py-2 sm:py-3">
+        <div className="px-2 sm:px-4 py-2 sm:py-3">
           <MessageInput
             onSend={handleSendMessage}
             isLoading={sendMessage.isPending}

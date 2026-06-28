@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { useState } from "react";
@@ -210,7 +211,7 @@ function CommentItem({
   onReply: () => void;
   onDelete: () => void;
   onLike: () => void;
-  currentUserId?: number;
+  currentUserId?: string | number;
 }) {
   const [showReplies, setShowReplies] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -362,8 +363,7 @@ function CommentItem({
 
           <TimeAgo
             date={comment.created_at}
-            className="text-xs"
-            style={{ color: "#c2c9bb" }}
+            className="text-xs text-#c2c9bb"
           />
         </div>
 
@@ -427,8 +427,7 @@ function CommentItem({
                 <div className="flex items-center gap-3 mt-1 ml-1">
                   <TimeAgo
                     date={reply.created_at}
-                    className="text-xs"
-                    style={{ color: "#c2c9bb" }}
+                    className="text-xs text-#c2c9bb"
                   />
                   {currentUserId === reply.author.id && (
                     <button

@@ -64,7 +64,7 @@ export function Feed() {
   }
 
   return (
-    <div className="space-y-3 bg-white/80">
+    <div className="space-y-3">
       <CreatePostCard />
 
       {posts.length === 0 ? (

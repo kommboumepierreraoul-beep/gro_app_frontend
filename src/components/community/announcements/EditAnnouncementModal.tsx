@@ -22,7 +22,10 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth.store";
 import { Avatar } from "../shared/Avatar";
-import type { Announcement } from "@/types/community.types";
+import type {
+  Announcement,
+  AnnouncementCategory,
+} from "@/types/community.types";
 import toast from "react-hot-toast";
 
 interface EditAnnouncementModalProps {
@@ -31,6 +34,15 @@ interface EditAnnouncementModalProps {
   onClose: () => void;
   onSuccess?: () => void;
 }
+
+// Définir les catégories disponibles avec leur type
+const CATEGORIES: AnnouncementCategory[] = [
+  "job",
+  "event",
+  "news",
+  "training",
+  "other",
+];
 
 export default function EditAnnouncementModal({
   isOpen,
@@ -51,7 +63,7 @@ export default function EditAnnouncementModal({
   });
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(
-    announcement.cover_image || null
+    announcement.cover_image || null,
   );
   const [removeCover, setRemoveCover] = useState(false);
 
@@ -87,19 +99,24 @@ export default function EditAnnouncementModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
-      queryClient.invalidateQueries({ queryKey: ["announcement", announcement.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["announcement", announcement.id],
+      });
       toast.success("Annonce modifiée avec succès !");
       if (onSuccess) onSuccess();
       onClose();
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || "Erreur lors de la modification";
+      const message =
+        error.response?.data?.message || "Erreur lors de la modification";
       toast.error(message);
     },
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     setFormData({
       ...formData,
@@ -153,7 +170,7 @@ export default function EditAnnouncementModal({
     updateMutation.mutate();
   };
 
-  const getCategoryIcon = (category: string) => {
+  const getCategoryIcon = (category: AnnouncementCategory) => {
     switch (category) {
       case "job":
         return <Briefcase className="w-3.5 h-3.5" />;
@@ -168,7 +185,7 @@ export default function EditAnnouncementModal({
     }
   };
 
-  const getCategoryLabel = (category: string) => {
+  const getCategoryLabel = (category: AnnouncementCategory) => {
     switch (category) {
       case "job":
         return "Offre d'emploi";
@@ -187,7 +204,9 @@ export default function EditAnnouncementModal({
     if (!user?.avatar) return undefined;
     if (user.avatar.startsWith("http")) return user.avatar;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const cleanPath = user.avatar.startsWith("/") ? user.avatar : `/${user.avatar}`;
+    const cleanPath = user.avatar.startsWith("/")
+      ? user.avatar
+      : `/${user.avatar}`;
     return `${apiUrl}${cleanPath}`;
   };
 
@@ -279,13 +298,15 @@ export default function EditAnnouncementModal({
                 Catégorie
               </label>
               <div className="flex flex-wrap gap-2">
-                {["job", "event", "news", "training", "other"].map((cat) => {
+                {CATEGORIES.map((cat) => {
                   const isActive = formData.category === cat;
                   return (
                     <button
                       key={cat}
                       type="button"
-                      onClick={() => setFormData({ ...formData, category: cat })}
+                      onClick={() =>
+                        setFormData({ ...formData, category: cat })
+                      }
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
                         isActive
                           ? "bg-[#154212] text-[#bcf0ae] shadow-sm"

@@ -56,7 +56,7 @@ export function AnnouncementHeader({
   return (
     <div className="flex items-start justify-between mb-4">
       <div className="flex items-center gap-3">
-        <Link href={`/community/profile/${author.id}`}>
+        <Link href={`/profile/${author.id}`}>
           <Avatar
             src={getFullImageUrl(author.avatar)}
             firstname={author.firstname}
@@ -66,7 +66,7 @@ export function AnnouncementHeader({
         </Link>
         <div>
           <Link
-            href={`/community/profile/${author.id}`}
+            href={`/profile/${author.id}`}
             className="font-semibold text-gray-900 hover:text-gray-700 transition-colors"
           >
             {author.firstname} {author.lastname}

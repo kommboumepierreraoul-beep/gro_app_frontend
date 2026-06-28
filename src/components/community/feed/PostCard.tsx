@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -22,6 +25,8 @@ import {
   Volume2,
   VolumeX,
   Maximize,
+  Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
 
 import { Avatar } from "../shared/Avatar";
@@ -64,33 +69,24 @@ function ExpandableText({ content }: { content: string }) {
   const [needsClamp, setNeedsClamp] = useState(false);
 
   useEffect(() => {
-    // Attendre le rendu complet pour vérifier la hauteur réelle
     const checkClamp = () => {
       const el = textRef.current;
       if (!el) return;
-      
-      // Comparer la hauteur réelle avec la hauteur visible
-      // Si le texte est plus haut que la hauteur visible, il est clampé
       const isClamped = el.scrollHeight > el.clientHeight;
       setNeedsClamp(isClamped);
     };
 
-    // Vérifier après le rendu
     const timer = setTimeout(checkClamp, 50);
-    
-    // Vérifier aussi au resize
-    window.addEventListener('resize', checkClamp);
-    
+    window.addEventListener("resize", checkClamp);
+
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', checkClamp);
+      window.removeEventListener("resize", checkClamp);
     };
   }, [content]);
 
-  // Si le texte est vide
   if (!content) return null;
 
-  // Si le texte est court et ne nécessite pas de clamp
   if (!needsClamp && !isExpanded) {
     return (
       <div className="pb-3">
@@ -125,7 +121,9 @@ function ExpandableText({ content }: { content: string }) {
           onClick={() => setIsExpanded(!isExpanded)}
           className="mt-1.5 text-xs font-semibold text-green-950 hover:text-green-800 transition-colors"
         >
-          {isExpanded ? "Voir moins" : `Voir plus (${content.length} caractères)`}
+          {isExpanded
+            ? "Voir moins"
+            : `Voir plus (${content.length} caractères)`}
         </button>
       )}
     </div>
@@ -155,13 +153,21 @@ function VideoPlayer({
   const [volume, setVolume] = useState(0.5);
   const [showControls, setShowControls] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+  const controlsTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (autoPlay && videoRef.current) {
       videoRef.current.play().catch(() => setIsPlaying(false));
     }
   }, [autoPlay]);
+
+  useEffect(() => {
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -223,8 +229,10 @@ function VideoPlayer({
 
   const showControlsTemporarily = () => {
     setShowControls(true);
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    controlsTimeoutRef.current = setTimeout(() => {
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    controlsTimeoutRef.current = window.setTimeout(() => {
       if (!isHovering) setShowControls(false);
     }, 2000);
   };
@@ -719,26 +727,234 @@ function EditModal({
   isPending,
 }: {
   post: Post;
-  onSave: (content: string) => void;
+  onSave: (data: { content: string; media?: File[]; removeMedia?: string[] }) => void;
   onCancel: () => void;
   isPending: boolean;
 }) {
   const [content, setContent] = useState(post.content || "");
+  const [newMedia, setNewMedia] = useState<File[]>([]);
+  const [existingMedia, setExistingMedia] = useState<Array<{ url: string }>>(
+    (post.media_urls || []).map((url) => ({ url }))
+  );
+  const [mediaToRemove, setMediaToRemove] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ✅ Fonction pour générer les previews des fichiers
+  const getNewMediaPreviews = (files: File[]): string[] => {
+    return files.map((file) => URL.createObjectURL(file));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const validFiles: File[] = [];
+    const invalidFiles: string[] = [];
+
+    Array.from(files).forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        invalidFiles.push(`${file.name} (trop lourd, max 5Mo)`);
+        return;
+      }
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+        invalidFiles.push(`${file.name} (format non supporté)`);
+        return;
+      }
+      validFiles.push(file);
+    });
+
+    if (invalidFiles.length > 0) {
+      toast.error(`Fichiers ignorés : ${invalidFiles.join(", ")}`);
+    }
+
+    if (validFiles.length > 0) {
+      // ✅ Mettre à jour les médias directement
+      setNewMedia((prev) => [...prev, ...validFiles]);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveNewMedia = (index: number) => {
+    // ✅ Nettoyer la preview avant de supprimer
+    const previewToRemove = URL.createObjectURL(newMedia[index]);
+    URL.revokeObjectURL(previewToRemove);
+    setNewMedia((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveExistingMedia = (url: string) => {
+    setMediaToRemove((prev) => [...prev, url]);
+    setExistingMedia((prev) => prev.filter((item) => item.url !== url));
+  };
+
+  const handleSave = () => {
+    if (!content.trim()) {
+      toast.error("Le contenu est obligatoire");
+      return;
+    }
+
+    onSave({
+      content: content.trim(),
+      media: newMedia.length > 0 ? newMedia : undefined,
+      removeMedia: mediaToRemove.length > 0 ? mediaToRemove : undefined,
+    });
+  };
+
+  // ✅ Nettoyer les previews au démontage
+  useEffect(() => {
+    return () => {
+      newMedia.forEach((file) => {
+        const preview = URL.createObjectURL(file);
+        URL.revokeObjectURL(preview);
+      });
+    };
+  }, [newMedia]);
+
+  const totalMediaCount = existingMedia.length + newMedia.length;
+  const maxMedia = 10;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className=" rounded-2xl p-6 max-w-lg w-full mx-4 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
           Modifier le post
         </h3>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="w-full p-3 border border-gray-200 rounded-xl text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-green-950/20 focus:border-green-950"
-          rows={4}
-          placeholder="Que voulez-vous dire ?"
-        />
-        <div className="flex gap-3 mt-4">
+
+        {/* Contenu */}
+        <div className="mt-4">
+          <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+            Contenu
+          </label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full p-3 border border-gray-200 rounded-xl text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-green-950/20 focus:border-green-950"
+            rows={4}
+            placeholder="Que voulez-vous dire ?"
+          />
+        </div>
+
+        {/* Médias existants */}
+        {existingMedia.length > 0 && (
+          <div className="mt-4">
+            <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+              Médias existants
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {existingMedia.map((item, index) => {
+                const isVideo = getMediaType(item.url);
+                const fullUrl = getFullMediaUrl(item.url);
+                return (
+                  <div
+                    key={index}
+                    className="relative group rounded-lg overflow-hidden border border-gray-200 aspect-square"
+                  >
+                    {isVideo === "video" ? (
+                      <video
+                        src={fullUrl}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={fullUrl}
+                        alt={`Média ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    <button
+                      onClick={() => handleRemoveExistingMedia(item.url)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white hover:bg-red-600 transition flex items-center justify-center opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs px-1.5 py-0.5 truncate">
+                      Média {index + 1}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Nouveaux médias à ajouter */}
+        {newMedia.length > 0 && (
+          <div className="mt-4">
+            <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+              Nouveaux médias
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {newMedia.map((file, index) => {
+                // ✅ Générer la preview uniquement pour l'affichage
+                const preview = URL.createObjectURL(file);
+                return (
+                  <div
+                    key={index}
+                    className="relative group rounded-lg overflow-hidden border-2 border-green-400 aspect-square"
+                  >
+                    {file.type.startsWith("video/") ? (
+                      <video
+                        src={preview}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={preview}
+                        alt={`Nouveau média ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onLoad={() => {
+                          // ✅ Nettoyer la preview après le chargement
+                          // L'URL sera réutilisée pour l'affichage
+                        }}
+                      />
+                    )}
+                    <button
+                      onClick={() => handleRemoveNewMedia(index)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white hover:bg-red-600 transition flex items-center justify-center opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-green-500/80 text-white text-xs px-1.5 py-0.5 truncate">
+                      Nouveau
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Bouton d'ajout */}
+        {totalMediaCount < maxMedia && (
+          <div className="mt-4">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-green-950 hover:text-green-950 transition flex items-center justify-center gap-2"
+            >
+              <ImageIcon className="w-4 h-4" />
+              Ajouter des médias ({totalMediaCount}/{maxMedia})
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
+        )}
+
+        {mediaToRemove.length > 0 && (
+          <div className="mt-2 text-xs text-red-500">
+            {mediaToRemove.length} média(s) seront supprimés
+          </div>
+        )}
+
+        {/* Boutons d'action */}
+        <div className="flex gap-3 mt-6">
           <button
             onClick={onCancel}
             className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
@@ -746,11 +962,18 @@ function EditModal({
             Annuler
           </button>
           <button
-            onClick={() => onSave(content)}
+            onClick={handleSave}
             disabled={isPending || !content.trim()}
-            className="flex-1 px-4 py-2 bg-green-950 hover:bg-green-900 disabled:opacity-50 rounded-xl text-sm font-medium text-white transition"
+            className="flex-1 px-4 py-2 bg-green-950 hover:bg-green-900 disabled:opacity-50 rounded-xl text-sm font-medium text-white transition flex items-center justify-center gap-2"
           >
-            {isPending ? "Enregistrement..." : "Enregistrer"}
+            {isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Enregistrement...
+              </>
+            ) : (
+              "Enregistrer"
+            )}
           </button>
         </div>
       </div>
@@ -761,7 +984,7 @@ function EditModal({
 /* ─── PostCard ─── */
 export function PostCard({ post }: { post: Post }) {
   const { user } = useAuthStore();
-  const { deletePost, updatePost } = useFeed();
+  const { deletePost, updatePost, updatePostLoading } = useFeed();
 
   const [showComments, setShowComments] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -774,9 +997,7 @@ export function PostCard({ post }: { post: Post }) {
   const isOwner = user?.id === post.author?.id;
 
   const mediaItems = (post.media_urls || []).map((url, index) => ({
-    url,
-    type: post.media_types?.[index] || (isVideoFile(url) ? "video" : "image"),
-    mime_type: post.media_mime_types?.[index],
+    url
   }));
 
   useEffect(() => {
@@ -790,11 +1011,33 @@ export function PostCard({ post }: { post: Post }) {
 
   const handleDelete = () =>
     deletePost.mutate(post.id, { onSuccess: () => setShowDeleteModal(false) });
-  const handleSave = (content: string) =>
-    updatePost.mutate(
-      { id: post.id, content },
-      { onSuccess: () => setShowEditModal(false) },
+
+  const handleSave = (data: {
+    content: string;
+    media?: File[];
+    removeMedia?: string[];
+  }) => {
+    if (!updatePost) {
+      toast.error("Erreur: service de mise à jour non disponible");
+      return;
+    }
+
+    // Pour l'instant, on ne gère que le contenu texte
+    // Les médias seront gérés quand l'API sera prête
+    updatePost(
+      { id: post.id, data },
+      {
+        onSuccess: () => {
+          setShowEditModal(false);
+          toast.success("Post mis à jour !");
+        },
+        onError: (error: any) => {
+          toast.error(error?.message || "Erreur lors de la mise à jour");
+        },
+      },
     );
+  };
+
   const handleMediaClick = (index: number) => {
     setSelectedMediaIndex(index);
     setShowMediaViewer(true);
@@ -814,7 +1057,7 @@ export function PostCard({ post }: { post: Post }) {
         {/* Header */}
         <div className="flex items-start justify-between px-4 pt-4 pb-3 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <Link href={`/community/profile/${post.author?.id}`}>
+            <Link href={`/profile/${post.author?.id}`}>
               <Avatar
                 src={post.author?.avatar}
                 firstname={post.author?.firstname}
@@ -824,7 +1067,7 @@ export function PostCard({ post }: { post: Post }) {
             </Link>
             <div>
               <Link
-                href={`/community/profile/${post.author?.id}`}
+                href={`/profile/${post.author?.id}`}
                 className="text-sm font-semibold text-gray-900 hover:text-gray-700 transition-colors"
               >
                 {post.author?.firstname} {post.author?.lastname}
@@ -950,14 +1193,16 @@ export function PostCard({ post }: { post: Post }) {
           isPending={deletePost.isPending}
         />
       )}
+
       {showEditModal && (
         <EditModal
           post={post}
           onSave={handleSave}
           onCancel={() => setShowEditModal(false)}
-          isPending={updatePost?.isPending ?? false}
+          isPending={updatePostLoading || false}
         />
       )}
+
       {showMediaViewer && (
         <MediaViewerModal
           mediaItems={mediaItems}

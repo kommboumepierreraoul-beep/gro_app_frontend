@@ -38,7 +38,6 @@ export function useFeed() {
     },
 
     onSuccess: (res: any) => {
-      // Mettre à jour le feed
       queryClient.setQueryData(["feed"], (old: any) => {
         if (!old) return old;
         return {
@@ -57,7 +56,6 @@ export function useFeed() {
         };
       });
 
-      // Invalider les caches de modération
       queryClient.invalidateQueries({ queryKey: ["moderation", "stats"] });
       queryClient.invalidateQueries({
         queryKey: ["moderation", "my", "summary"],
@@ -69,7 +67,7 @@ export function useFeed() {
       const status = res.data?.moderation_status || "pending";
       const messages = {
         pending: "⏳ Publication créée, en cours d'analyse...",
-        approved: "✅ Publication approuvée et publiée",
+        approved: "Publication approuvée et publiée",
         review: "🔍 Publication en cours de vérification",
         rejected: "❌ Publication rejetée",
       };
@@ -116,6 +114,73 @@ export function useFeed() {
     },
   });
 
+  // ── Update Post ───────────────────────────────────────────────────────────
+  const updatePost = useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number | string;
+      data: { content: string; media?: File[]; removeMedia?: string[] };
+    }) => postService.updatePost(id, data),
+
+    onSuccess: (response, variables) => {
+      queryClient.setQueryData(["feed"], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            data: {
+              ...page.data,
+              data: page.data.data.map((p: any) =>
+                p.id === variables.id
+                  ? {
+                      ...p,
+                      content: variables.data.content,
+                      media_urls: response.data?.media_urls || [],
+                      moderation_status:
+                        response.data?.moderation_status || "pending",
+                      updated_at: new Date().toISOString(),
+                    }
+                  : p,
+              ),
+            },
+          })),
+        };
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
+      queryClient.invalidateQueries({ queryKey: ["post", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["moderation", "my", "pending"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["moderation", "my", "summary"],
+      });
+
+      const status = response.data?.moderation_status || "pending";
+      const messages = {
+        pending: "⏳ Publication mise à jour, en cours d'analyse...",
+        approved: "✅ Publication mise à jour et approuvée",
+        review: "🔍 Publication mise à jour, en cours de vérification",
+        rejected: "❌ Publication mise à jour mais rejetée",
+      };
+      toast.success(
+        messages[status as ModerationStatus] || "Publication mise à jour !",
+      );
+    },
+
+    onError: (error: any) => {
+      console.error("❌ [useFeed] updatePost error:", error);
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Erreur lors de la mise à jour";
+      toast.error(message);
+    },
+  });
+
   // ── Like post (optimistic) ────────────────────────────────────────────────
   const likePost = useMutation({
     mutationFn: (id: number | string) => postService.toggleLike(id),
@@ -159,9 +224,6 @@ export function useFeed() {
 
   // ─── MODÉRATION - POSTS ──────────────────────────────────────────────────
 
-  /**
-   * Modérer un post
-   */
   const moderatePost = useMutation({
     mutationFn: async ({
       postId,
@@ -176,7 +238,6 @@ export function useFeed() {
     },
 
     onSuccess: (_, variables) => {
-      // Mettre à jour le feed
       queryClient.setQueryData(["feed"], (old: any) => {
         if (!old) return old;
         return {
@@ -200,7 +261,6 @@ export function useFeed() {
         };
       });
 
-      // Invalider les caches de modération
       queryClient.invalidateQueries({ queryKey: ["moderation", "queue"] });
       queryClient.invalidateQueries({ queryKey: ["moderation", "stats"] });
       queryClient.invalidateQueries({ queryKey: ["moderation", "my"] });
@@ -219,9 +279,6 @@ export function useFeed() {
     },
   });
 
-  /**
-   * Réanalyser un post
-   */
   const reanalyzePost = useMutation({
     mutationFn: (postId: number) => postService.reanalyzePost(postId),
 
@@ -259,9 +316,6 @@ export function useFeed() {
 
   // ─── STATISTIQUES DE MODÉRATION ──────────────────────────────────────────
 
-  /**
-   * Récupérer les statistiques de modération
-   */
   const moderationStatsQuery = useQuery({
     queryKey: ["moderation", "stats"],
     queryFn: () => postService.getModerationStats(),
@@ -269,9 +323,6 @@ export function useFeed() {
     refetchOnWindowFocus: true,
   });
 
-  /**
-   * Récupérer le résumé de ma modération
-   */
   const myModerationSummaryQuery = useQuery({
     queryKey: ["moderation", "my", "summary"],
     queryFn: () => postService.getMyModerationSummary(),
@@ -280,9 +331,6 @@ export function useFeed() {
 
   // ─── FILE DE REVIEW ──────────────────────────────────────────────────────
 
-  /**
-   * Récupérer la file de review des posts
-   */
   const reviewQueueQuery = useInfiniteQuery({
     queryKey: ["moderation", "queue", "posts"],
     queryFn: ({ pageParam = 1 }) =>
@@ -301,9 +349,6 @@ export function useFeed() {
 
   // ─── MES POSTS - MODÉRATION ─────────────────────────────────────────────
 
-  /**
-   * Récupérer mes posts en attente
-   */
   const myPendingPostsQuery = useInfiniteQuery({
     queryKey: ["moderation", "my", "pending", "posts"],
     queryFn: ({ pageParam = 1 }) =>
@@ -320,9 +365,6 @@ export function useFeed() {
     myPendingPostsQuery.data?.pages.flatMap((p: any) => p.data?.data ?? []) ??
     [];
 
-  /**
-   * Récupérer mes posts rejetés
-   */
   const myRejectedPostsQuery = useInfiniteQuery({
     queryKey: ["moderation", "my", "rejected", "posts"],
     queryFn: ({ pageParam = 1 }) =>
@@ -338,9 +380,6 @@ export function useFeed() {
     myRejectedPostsQuery.data?.pages.flatMap((p: any) => p.data?.data ?? []) ??
     [];
 
-  /**
-   * Récupérer mes posts approuvés
-   */
   const myApprovedPostsQuery = useInfiniteQuery({
     queryKey: ["moderation", "my", "approved", "posts"],
     queryFn: ({ pageParam = 1 }) =>
@@ -356,9 +395,6 @@ export function useFeed() {
     myApprovedPostsQuery.data?.pages.flatMap((p: any) => p.data?.data ?? []) ??
     [];
 
-  /**
-   * Récupérer mes posts en révision
-   */
   const myReviewPostsQuery = useInfiniteQuery({
     queryKey: ["moderation", "my", "review", "posts"],
     queryFn: ({ pageParam = 1 }) =>
@@ -376,9 +412,6 @@ export function useFeed() {
 
   // ─── ACTIONS EN MASSE ────────────────────────────────────────────────────
 
-  /**
-   * Approuver plusieurs posts en masse
-   */
   const bulkApprove = useMutation({
     mutationFn: (ids: number[]) => postService.bulkApprovePosts(ids),
     onSuccess: () => {
@@ -393,9 +426,6 @@ export function useFeed() {
     },
   });
 
-  /**
-   * Rejeter plusieurs posts en masse
-   */
   const bulkReject = useMutation({
     mutationFn: ({ ids, reason }: { ids: number[]; reason?: string }) =>
       postService.bulkRejectPosts(ids, reason),
@@ -411,9 +441,6 @@ export function useFeed() {
     },
   });
 
-  /**
-   * Mettre plusieurs posts en révision en masse
-   */
   const bulkReview = useMutation({
     mutationFn: (ids: number[]) => postService.bulkReviewPosts(ids),
     onSuccess: () => {
@@ -441,6 +468,8 @@ export function useFeed() {
     // CRUD
     createPost,
     deletePost,
+    updatePost: updatePost.mutate,
+    updatePostLoading: updatePost.isPending,
     likePost,
 
     // Modération - Actions individuelles

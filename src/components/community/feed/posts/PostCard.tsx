@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
@@ -23,6 +24,8 @@ import {
   Volume2,
   VolumeX,
   Maximize,
+  ImageIcon,
+  Loader2,
 } from "lucide-react";
 
 import { Avatar } from "@/components/community/shared/Avatar";
@@ -40,6 +43,7 @@ const getFullMediaUrl = (url: string): string => {
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   if (url.startsWith("/storage")) return `${apiUrl}${url}`;
+  if (url.startsWith("/uploads")) return `${apiUrl}${url}`;
   return `${apiUrl}/${url}`;
 };
 
@@ -66,18 +70,15 @@ function ExpandableText({ content }: { content: string }) {
     const el = innerRef.current;
     if (!el) return;
 
-    // 1. Mesurer la hauteur SANS clamp
     el.style.webkitLineClamp = "unset";
     el.style.display = "block";
     const fullHeight = el.scrollHeight;
 
-    // 2. Remettre le clamp et mesurer la hauteur réduite
     el.style.webkitLineClamp = String(LINE_CLAMP);
     el.style.display = "-webkit-box";
-    // Laisser le navigateur recalculer
     const clampedHeight = el.clientHeight;
 
-    setNeedsClamp(fullHeight > clampedHeight + 2); // +2 pour tolérance pixel
+    setNeedsClamp(fullHeight > clampedHeight + 2);
   }, [content]);
 
   if (!content) return null;
@@ -104,6 +105,7 @@ function ExpandableText({ content }: { content: string }) {
         <button
           onClick={() => setIsExpanded((v) => !v)}
           className="mt-1.5 text-xs font-semibold text-green-950 hover:text-green-800 transition-colors"
+          aria-label={isExpanded ? "Voir moins" : "Voir plus"}
         >
           {isExpanded ? "Voir moins" : "Voir plus"}
         </button>
@@ -135,13 +137,21 @@ function VideoPlayer({
   const [volume, setVolume] = useState(0.5);
   const [showControls, setShowControls] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+  const controlsTimeoutRef = useRef<NodeJS.Timeout>(null);
 
   useEffect(() => {
     if (autoPlay && videoRef.current) {
       videoRef.current.play().catch(() => setIsPlaying(false));
     }
   }, [autoPlay]);
+
+  useEffect(() => {
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -260,6 +270,7 @@ function VideoPlayer({
           <button
             onClick={togglePlay}
             className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition"
+            aria-label={isPlaying ? "Mettre en pause" : "Lire"}
           >
             {isPlaying ? (
               <Pause className="w-4 h-4 text-white" />
@@ -271,6 +282,7 @@ function VideoPlayer({
             <button
               onClick={toggleMute}
               className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition"
+              aria-label={isMuted ? "Activer le son" : "Couper le son"}
             >
               {isMuted ? (
                 <VolumeX className="w-4 h-4 text-white" />
@@ -286,11 +298,13 @@ function VideoPlayer({
               value={isMuted ? 0 : volume}
               onChange={handleVolumeChange}
               className="w-20 h-1 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white opacity-0 group-hover/volume:opacity-100 transition-opacity"
+              aria-label="Volume"
             />
           </div>
           <button
             onClick={handleFullscreen}
             className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition ml-auto"
+            aria-label="Plein écran"
           >
             <Maximize className="w-4 h-4 text-white" />
           </button>
@@ -301,6 +315,7 @@ function VideoPlayer({
         <button
           onClick={togglePlay}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/30 hover:bg-white/40 backdrop-blur-md flex items-center justify-center transition hover:scale-110"
+          aria-label="Lire la vidéo"
         >
           <Play className="w-7 h-7 text-white ml-1" />
         </button>
@@ -426,6 +441,21 @@ function MediaViewerModal({
   const [isDownloading, setIsDownloading] = useState(false);
   const [imgError, setImgError] = useState(false);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   const currentMedia = mediaItems[currentIndex];
   const currentUrl = getFullMediaUrl(currentMedia.url);
   const isVideo =
@@ -487,6 +517,9 @@ function MediaViewerModal({
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: "rgba(0,0,0,0.95)", backdropFilter: "blur(8px)" }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Visionneuse de médias"
     >
       <div
         className="relative w-full h-full flex flex-col"
@@ -502,18 +535,21 @@ function MediaViewerModal({
                 <button
                   onClick={() => setZoom((z) => Math.max(z - 0.25, 0.5))}
                   className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+                  aria-label="Zoom arrière"
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setZoom((z) => Math.min(z + 0.25, 3))}
                   className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+                  aria-label="Zoom avant"
                 >
                   <ZoomIn className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setRotation((r) => (r + 90) % 360)}
                   className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+                  aria-label="Rotation"
                 >
                   <RotateCw className="w-4 h-4" />
                 </button>
@@ -524,9 +560,10 @@ function MediaViewerModal({
               onClick={handleDownload}
               disabled={isDownloading}
               className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center disabled:opacity-50"
+              aria-label="Télécharger"
             >
               {isDownloading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Download className="w-4 h-4" />
               )}
@@ -534,12 +571,14 @@ function MediaViewerModal({
             <button
               onClick={handleCopyLink}
               className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+              aria-label="Copier le lien"
             >
               <Copy className="w-4 h-4" />
             </button>
             <button
               onClick={handleShare}
               className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+              aria-label="Partager"
             >
               <Share className="w-4 h-4" />
             </button>
@@ -547,6 +586,7 @@ function MediaViewerModal({
             <button
               onClick={onClose}
               className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+              aria-label="Fermer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -587,12 +627,14 @@ function MediaViewerModal({
             <button
               onClick={handlePrev}
               className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+              aria-label="Précédent"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={handleNext}
               className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
+              aria-label="Suivant"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -615,6 +657,7 @@ function MediaViewerModal({
                       setImgError(false);
                     }}
                     className={`relative w-12 h-12 rounded-lg overflow-hidden transition-all flex-shrink-0 ${idx === currentIndex ? "ring-2 ring-green-950 scale-110" : "opacity-60 hover:opacity-100"}`}
+                    aria-label={`Aller au média ${idx + 1}`}
                   >
                     {isVid ? (
                       <div className="w-full h-full bg-black flex items-center justify-center">
@@ -652,8 +695,28 @@ function DeleteModal({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onCancel]);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Confirmation de suppression"
+    >
       <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
           Supprimer le post
@@ -666,6 +729,7 @@ function DeleteModal({
           <button
             onClick={onCancel}
             className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+            aria-label="Annuler la suppression"
           >
             Annuler
           </button>
@@ -673,6 +737,7 @@ function DeleteModal({
             onClick={onConfirm}
             disabled={isPending}
             className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-xl text-sm font-medium text-white transition"
+            aria-label="Confirmer la suppression"
           >
             {isPending ? "Suppression..." : "Supprimer"}
           </button>
@@ -690,37 +755,275 @@ function EditModal({
   isPending,
 }: {
   post: Post;
-  onSave: (content: string) => void;
+  onSave: (data: { content: string; media?: File[]; removeMedia?: string[] }) => void;
   onCancel: () => void;
   isPending: boolean;
 }) {
-  const [content, setContent] = useState(post.content || "");
+  const [content, setContent] = useState(post?.content || "");
+  const [newMedia, setNewMedia] = useState<File[]>([]);
+  const [existingMedia, setExistingMedia] = useState<Array<{ url: string }>>(
+    (post?.media_urls || []).map((url) => ({ url }))
+  );
+  const [mediaToRemove, setMediaToRemove] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onCancel]);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    const textarea = document.querySelector("textarea");
+    if (textarea) {
+      setTimeout(() => textarea.focus(), 100);
+    }
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const validFiles: File[] = [];
+    const invalidFiles: string[] = [];
+
+    Array.from(files).forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        invalidFiles.push(`${file.name} (trop lourd, max 5Mo)`);
+        return;
+      }
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+        invalidFiles.push(`${file.name} (format non supporté)`);
+        return;
+      }
+      validFiles.push(file);
+    });
+
+    if (invalidFiles.length > 0) {
+      toast.error(`Fichiers ignorés : ${invalidFiles.join(", ")}`);
+    }
+
+    if (validFiles.length > 0) {
+      setNewMedia((prev) => [...prev, ...validFiles]);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveNewMedia = (index: number) => {
+    setNewMedia((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveExistingMedia = (url: string) => {
+    setMediaToRemove((prev) => [...prev, url]);
+    setExistingMedia((prev) => prev.filter((item) => item.url !== url));
+  };
+
+  const handleSave = () => {
+    const trimmedContent = content?.trim() || "";
+    
+    if (!trimmedContent || trimmedContent === "undefined") {
+      toast.error("Le contenu est obligatoire");
+      return;
+    }
+
+    onSave({
+      content: trimmedContent,
+      media: newMedia.length > 0 ? newMedia : undefined,
+      removeMedia: mediaToRemove.length > 0 ? mediaToRemove : undefined,
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      newMedia.forEach((file) => {
+        const preview = URL.createObjectURL(file);
+        URL.revokeObjectURL(preview);
+      });
+    };
+  }, [newMedia]);
+
+  const totalMediaCount = existingMedia.length + newMedia.length;
+  const maxMedia = 10;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl p-6 max-w-lg w-full mx-4 shadow-xl">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Modifier le post"
+    >
+      <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
           Modifier le post
         </h3>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          rows={4}
-          placeholder="Que voulez-vous dire ?"
-          className="w-full p-3 border border-gray-200 rounded-xl text-sm text-gray-800 resize-none outline-none focus:ring-2 focus:ring-green-950/20 focus:border-green-950"
-        />
-        <div className="flex gap-3 mt-4">
+
+        <div className="mt-4">
+          <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+            Contenu *
+          </label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full p-3 border border-gray-200 rounded-xl text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-green-950/20 focus:border-green-950"
+            rows={4}
+            placeholder="Que voulez-vous dire ?"
+            maxLength={20000}
+          />
+          <div className="mt-1 text-xs text-gray-400 text-right">
+            {content.length} / 20000 caractères
+          </div>
+        </div>
+
+        {existingMedia.length > 0 && (
+          <div className="mt-4">
+            <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+              Médias existants ({existingMedia.length})
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {existingMedia.map((item, index) => {
+                const isVideo = getMediaType(item.url);
+                const fullUrl = getFullMediaUrl(item.url);
+                return (
+                  <div
+                    key={index}
+                    className="relative group rounded-lg overflow-hidden border border-gray-200 aspect-square"
+                  >
+                    {isVideo === "video" ? (
+                      <video
+                        src={fullUrl}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={fullUrl}
+                        alt={`Média ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error("Erreur de chargement de l'image:", fullUrl);
+                          e.currentTarget.src = "https://placehold.co/200x200?text=Erreur";
+                        }}
+                      />
+                    )}
+                    <button
+                      onClick={() => handleRemoveExistingMedia(item.url)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white hover:bg-red-600 transition flex items-center justify-center opacity-0 group-hover:opacity-100"
+                      aria-label="Supprimer ce média"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs px-1.5 py-0.5 truncate">
+                      Média {index + 1}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {newMedia.length > 0 && (
+          <div className="mt-4">
+            <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+              Nouveaux médias ({newMedia.length})
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {newMedia.map((file, index) => {
+                const preview = URL.createObjectURL(file);
+                return (
+                  <div
+                    key={index}
+                    className="relative group rounded-lg overflow-hidden border-2 border-green-400 aspect-square"
+                  >
+                    {file.type.startsWith("video/") ? (
+                      <video
+                        src={preview}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={preview}
+                        alt={`Nouveau média ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    <button
+                      onClick={() => handleRemoveNewMedia(index)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white hover:bg-red-600 transition flex items-center justify-center opacity-0 group-hover:opacity-100"
+                      aria-label="Supprimer ce nouveau média"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-green-500/80 text-white text-xs px-1.5 py-0.5 truncate">
+                      Nouveau
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {totalMediaCount < maxMedia && (
+          <div className="mt-4">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-green-950 hover:text-green-950 transition flex items-center justify-center gap-2"
+              type="button"
+            >
+              <ImageIcon className="w-4 h-4" />
+              Ajouter des médias ({totalMediaCount}/{maxMedia})
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
+        )}
+
+        {mediaToRemove.length > 0 && (
+          <div className="mt-2 text-xs text-red-500">
+            {mediaToRemove.length} média(s) seront supprimés
+          </div>
+        )}
+
+        <div className="flex gap-3 mt-6">
           <button
             onClick={onCancel}
             className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+            type="button"
           >
             Annuler
           </button>
           <button
-            onClick={() => onSave(content)}
-            disabled={isPending || !content.trim()}
-            className="flex-1 px-4 py-2 bg-green-950 hover:bg-green-900 disabled:opacity-50 rounded-xl text-sm font-medium text-white transition"
+            onClick={handleSave}
+            disabled={isPending || !content?.trim() || content?.trim() === "undefined"}
+            className="flex-1 px-4 py-2 bg-green-950 hover:bg-green-900 disabled:opacity-50 rounded-xl text-sm font-medium text-white transition flex items-center justify-center gap-2"
+            type="button"
           >
-            {isPending ? "Enregistrement..." : "Enregistrer"}
+            {isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Enregistrement...
+              </>
+            ) : (
+              "Enregistrer"
+            )}
           </button>
         </div>
       </div>
@@ -731,7 +1034,7 @@ function EditModal({
 /* ─── PostCard ─── */
 export function PostCard({ post }: { post: Post }) {
   const { user } = useAuthStore();
-  const { deletePost, updatePost } = useFeed();
+  const { deletePost, updatePost, updatePostLoading } = useFeed();
 
   const [showComments, setShowComments] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -744,9 +1047,7 @@ export function PostCard({ post }: { post: Post }) {
   const isOwner = user?.id === post.author?.id;
 
   const mediaItems = (post.media_urls || []).map((url, index) => ({
-    url,
-    type: post.media_types?.[index] || (isVideoFile(url) ? "video" : "image"),
-    mime_type: post.media_mime_types?.[index],
+    url
   }));
 
   useEffect(() => {
@@ -760,11 +1061,43 @@ export function PostCard({ post }: { post: Post }) {
 
   const handleDelete = () =>
     deletePost.mutate(post.id, { onSuccess: () => setShowDeleteModal(false) });
-  const handleSave = (content: string) =>
-    updatePost.mutate(
-      { id: post.id, content },
-      { onSuccess: () => setShowEditModal(false) },
+
+  // ✅ Correction : handleSave prend un objet avec content, media, removeMedia
+  const handleSave = (data: { content: string; media?: File[]; removeMedia?: string[] }) => {
+    if (!updatePost) {
+      toast.error("Erreur: service de mise à jour non disponible");
+      return;
+    }
+    
+    const contentToSend = data?.content?.trim() || "";
+    
+    if (!contentToSend || contentToSend === "undefined") {
+      toast.error("Le contenu ne peut pas être vide");
+      return;
+    }
+    
+    // ✅ Appel correct avec id et data
+    updatePost(
+      { 
+        id: post.id, 
+        data: {
+          content: contentToSend,
+          media: data.media,
+          removeMedia: data.removeMedia,
+        }
+      },
+      {
+        onSuccess: () => {
+          setShowEditModal(false);
+          toast.success("Post mis à jour !");
+        },
+        onError: (error: any) => {
+          toast.error(error?.message || "Erreur lors de la mise à jour");
+        },
+      }
     );
+  };
+
   const handleMediaClick = (index: number) => {
     setSelectedMediaIndex(index);
     setShowMediaViewer(true);
@@ -784,7 +1117,7 @@ export function PostCard({ post }: { post: Post }) {
         {/* Header */}
         <div className="flex items-start justify-between px-4 pt-4 pb-3 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <Link href={`/community/profile/${post.author?.id}`}>
+            <Link href={`/profile/${post.author?.id}`}>
               <Avatar
                 src={post.author?.avatar}
                 firstname={post.author?.firstname}
@@ -794,7 +1127,7 @@ export function PostCard({ post }: { post: Post }) {
             </Link>
             <div>
               <Link
-                href={`/community/profile/${post.author?.id}`}
+                href={`/profile/${post.author?.id}`}
                 className="text-sm font-semibold text-gray-900 hover:text-gray-700 transition-colors"
               >
                 {post.author?.firstname} {post.author?.lastname}
@@ -816,6 +1149,7 @@ export function PostCard({ post }: { post: Post }) {
               <button
                 onClick={() => setShowMenu((v) => !v)}
                 className="w-8 h-8 flex items-center justify-center rounded-full transition hover:bg-gray-100"
+                aria-label="Menu"
               >
                 <MoreHorizontal className="w-4 h-4 text-gray-500" />
               </button>
@@ -958,7 +1292,7 @@ export function PostCard({ post }: { post: Post }) {
           post={post}
           onSave={handleSave}
           onCancel={() => setShowEditModal(false)}
-          isPending={updatePost?.isPending ?? false}
+          isPending={updatePostLoading || false}
         />
       )}
       {showMediaViewer && (

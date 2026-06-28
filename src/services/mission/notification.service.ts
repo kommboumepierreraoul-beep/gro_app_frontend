@@ -1,103 +1,187 @@
 // ============================================================
-// services/notification.service.ts
-// Couche d'accès API pour le centre de notifications in-app GRO.
-// Repose sur les routes natives Laravel notifications (database channel).
+// services/mission/notification.service.ts
 // ============================================================
 
 import api from "@/lib/axios";
+import {
+  MissionNotification,
+  MissionNotificationsResponse,
+  MissionNotificationFilters,
+  MissionNotificationType,
+} from "@/lib/missions/notification.type";
 
-export interface AppNotification {
-  id: string; // UUID Laravel
-  type: string; // ex: 'new_mission', 'application_accepted', 'mission_reminder', ...
-  data: {
-    type: string;
-    title?: string;
-    body?: string;
-    message?: string;
-    mission_ulid?: string;
-    mission_title?: string;
-    url?: string;
-    [key: string]: unknown;
-  };
-  read_at: string | null;
-  created_at: string;
-}
-
-export interface NotificationsResponse {
-  data: AppNotification[];
-  meta?: { current_page: number; last_page: number; total: number };
-  unread_count?: number;
-}
-
-export const notificationService = {
+export const missionNotificationService = {
   /**
-   * GET /user/notifications — toutes les notifications (paginées)
+   * GET /community/notifications/missions — Toutes les notifications missions
    */
-  async list(params?: {
-    per_page?: number;
-    page?: number;
-  }): Promise<NotificationsResponse> {
-    const { data } = await api.get<NotificationsResponse>(
-      "/user/notifications",
-      { params },
-    );
-    return data;
+  async list(
+    params?: MissionNotificationFilters,
+  ): Promise<MissionNotificationsResponse> {
+    try {
+      const { data } = await api.get<{
+        success: boolean;
+        data: {
+          data: MissionNotification[];
+          current_page: number;
+          last_page: number;
+          total: number;
+          per_page: number;
+        };
+        unread_count?: number;
+      }>("/community/notifications/missions", { params });
+
+      // ✅ Normaliser la réponse
+      return {
+        data: data.data?.data ?? [],
+        meta: {
+          current_page: data.data?.current_page ?? 1,
+          last_page: data.data?.last_page ?? 1,
+          total: data.data?.total ?? 0,
+          per_page: data.data?.per_page ?? 20,
+        },
+        unread_count: data.unread_count ?? 0,
+      };
+    } catch (error) {
+      console.error("Error fetching mission notifications:", error);
+      return {
+        data: [],
+        meta: {
+          current_page: 1,
+          last_page: 1,
+          total: 0,
+          per_page: 20,
+        },
+        unread_count: 0,
+      };
+    }
   },
 
   /**
-   * GET /user/notifications/unread — notifications non lues uniquement
+   * GET /community/notifications/missions/unread — Notifications non lues
    */
-  async unread(): Promise<NotificationsResponse> {
-    const { data } = await api.get<NotificationsResponse>(
-      "/user/notifications/unread",
-    );
-    return data;
+  async unread(): Promise<MissionNotificationsResponse> {
+    try {
+      const { data } = await api.get<{
+        success: boolean;
+        data: MissionNotification[];
+      }>("/community/notifications/missions/unread");
+
+      return {
+        data: data.data ?? [],
+        meta: {
+          current_page: 1,
+          last_page: 1,
+          total: data.data?.length ?? 0,
+          per_page: data.data?.length ?? 0,
+        },
+        unread_count: data.data?.length ?? 0,
+      };
+    } catch (error) {
+      console.error("Error fetching unread mission notifications:", error);
+      return {
+        data: [],
+        meta: {
+          current_page: 1,
+          last_page: 1,
+          total: 0,
+          per_page: 20,
+        },
+        unread_count: 0,
+      };
+    }
   },
 
   /**
-   * GET /user/notifications/unread-count — compteur pour badge
+   * GET /community/notifications/missions/unread-count — Compteur
    */
   async unreadCount(): Promise<number> {
-    const { data } = await api.get<{ count: number }>(
-      "/user/notifications/unread-count",
-    );
-    return data.count;
+    try {
+      const { data } = await api.get<{ success: boolean; count: number }>(
+        "/community/notifications/missions/unread-count",
+      );
+      return data.count ?? 0;
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      return 0;
+    }
   },
 
   /**
-   * POST /user/notifications/{id}/read — marquer comme lue
+   * POST /community/notifications/{id}/read — Marquer comme lue
    */
-  async markAsRead(id: string): Promise<void> {
-    await api.post(`/user/notifications/${id}/read`);
+  async markAsRead(id: string | number): Promise<void> {
+    try {
+      await api.post(`/community/notifications/${id}/read`);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      throw error;
+    }
   },
 
   /**
-   * POST /user/notifications/read-all — tout marquer comme lu
+   * POST /community/notifications/read-all — Tout marquer comme lu
    */
   async markAllAsRead(): Promise<void> {
-    await api.post("/user/notifications/read-all");
+    try {
+      await api.post("/community/notifications/read-all");
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+      throw error;
+    }
   },
 
   /**
-   * DELETE /user/notifications/{id}
+   * DELETE /community/notifications/{id} — Supprimer une notification
    */
-  async remove(id: string): Promise<void> {
-    await api.delete(`/user/notifications/${id}`);
+  async remove(id: string | number): Promise<void> {
+    try {
+      await api.delete(`/community/notifications/${id}`);
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      throw error;
+    }
   },
 
   /**
-   * Construire l'URL de redirection à partir d'une notification
-   * (fallback si data.url n'est pas fourni par le backend)
+   * DELETE /community/notifications — Supprimer toutes les notifications
    */
-  resolveUrl(notification: AppNotification): string {
-    if (notification.data.url) return notification.data.url;
+  async clearAll(): Promise<void> {
+    try {
+      await api.delete("/community/notifications");
+    } catch (error) {
+      console.error("Error clearing notifications:", error);
+      throw error;
+    }
+  },
 
-    if (notification.data.mission_ulid) {
-      switch (notification.data.type) {
+  /**
+   * Construire l'URL de redirection
+   */
+  resolveUrl(notification: MissionNotification): string {
+    if (notification.data?.url) return notification.data.url;
+
+    if (notification.data?.mission_ulid) {
+      const missionUrl = `/missions/${notification.data.mission_ulid}`;
+
+      const type = notification.type as MissionNotificationType;
+      switch (type) {
         case "new_application":
-          return `/missions/${notification.data.mission_ulid}/applications`;
+        case "application_accepted":
+        case "application_rejected":
+        case "application_withdrawn":
+          return `${missionUrl}/applications`;
+        case "mission_reminder":
+        case "mission_updated":
+        case "new_mission":
+        case "mission_filled":
+        case "mission_cancelled":
+        case "mission_report":
+          return missionUrl;
+        case "mission_completed":
+        case "review_request":
+          return `${missionUrl}/review`;
         default:
-          return `/missions/${notification.data.mission_ulid}`;
+          return missionUrl;
       }
     }
 
@@ -105,17 +189,44 @@ export const notificationService = {
   },
 
   /**
-   * Libellé lisible pour un type de notification
+   * Libellé pour un type de notification
    */
-  labelFor(type: string): string {
-    const labels: Record<string, string> = {
+  labelFor(type: MissionNotificationType): string {
+    const labels: Record<MissionNotificationType, string> = {
       new_mission: "Nouvelle mission",
       new_application: "Nouvelle candidature",
       application_accepted: "Candidature acceptée",
       application_rejected: "Candidature refusée",
+      application_withdrawn: "Candidature retirée",
       mission_reminder: "Rappel de mission",
       mission_updated: "Mission mise à jour",
+      mission_completed: "Mission terminée",
+      mission_filled: "Mission pourvue",
+      mission_cancelled: "Mission annulée",
+      review_request: "Demande d'avis",
+      mission_report: "Mission signalée",
     };
     return labels[type] ?? "Notification";
+  },
+
+  /**
+   * Icône pour un type de notification
+   */
+  iconFor(type: MissionNotificationType): string {
+    const icons: Record<MissionNotificationType, string> = {
+      new_mission: "📋",
+      new_application: "📩",
+      application_accepted: "✅",
+      application_rejected: "❌",
+      application_withdrawn: "↩️",
+      mission_reminder: "⏰",
+      mission_updated: "✏️",
+      mission_completed: "🏁",
+      mission_filled: "👥",
+      mission_cancelled: "🚫",
+      review_request: "⭐",
+      mission_report: "🚩",
+    };
+    return icons[type] ?? "🔔";
   },
 };

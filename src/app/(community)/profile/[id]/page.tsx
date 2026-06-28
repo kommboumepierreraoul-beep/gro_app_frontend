@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -18,6 +19,12 @@ import {
   Calendar,
   Users,
   CheckCircle,
+  Shield,
+  Award,
+  Edit3,
+  Camera,
+  MoreHorizontal,
+  User,
 } from "lucide-react";
 
 import { profileService } from "@/services/community/profile.service";
@@ -77,7 +84,7 @@ export default function UserProfilePage({
   const { data: postsData } = useQuery({
     queryKey: ["userPosts", userId],
     queryFn: async () => {
-      const res = await postService.getPost(userId);
+      const res = await postService.getUserPosts(userId);
       return res?.data?.data ?? res?.data?.posts ?? res?.data ?? [];
     },
     enabled: !!profile && activeTab === "publications",
@@ -128,7 +135,7 @@ export default function UserProfilePage({
   /* ---------------- LOADING ---------------- */
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-[#f9faf2]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="space-y-4">
             <div className="h-8 w-32 bg-gray-200 rounded-xl animate-pulse" />
@@ -164,7 +171,7 @@ export default function UserProfilePage({
   /* ---------------- ERROR ---------------- */
   if (isError || !profile) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-[#f9faf2]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -189,24 +196,24 @@ export default function UserProfilePage({
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#f9faf2]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="space-y-4">
-          {/* Back button - style édité */}
+          {/* ─── BACK BUTTON ─── */}
           <div className="mb-2">
             <button
               onClick={() => window.history.back()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-100 shadow-sm hover:bg-gray-50 transition-colors text-sm font-medium text-gray-600"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-[#c2c9bb]/30 shadow-sm hover:shadow-md hover:bg-[#f3f4ed] transition-all duration-200 text-sm font-medium text-[#42493e]"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={16} strokeWidth={1.8} />
               Retour
             </button>
           </div>
 
           {/* ─── PROFILE CARD ─── */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Banner - style édité */}
-            <div className="relative h-32 sm:h-40 bg-gradient-to-r from-primary to-tertiary cursor-pointer group">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#c2c9bb]/20 overflow-hidden hover:shadow-md transition-shadow duration-300">
+            {/* Banner */}
+            <div className="relative h-32 sm:h-40 bg-gradient-to-r from-[#154212] via-[#2d5a27] to-[#805533] cursor-pointer group">
               {(profile as any)?.banner && !bannerError ? (
                 <img
                   src={(profile as any).banner}
@@ -215,78 +222,112 @@ export default function UserProfilePage({
                   onError={() => setBannerError(true)}
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-r from-green-700 to-green-800">
-                  <span className="text-white/40 text-xs sm:text-sm font-medium">
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-r from-[#154212] via-[#2d5a27] to-[#805533]">
+                  <span className="text-white/30 text-xs sm:text-sm font-medium tracking-wider uppercase">
                     {profile.firstname} {profile.lastname}
                   </span>
                 </div>
               )}
-              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                <span className="text-white text-xs sm:text-sm font-semibold flex items-center gap-2 bg-black/50 px-4 py-2 rounded-full">
-                  <Users size={14} />
+
+              {/* Badge de statut */}
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                <span className="px-3 py-1.5 text-[10px] font-semibold text-white/90 bg-black/40 backdrop-blur-sm rounded-full flex items-center gap-1.5">
+                  <Shield size={12} strokeWidth={2} />
                   Profil public
                 </span>
               </div>
             </div>
 
-            {/* Avatar + identity - style édité */}
+            {/* Avatar + Identity */}
             <div className="px-4 sm:px-6 pb-5">
               {/* Avatar row */}
               <div className="flex items-end justify-between -mt-10 sm:-mt-12 mb-3">
-                <Avatar
-                  src={profile?.avatar ?? null}
-                  firstname={profile?.firstname}
-                  size="xl"
-                  className="ring-4 ring-white shadow-lg"
-                />
+                <div className="relative">
+                  <Avatar
+                    src={profile?.avatar ?? null}
+                    firstname={profile?.firstname}
+                    size="xl"
+                    className="ring-4 ring-white shadow-lg hover:ring-[#bcf0ae]/50 transition-all duration-300"
+                  />
+                  {(profile as any)?.is_verified && (
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#3b6934] rounded-full flex items-center justify-center border-2 border-white">
+                      <CheckCircle
+                        size={14}
+                        className="text-[#bcf0ae]"
+                        strokeWidth={2.5}
+                      />
+                    </div>
+                  )}
+                </div>
 
-                {/* CTA buttons - style édité */}
+                {/* CTA buttons */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => followMutation.mutate()}
                     disabled={followMutation.isPending}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-colors shadow-sm ${
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm active:scale-95 ${
                       isFollowing
-                        ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                        : "bg-green-950 hover:bg-green-900 text-white"
+                        ? "bg-[#f3f4ed] hover:bg-[#e7e9e1] text-[#42493e] border border-[#c2c9bb]/30"
+                        : "bg-[#154212] hover:bg-[#2d5a27] text-[#bcf0ae] shadow-md hover:shadow-lg"
                     }`}
                   >
                     {followMutation.isPending ? (
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     ) : isFollowing ? (
-                      <UserCheck size={14} />
+                      <UserCheck size={14} strokeWidth={2} />
                     ) : (
-                      <UserPlus size={14} />
+                      <UserPlus size={14} strokeWidth={2} />
                     )}
                     {isFollowing ? "Abonné" : "Suivre"}
                   </button>
 
                   <button
                     onClick={handleMessage}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 bg-[#f3f4ed] hover:bg-[#e7e9e1] text-[#42493e] text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm active:scale-95 border border-[#c2c9bb]/20"
                   >
-                    <MessageCircle size={14} />
-                    Message
+                    <MessageCircle size={14} strokeWidth={1.8} />
+                    <span className="hidden sm:inline">Message</span>
+                  </button>
+
+                  <button className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#f3f4ed] hover:bg-[#e7e9e1] transition-all duration-200 border border-[#c2c9bb]/20">
+                    <MoreHorizontal
+                      size={18}
+                      strokeWidth={1.8}
+                      className="text-[#72796e]"
+                    />
                   </button>
                 </div>
               </div>
 
-              {/* Name + headline - style édité */}
-              <h1 className="text-lg font-semibold text-gray-900">
+              {/* Name + headline */}
+              <h1 className="text-xl font-bold text-[#191c18] flex items-center gap-2">
                 {profile.firstname} {profile.lastname}
+                {(profile as any)?.role === "admin" && (
+                  <span className="px-2 py-0.5 text-[9px] font-bold bg-[#805533] text-white rounded-full">
+                    Admin
+                  </span>
+                )}
               </h1>
               {(profile as any)?.headline && (
-                <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-1.5">
-                  <Briefcase size={13} className="flex-shrink-0" />
+                <p className="text-sm text-[#72796e] mt-0.5 flex items-center gap-1.5">
+                  <Briefcase
+                    size={13}
+                    className="flex-shrink-0 text-[#72796e]"
+                    strokeWidth={1.8}
+                  />
                   {(profile as any).headline}
                 </p>
               )}
 
-              {/* Meta - style édité */}
+              {/* Meta */}
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
                 {(profile as any)?.location && (
-                  <span className="flex items-center gap-1 text-xs text-gray-400">
-                    <MapPin size={12} />
+                  <span className="flex items-center gap-1 text-xs text-[#72796e]">
+                    <MapPin
+                      size={12}
+                      className="text-[#72796e]"
+                      strokeWidth={1.8}
+                    />
                     {(profile as any).location}
                   </span>
                 )}
@@ -295,15 +336,15 @@ export default function UserProfilePage({
                     href={(profile as any).website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-primary hover:underline"
+                    className="flex items-center gap-1 text-xs text-[#2d5a27] hover:text-[#154212] transition-colors"
                   >
-                    <Link2 size={12} />
+                    <Link2 size={12} strokeWidth={1.8} />
                     {(profile as any).website.replace(/^https?:\/\//, "")}
                   </a>
                 )}
                 {(profile as any)?.created_at && (
-                  <span className="flex items-center gap-1 text-xs text-gray-400">
-                    <Calendar size={12} />
+                  <span className="flex items-center gap-1 text-xs text-[#72796e]">
+                    <Calendar size={12} strokeWidth={1.8} />
                     Membre depuis{" "}
                     {new Date((profile as any).created_at).toLocaleDateString(
                       "fr-FR",
@@ -313,15 +354,15 @@ export default function UserProfilePage({
                 )}
               </div>
 
-              {/* Bio - style édité */}
+              {/* Bio */}
               {(profile as any)?.bio && (
-                <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                <p className="mt-3 text-sm text-[#42493e] leading-relaxed bg-[#f9faf2] p-3 rounded-xl border border-[#c2c9bb]/10">
                   {(profile as any).bio}
                 </p>
               )}
 
-              {/* Stats - style édité */}
-              <div className="flex gap-6 mt-4 pt-4 border-t border-gray-100">
+              {/* Stats */}
+              <div className="flex gap-8 mt-4 pt-4 border-t border-[#c2c9bb]/20">
                 {[
                   {
                     label: "Publications",
@@ -336,23 +377,39 @@ export default function UserProfilePage({
                     value: (profile as any)?.following_count ?? 0,
                   },
                 ].map(({ label, value }) => (
-                  <div key={label}>
-                    <p className="text-base font-semibold text-gray-900">
+                  <div
+                    key={label}
+                    className="group cursor-pointer hover:bg-[#f3f4ed] px-3 py-1.5 rounded-xl transition-colors -mx-3"
+                  >
+                    <p className="text-lg font-bold text-[#191c18] group-hover:text-[#154212] transition-colors">
                       {value}
                     </p>
-                    <p className="text-xs text-gray-400">{label}</p>
+                    <p className="text-xs text-[#72796e]">{label}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Message informatif - style édité */}
-              <div className="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+              {/* Badges */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="px-3 py-1.5 text-xs font-medium bg-[#eaf3de] text-[#154212] rounded-full flex items-center gap-1.5">
+                  <Award size={12} strokeWidth={2} />
+                  Membre actif
+                </span>
+                <span className="px-3 py-1.5 text-xs font-medium bg-[#f3f4ed] text-[#42493e] rounded-full flex items-center gap-1.5">
+                  <CheckCircle size={12} strokeWidth={2} />
+                  Compte vérifié
+                </span>
+              </div>
+
+              {/* Message informatif */}
+              <div className="mt-4 p-3 bg-[#f9faf2] rounded-xl border border-[#c2c9bb]/10">
                 <div className="flex items-start gap-2">
                   <CheckCircle
                     size={14}
-                    className="text-primary flex-shrink-0 mt-0.5"
+                    className="text-[#154212] flex-shrink-0 mt-0.5"
+                    strokeWidth={2}
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-[#72796e]">
                     Profil public - Tous les membres peuvent voir ces
                     informations.
                   </p>
@@ -362,36 +419,61 @@ export default function UserProfilePage({
           </div>
 
           {/* ─── TABS + CONTENT ─── */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Tabs - style édité */}
-            <div className="flex border-b border-gray-100 px-4 overflow-x-auto">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#c2c9bb]/20 overflow-hidden hover:shadow-md transition-shadow duration-300">
+            {/* Tabs */}
+            <div className="flex border-b border-[#c2c9bb]/20 px-4 overflow-x-auto bg-[#f9faf2]/50">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                const counts = {
+                  publications: posts.length,
+                  partages: shared.length,
+                  likes: liked.length,
+                };
+                const count = counts[tab.id as keyof typeof counts] || 0;
+
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as TabType)}
-                    className={`flex items-center gap-2 py-3 px-4 border-b-2 transition-colors whitespace-nowrap text-sm font-medium ${
-                      activeTab === tab.id
-                        ? "border-primary text-primary"
-                        : "border-transparent text-gray-500 hover:text-gray-800"
+                    className={`flex items-center gap-2 py-3.5 px-4 border-b-2 transition-all duration-200 whitespace-nowrap text-sm font-medium ${
+                      isActive
+                        ? "border-[#154212] text-[#154212]"
+                        : "border-transparent text-[#72796e] hover:text-[#191c18] hover:bg-[#f3f4ed]/50"
                     }`}
                   >
-                    <Icon size={16} />
+                    <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
                     {tab.label}
+                    {count > 0 && (
+                      <span
+                        className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
+                          isActive
+                            ? "bg-[#154212] text-[#bcf0ae]"
+                            : "bg-[#f3f4ed] text-[#72796e]"
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            {/* Content - style édité */}
+            {/* Content */}
             <div className="p-4 sm:p-6">
               {/* PUBLICATIONS */}
               {activeTab === "publications" && (
-                <div className="divide-y divide-gray-100">
+                <div className="space-y-4">
                   {posts.length === 0 ? (
                     <EmptyState
-                      icon={<FileText size={32} className="text-gray-400" />}
+                      icon={
+                        <FileText
+                          size={32}
+                          className="text-[#c2c9bb]"
+                          strokeWidth={1.5}
+                        />
+                      }
                       title="Aucune publication"
                       description="Cet utilisateur n'a pas encore publié de contenu."
                     />
@@ -405,10 +487,16 @@ export default function UserProfilePage({
 
               {/* PARTAGES */}
               {activeTab === "partages" && (
-                <div className="divide-y divide-gray-100">
+                <div className="space-y-4">
                   {shared.length === 0 ? (
                     <EmptyState
-                      icon={<Share2 size={32} className="text-gray-400" />}
+                      icon={
+                        <Share2
+                          size={32}
+                          className="text-[#c2c9bb]"
+                          strokeWidth={1.5}
+                        />
+                      }
                       title="Aucun partage"
                       description="Cet utilisateur n'a pas encore partagé de contenu."
                     />
@@ -422,10 +510,16 @@ export default function UserProfilePage({
 
               {/* LIKES */}
               {activeTab === "likes" && (
-                <div className="divide-y divide-gray-100">
+                <div className="space-y-4">
                   {liked.length === 0 ? (
                     <EmptyState
-                      icon={<Heart size={32} className="text-gray-400" />}
+                      icon={
+                        <Heart
+                          size={32}
+                          className="text-[#c2c9bb]"
+                          strokeWidth={1.5}
+                        />
+                      }
                       title="Aucun like"
                       description="Cet utilisateur n'a pas encore aimé de contenu."
                     />
@@ -444,7 +538,7 @@ export default function UserProfilePage({
   );
 }
 
-/* ─── Empty state amélioré ─── */
+/* ─── Empty state ─── */
 function EmptyState({
   icon,
   title,
@@ -456,11 +550,11 @@ function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+      <div className="w-16 h-16 bg-[#f3f4ed] rounded-full flex items-center justify-center mb-4 border border-[#c2c9bb]/20">
         {icon}
       </div>
-      <h3 className="text-base font-semibold text-gray-700 mb-1">{title}</h3>
-      <p className="text-sm text-gray-400">{description}</p>
+      <h3 className="text-base font-semibold text-[#42493e] mb-1">{title}</h3>
+      <p className="text-sm text-[#72796e] max-w-sm">{description}</p>
     </div>
   );
 }
