@@ -179,7 +179,7 @@ export default function SearchPageContent() {
         {users.map((user) => (
           <Link
             key={user.id}
-            href={`/community/profile/${user.id}`}
+            href={`/profile/${user.id}`}
             className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:shadow-md transition group"
           >
             <Avatar src={user.avatar} firstname={user.firstname} size="lg" />
@@ -272,7 +272,7 @@ export default function SearchPageContent() {
               {users.slice(0, 3).map((user) => (
                 <Link
                   key={user.id}
-                  href={`/community/profile/${user.id}`}
+                  href={`/profile/${user.id}`}
                   className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:shadow-md transition group"
                 >
                   <Avatar
