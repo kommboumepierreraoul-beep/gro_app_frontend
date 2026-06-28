@@ -31,15 +31,19 @@ export function ConversationList({
   const [showCreateGroup, setShowCreateGroup] = useState(false);
 
   // ── Deux états de recherche séparés ──
-  const [convSearch, setConvSearch] = useState(""); // filtre la liste des conversations
-  const [modalSearch, setModalSearch] = useState(""); // filtre les users dans la modal
+  const [convSearch, setConvSearch] = useState("");
+  const [modalSearch, setModalSearch] = useState("");
 
   const [users, setUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [userAvatars, setUserAvatars] = useState<Record<number, string>>({});
-  const [userHeadlines, setUserHeadlines] = useState<Record<number, string>>(
+
+  // ✅ Types corrigés pour accepter null et undefined
+  const [userAvatars, setUserAvatars] = useState<Record<number, string | null>>(
     {},
   );
+  const [userHeadlines, setUserHeadlines] = useState<
+    Record<number, string | undefined>
+  >({});
 
   const {
     data: conversationsData,
@@ -52,7 +56,6 @@ export function ConversationList({
       (conv: any) => conv.last_message !== null,
     ) ?? [];
 
-  // Filtre les conversations selon convSearch
   const conversations = allConversations.filter((conv: any) => {
     if (!convSearch.trim()) return true;
     const q = convSearch.toLowerCase();
@@ -63,16 +66,30 @@ export function ConversationList({
     return name.includes(q);
   });
 
+  // ✅ Fonction corrigée avec gestion des types null/undefined
   const loadUserProfile = async (userId: number) => {
-    if (userAvatars[userId]) return;
+    // Vérifier si déjà chargé (undefined = pas encore chargé)
+    if (userAvatars[userId] !== undefined) return;
+
     try {
       const { profileService } =
         await import("@/services/community/profile.service");
       const profile = await profileService.getProfile(userId);
-      setUserAvatars((prev) => ({ ...prev, [userId]: profile.avatar }));
-      setUserHeadlines((prev) => ({ ...prev, [userId]: profile.headline }));
+
+      // Mettre à jour avec des valeurs par défaut
+      setUserAvatars((prev) => ({
+        ...prev,
+        [userId]: profile.avatar || null,
+      }));
+      setUserHeadlines((prev) => ({
+        ...prev,
+        [userId]: profile.headline || undefined,
+      }));
     } catch (error) {
-      console.error("Error loading profile:", error);
+      console.error(`Error loading profile for user ${userId}:`, error);
+      // Marquer comme chargé avec des valeurs null pour éviter de re-tenter
+      setUserAvatars((prev) => ({ ...prev, [userId]: null }));
+      setUserHeadlines((prev) => ({ ...prev, [userId]: undefined }));
     }
   };
 
@@ -114,10 +131,12 @@ export function ConversationList({
     allConversations.forEach((conv: any) => {
       if (!conv.is_group) {
         const other = conv.participants?.find((p: any) => p.id !== user?.id);
-        if (other && !userAvatars[other.id]) loadUserProfile(other.id);
+        if (other && userAvatars[other.id] === undefined) {
+          loadUserProfile(other.id);
+        }
       }
     });
-  }, [allConversations]);
+  }, [allConversations, user?.id]);
 
   const handleOpenNewConversation = () => {
     setShowNewConversation(true);
@@ -139,7 +158,6 @@ export function ConversationList({
     refetch();
   };
 
-  // Filtre les users dans la modal selon modalSearch
   const filteredUsers = users.filter((item: any) => {
     const userData = item.follower || item;
     const name =
@@ -233,8 +251,8 @@ export function ConversationList({
               {conversations.map((conv: any) => {
                 let other: any = null;
                 let displayName = conv.name;
-                let displayAvatar = null;
-                let displayHeadline = null;
+                let displayAvatar: string | null = null;
+                let displayHeadline: string | undefined = undefined;
                 let displayLastMessage = "";
                 let displayTime = null;
 
@@ -329,7 +347,6 @@ export function ConversationList({
                           <TimeAgo
                             date={displayTime}
                             className="flex-shrink-0 text-[10px]"
-                            style={{ color: "#72796e" }}
                           />
                         )}
                       </div>
@@ -363,7 +380,7 @@ export function ConversationList({
           )}
         </div>
 
-        {/* Bouton flottant - caché sur mobile quand conversation ouverte */}
+        {/* Bouton flottant */}
         <button
           onClick={handleOpenNewConversation}
           className="hidden sm:flex absolute bottom-10 right-4 w-11 h-11 items-center justify-center rounded-full transition-transform hover:scale-105 z-10 shadow-lg"
@@ -378,7 +395,7 @@ export function ConversationList({
         </button>
       </div>
 
-      {/* ── Modal nouvelle conversation (responsive) ── */}
+      {/* ── Modal nouvelle conversation ── */}
       {showNewConversation && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
@@ -458,7 +475,7 @@ export function ConversationList({
                 />
               </div>
 
-              {/* Créer un groupe - option */}
+              {/* Créer un groupe */}
               <button
                 onClick={() => {
                   setShowNewConversation(false);

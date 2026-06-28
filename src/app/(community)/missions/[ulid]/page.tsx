@@ -28,7 +28,6 @@ import {
 } from "@/hooks/missions/useMissionMutate";
 import { useMissionStore } from "@/stores/useMissionStore";
 import ApplicationModal from "@/components/missions/Form/ApplicationModal";
-import ReportModal from "@/components/missions/Report/ReportModal";
 import MissionStatusBadge from "@/components/missions/MissionStatusBadge";
 import MissionRouteMap from "@/components/missions/Map/MissionRouteMap";
 
@@ -514,13 +513,7 @@ export default function MissionDetailPage() {
 
       {/* Modals */}
       {applyModalMissionUlid && <ApplicationModal onClose={closeApplyModal} />}
-      {reportOpen && (
-        <ReportModal
-          ulid={mission.ulid}
-          missionTitle={mission.title}
-          onClose={() => setReportOpen(false)}
-        />
-      )}
+     
 
       {/* Confirmation suppression */}
       {confirmDelete && (

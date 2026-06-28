@@ -27,12 +27,6 @@ export function useModeration() {
           case "post":
             response = await moderationService.moderatePost(id, data);
             break;
-          case "comment":
-            response = await moderationService.moderateComment(id, data);
-            break;
-          case "message":
-            response = await moderationService.moderateMessage(id, data);
-            break;
         }
         toast.success(
           `Contenu ${data.action === "approve" ? "approuvé" : data.action === "reject" ? "rejeté" : "mis en révision"}`,
@@ -60,12 +54,6 @@ export function useModeration() {
         switch (type) {
           case "post":
             response = await moderationService.reanalyzePost(id);
-            break;
-          case "comment":
-            response = await moderationService.reanalyzeComment(id);
-            break;
-          case "message":
-            response = await moderationService.reanalyzeMessage(id);
             break;
         }
         toast.success("Réanalyse en cours...");
@@ -146,12 +134,6 @@ export function useModeration() {
         switch (type) {
           case "posts":
             response = await moderationService.getQueuePosts(params);
-            break;
-          case "comments":
-            response = await moderationService.getQueueComments(params);
-            break;
-          case "messages":
-            response = await moderationService.getQueueMessages(params);
             break;
         }
         return response;

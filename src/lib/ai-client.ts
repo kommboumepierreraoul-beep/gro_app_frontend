@@ -2,9 +2,8 @@
 
 import type {
   SendMessageResponse,
-  Conversation,
+  AIConversation,
   ModerationResult,
-  StreamChunk,
 } from "@/types/ai.types";
 
 /**
@@ -103,8 +102,7 @@ export function streamMessage(
         return;
       }
 
-      const data = JSON.parse(event.data) as StreamChunk;
-
+      const data = JSON.parse(event.data)
       if (data.done) {
         es.close();
         onDone();
@@ -141,7 +139,7 @@ export async function startConversation(): Promise<{
 }
 
 export async function listConversations(page = 1): Promise<{
-  data: Conversation[];
+  data: AIConversation[];
   current_page: number;
   last_page: number;
 }> {
