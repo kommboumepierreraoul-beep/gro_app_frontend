@@ -1,211 +1,106 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// src/services/message.service.ts
-// ============================================================
-// SERVICE MESSAGERIE UNIFIÉ
-// - Pas de socket.io (Laravel Sanctum = REST + polling)
-// - Upload media réel via FormData
-// - Compatible avec votre MessageController Laravel
-// ============================================================
-
+// src/services/community/message.service.ts
 import api from "@/lib/axios";
+import { Conversation, Message, Paginated } from "@/types/community.types";
 
-// ─────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────
-export interface ConversationParticipant {
-  id: number;
-  firstname: string;
-  lastname: string;
-  avatar: string | null;
-}
-
-export interface LastMessage {
-  content: string;
-  sender: string;
-  created_at: string;
-}
-
-export interface Conversation {
-  id: number;
-  is_group: boolean;
-  name: string | null;
-  participants: ConversationParticipant[];
-  last_message: LastMessage | null;
-  unread_count: number;
-  updated_at: string;
-}
-
-export interface Message {
-  id: number;
-  content: string;
-  media_url: string | null;
-  status: "sent" | "delivered" | "read";
-  is_mine: boolean;
-  sender_id: number;
-  sender: {
-    id: number;
-    firstname: string;
-    avatar: string | null;
-  };
-  conversation_id: number;
-  created_at: string;
-}
-
-export interface PaginatedMessages {
-  data: Message[];
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
-}
-
-export interface ConversationsResponse {
-  data: Conversation[];
-  current_page: number;
-  last_page: number;
-}
-
-// ─────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────
-function extractApiError(error: unknown): string {
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "response" in error &&
-    typeof (error as any).response?.data?.message === "string"
-  ) {
-    return (error as any).response.data.message;
-  }
-  return "Une erreur est survenue.";
-}
-
-// ─────────────────────────────────────────────────────────────
-// SERVICE
-// ─────────────────────────────────────────────────────────────
 class MessageService {
-  // ── GET /community/messages/conversations ──────────────────
-  async getConversations(): Promise<Conversation[]> {
-    try {
-      const res = await api.get("/community/messages/conversations");
-      // Robustesse : le backend peut retourner data.data.data ou data.data
-      const raw = res.data?.data;
-      if (Array.isArray(raw)) return raw;
-      if (Array.isArray(raw?.data)) return raw.data;
-      return [];
-    } catch (error) {
-      console.error("[MessageService] getConversations:", error);
-      throw new Error(extractApiError(error));
-    }
+  // Récupérer toutes les conversations
+  async getConversations(): Promise<Paginated<Conversation>> {
+    const response = await api.get("/community/messages/conversations");
+    return response.data.data;
   }
 
-  // ── POST /community/messages/conversations ─────────────────
-  // Crée ou retrouve une conversation privée avec userId
+  // Créer ou trouver une conversation privée
   async createOrFindConversation(userId: number): Promise<Conversation> {
-    try {
-      const res = await api.post("/community/messages/conversations", {
-        user_id: userId,
-      });
-      return res.data?.data ?? res.data;
-    } catch (error) {
-      console.error("[MessageService] createOrFindConversation:", error);
-      throw new Error(extractApiError(error));
-    }
+    const response = await api.post("/community/messages/conversations", {
+      user_id: userId,
+    });
+    return response.data.data;
   }
 
-  // ── GET /community/messages/conversations/{id}/messages ────
+  // Créer une conversation de groupe
+  async createGroupConversation(
+    participantIds: number[],
+    name?: string,
+  ): Promise<Conversation> {
+    const response = await api.post("/community/messages/conversations", {
+      participants: participantIds,
+      name: name || "Groupe",
+    });
+    return response.data.data;
+  }
+
+  // Récupérer les messages d'une conversation
   async getMessages(
-    conversationId: number | string,
-    page = 1,
-  ): Promise<PaginatedMessages> {
-    try {
-      const res = await api.get(
-        `/community/messages/conversations/${conversationId}/messages`,
-        { params: { page } },
-      );
-      const raw = res.data?.data;
-      // Normalise la réponse paginée
-      return {
-        data: Array.isArray(raw?.data) ? raw.data : [],
-        current_page: raw?.current_page ?? 1,
-        last_page: raw?.last_page ?? 1,
-        per_page: raw?.per_page ?? 30,
-        total: raw?.total ?? 0,
-      };
-    } catch (error) {
-      console.error("[MessageService] getMessages:", error);
-      throw new Error(extractApiError(error));
-    }
+    conversationId: number,
+    page: number = 1,
+  ): Promise<Paginated<Message>> {
+    const response = await api.get(
+      `/community/messages/conversations/${conversationId}/messages`,
+      { params: { page } },
+    );
+    return response.data.data;
   }
 
-  // ── POST /community/messages/conversations/{id}/messages ───
-  // Supporte texte seul, media seul, ou les deux
+  // Envoyer un message
   async sendMessage(
-    conversationId: number | string,
+    conversationId: number,
     content: string,
     media?: File,
   ): Promise<Message> {
-    try {
-      const form = new FormData();
-
-      if (content.trim()) {
-        form.append("content", content.trim());
-      }
-      if (media) {
-        form.append("media", media);
-      }
-
-      const res = await api.post(
-        `/community/messages/conversations/${conversationId}/messages`,
-        form,
-        { headers: { "Content-Type": "multipart/form-data" } },
-      );
-
-      return res.data?.data ?? res.data;
-    } catch (error) {
-      console.error("[MessageService] sendMessage:", error);
-      throw new Error(extractApiError(error));
+    const formData = new FormData();
+    if (content.trim()) {
+      formData.append("content", content.trim());
     }
+    if (media) {
+      formData.append("media", media);
+    }
+
+    const response = await api.post(
+      `/community/messages/conversations/${conversationId}/messages`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return response.data.data;
   }
 
-  // ── DELETE /community/messages/messages/{id} ───────────────
+  // Supprimer un message
   async deleteMessage(messageId: number): Promise<void> {
-    try {
-      await api.delete(`/community/messages/messages/${messageId}`);
-    } catch (error) {
-      console.error("[MessageService] deleteMessage:", error);
-      throw new Error(extractApiError(error));
-    }
+    await api.delete(`/community/messages/messages/${messageId}`);
   }
 
-  // ── Polling manuel (remplace le socket) ───────────────────
-  // Retourne une fonction stop() pour arrêter le polling
-  pollMessages(
-    conversationId: number | string,
-    onNewMessages: (messages: Message[]) => void,
-    intervalMs = 5000,
-  ): () => void {
-    let lastMessageId = 0;
+  // Marquer une conversation comme lue
+  async markAsRead(conversationId: number): Promise<void> {
+    await api.post(`/community/messages/conversations/${conversationId}/read`);
+  }
 
-    const tick = async () => {
-      try {
-        const result = await this.getMessages(conversationId, 1);
-        const newOnes = result.data.filter((m) => m.id > lastMessageId);
-        if (newOnes.length > 0) {
-          lastMessageId = Math.max(...newOnes.map((m) => m.id));
-          onNewMessages(newOnes);
-        }
-      } catch {
-        // Silencieux — ne pas crasher le polling
-      }
-    };
+  // Récupérer le statut d'un message spécifique
+  async getMessageStatus(
+    messageId: number,
+  ): Promise<{ is_read: boolean; is_delivered: boolean }> {
+    const response = await api.get(
+      `/community/messages/messages/${messageId}/status`,
+    );
+    return response.data.data;
+  }
 
-    // Premier appel immédiat
-    tick();
-    const timer = setInterval(tick, intervalMs);
+  // Ajouter des participants à un groupe
+  async addParticipants(
+    conversationId: number,
+    userIds: number[],
+  ): Promise<void> {
+    await api.post(
+      `/community/messages/conversations/${conversationId}/participants`,
+      {
+        user_ids: userIds,
+      },
+    );
+  }
 
-    // Retourne la fonction d'arrêt
-    return () => clearInterval(timer);
+  // Quitter un groupe
+  async leaveGroup(conversationId: number): Promise<void> {
+    await api.delete(
+      `/community/messages/conversations/${conversationId}/leave`,
+    );
   }
 }
 

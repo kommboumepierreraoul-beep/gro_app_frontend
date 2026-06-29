@@ -1,9 +1,7 @@
 import api from "@/lib/axios";
-import { tokenService } from "@/lib/auth-token";
+import Cookies from "js-cookie";
 
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface User {
   id: number;
@@ -11,9 +9,9 @@ export interface User {
   lastname: string;
   email: string;
   phone?: string;
+  avatar?: string;
   role: "user" | "admin";
   email_verified_at: string | null;
-  avatar: string | null;
 }
 
 export interface AuthResponse {
@@ -38,9 +36,7 @@ export interface LoginData {
   password: string;
 }
 
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const saveToken = (token: string) => {
   if (!token) {
@@ -74,117 +70,83 @@ const axios_isAxiosError = (
   error: unknown,
 ): error is {
   response?: {
-    data?: {
-      message?: string;
-      errors?: Record<string, string[]>;
-    };
+    data?: { message?: string; errors?: Record<string, string[]> };
     status?: number;
   };
 } => {
   return typeof error === "object" && error !== null && "response" in error;
 };
 
-const getApiError = (error: unknown): string => {
-  if (axios_isAxiosError(error)) {
-    const data = error.response?.data;
-
-    // Laravel validation errors
-    if (data?.errors) {
-      const firstKey = Object.keys(data.errors)[0];
-
-      if (firstKey && data.errors[firstKey]?.length) {
-        return data.errors[firstKey][0];
-      }
-    }
-
-    return data?.message || "Une erreur est survenue.";
-  }
-
-  return "Erreur réseau.";
-};
-
-// ─────────────────────────────────────────────
-// AUTH SERVICE
-// ─────────────────────────────────────────────
+// ─── Auth Service ─────────────────────────────────────────────────────────────
 
 export const authService = {
-  // ─── REGISTER ──────────────────────────────
-  async register(data: RegisterData): Promise<AuthResponse> {
+  // auth.service.ts
+async register(data: RegisterData): Promise<AuthResponse> {
     try {
-      const res = await api.post<AuthResponse>("/auth/register", data);
-
-      tokenService.set(res.data.token);
-
-      return res.data;
+        const res = await api.post("/auth/register", data);
+        
+        // ✅ Parse manuellement si c'est encore une string
+        const responseData = typeof res.data === 'string' 
+            ? JSON.parse(res.data) 
+            : res.data;
+        
+        console.log('Token extrait:', responseData.token);
+        saveToken(responseData.token);
+        return responseData;
     } catch (error) {
         throw new Error(getApiError(error));
     }
 },
 
-  // ─── LOGIN ─────────────────────────────────
-  async login(data: LoginData): Promise<AuthResponse> {
+async login(data: LoginData): Promise<AuthResponse> {
     try {
-      const res = await api.post<AuthResponse>("/auth/login", data);
+        const res = await api.post("/auth/login", data);
+        
+        const responseData = typeof res.data === 'string'
+            ? JSON.parse(res.data)
+            : res.data;
 
-      tokenService.set(res.data.token);
-
-      return res.data;
+        saveToken(responseData.token);
+        return responseData;
     } catch (error) {
-      throw new Error(getApiError(error));
+        throw new Error(getApiError(error));
     }
-  },
+},
 
-  // ─── PROFILE ───────────────────────────────
   async getProfile(): Promise<User> {
     try {
-      const res = await api.get<{
-        success: boolean;
-        user: User;
-      }>("/auth/profile");
-
+      const res = await api.get<{ success: boolean; user: User }>("/auth/profile");
       return res.data.user;
     } catch (error) {
       throw new Error(getApiError(error));
     }
   },
 
-  // ─── VERIFY EMAIL OTP ──────────────────────
-  async verifyEmail(code: string): Promise<{
-    success: boolean;
-    message: string;
-    user: User;
-  }> {
+  // ✅ verifyEmail corrigé — utilise `api` avec le token du cookie
+  async verifyEmail(code: string): Promise<any> {
     try {
       const res = await api.post("/auth/email/verify", { code });
-
       return res.data;
     } catch (error) {
       throw new Error(getApiError(error));
     }
   },
 
-  // ─── RESEND OTP ────────────────────────────
-  async resendVerificationCode(): Promise<{
-    success: boolean;
-    message: string;
-  }> {
+  // ✅ resendVerificationCode corrigé
+  async resendVerificationCode(): Promise<any> {
     try {
       const res = await api.post("/auth/email/resend");
-
       return res.data;
     } catch (error) {
       throw new Error(getApiError(error));
     }
   },
 
-  // ─── FORGOT PASSWORD ───────────────────────
-  async forgotPassword(email: string): Promise<{
-    success: boolean;
-    message: string;
-  }> {
+  async forgotPassword(
+    email: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       const res = await api.post("/auth/forgot-password", { email });
-
       return res.data;
     } catch (error) {
       throw new Error(getApiError(error));
@@ -196,13 +158,9 @@ export const authService = {
     code: string;
     password: string;
     password_confirmation: string;
-  }): Promise<{
-    success: boolean;
-    message: string;
-  }> {
+  }): Promise<{ success: boolean; message: string }> {
     try {
       const res = await api.post("/auth/reset-password", data);
-
       return res.data;
     } catch (error) {
       throw new Error(getApiError(error));
@@ -212,14 +170,12 @@ export const authService = {
   async logout(): Promise<void> {
     try {
       await api.post("/auth/logout");
-    } catch (error) {
-      console.error("Logout error:", error);
     } finally {
-      tokenService.remove();
+      removeToken();
     }
   },
 
   isAuthenticated(): boolean {
-    return tokenService.exists();
+    return !!Cookies.get("auth_token");
   },
 };

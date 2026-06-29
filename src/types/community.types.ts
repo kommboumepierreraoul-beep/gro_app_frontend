@@ -1,7 +1,7 @@
 // src/types/community.types.ts
 
 export interface CommunityUser {
-  id: number;
+  id: number ;
   firstname: string;
   lastname: string;
   email: string;
@@ -21,13 +21,73 @@ export interface CommunityUser {
   created_at: string;
 }
 
-export type PostType = "text" | "image" | "video" | "announcement" | "shared";
+export type PostType =
+  | "text"
+  | "image"
+  | "video"
+  | "pdf"
+  | "announcement"
+  | "shared";
+
+// ─── MODERATION TYPES ──────────────────────────────────────────────────────
+
+export type ModerationStatus = "pending" | "approved" | "review" | "rejected";
+
+export interface ModerationScores {
+  toxicity: number;
+  spam: number;
+  hate: number;
+  violence: number;
+}
+
+export interface ModerationData {
+  status: ModerationStatus;
+  reason?: string;
+  moderated_at?: string;
+  scores?: ModerationScores;
+}
+
+export interface PostWithModeration extends Post {
+  moderation_status: ModerationStatus;
+  toxicity_score?: number;
+  spam_score?: number;
+  hate_score?: number;
+  violence_score?: number;
+  moderation_reason?: string;
+  moderated_at?: string;
+  moderation?: ModerationData;
+}
+
+export interface CommentWithModeration extends Comment {
+  moderation_status: ModerationStatus;
+  toxicity_score?: number;
+  spam_score?: number;
+  hate_score?: number;
+  violence_score?: number;
+  moderation_reason?: string;
+  moderated_at?: string;
+  moderation?: ModerationData;
+}
+
+export interface MessageWithModeration extends Message {
+  moderation_status: ModerationStatus;
+  toxicity_score?: number;
+  spam_score?: number;
+  hate_score?: number;
+  violence_score?: number;
+  moderation_reason?: string;
+  moderated_at?: string;
+  moderation?: ModerationData;
+}
+
+// ─── POST ──────────────────────────────────────────────────────────────────
 
 export interface Post {
   id: number;
   content: string;
   type: PostType;
   media_urls: string[];
+  pdf_files?: string[];
   author: Pick<
     CommunityUser,
     "id" | "firstname" | "lastname" | "avatar" | "headline" | "role"
@@ -40,19 +100,39 @@ export interface Post {
   shared_post?: Post;
   created_at: string;
   updated_at: string;
+  // Modération
+  moderation_status?: ModerationStatus;
+  toxicity_score?: number;
+  spam_score?: number;
+  hate_score?: number;
+  violence_score?: number;
+  moderation_reason?: string;
+  moderated_at?: string;
 }
+
+// ─── COMMENT ──────────────────────────────────────────────────────────────
 
 export interface Comment {
   id: number;
   content: string;
-  author: Pick<CommunityUser, "id" | "firstname" | "lastname" | "avatar">;
+  author: Pick<CommunityUser, "id" | "firstname" | "lastname" | "avatar" | "headline">;
   post_id: number;
   parent_id?: number;
   likes_count: number;
   is_liked: boolean;
   replies?: Comment[];
   created_at: string;
+  // Modération
+  moderation_status?: ModerationStatus;
+  toxicity_score?: number;
+  spam_score?: number;
+  hate_score?: number;
+  violence_score?: number;
+  moderation_reason?: string;
+  moderated_at?: string;
 }
+
+// ─── MESSAGE ──────────────────────────────────────────────────────────────
 
 export type MessageStatus = "sent" | "delivered" | "read";
 

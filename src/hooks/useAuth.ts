@@ -2,7 +2,7 @@ import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import toast from "react-hot-toast";
 import { authService, LoginData, RegisterData } from "@/services/auth.service";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthStore } from "@/stores/auth.store";
 
 export function useAuth() {
   const router = useRouter();

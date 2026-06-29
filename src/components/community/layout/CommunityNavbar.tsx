@@ -1,268 +1,379 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
+
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+
+import {
+  Search as SearchIcon,
+  ChevronDown,
+  User,
+  Settings,
+  LogOut,
+  Bell,
+  HelpCircle,
+  X,
+} from "lucide-react";
+
 import { Avatar } from "../shared/Avatar";
-import { useAuthStore } from "@/store/auth.store";
-import { useCommunityStore } from "@/store/community.store";
+import { Search } from "@/components/ui/Search";
+import { useAuthStore } from "@/stores/auth.store";
+import { useCommunityStore } from "@/stores/community.store";
 import { useAuth } from "@/hooks/useAuth";
 import { profileService } from "@/services/community/profile.service";
+import Image from "next/image";
+// Fonction pour obtenir l'URL complète de l'avatar
+const getAvatarUrl = (avatar?: string | null): string | undefined => {
+  if (!avatar) return undefined;
+
+  if (avatar?.startsWith("http")) return avatar;
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const cleanPath = avatar?.startsWith("/") ? avatar : `/${avatar}`;
+  return `${apiUrl}${cleanPath}`;
+};
 
 export function CommunityNavbar() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { logout } = useAuth();
+
   const unreadNotifs = useCommunityStore((s) => s.unreadNotifs);
-  const unreadMsgs = useCommunityStore((s) => s.unreadMessages);
 
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const [showSearch, setShowSearch] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Recherche avec debounce
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Récupérer le profil utilisateur
+  const { data: profile } = useQuery({
+    queryKey: ["myProfile"],
+    queryFn: profileService.getMe,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  // Construire les données utilisateur pour l'affichage
+  const displayUser = {
+    id: profile?.id ?? user?.id,
+    firstname: profile?.firstname ?? user?.firstname,
+    lastname: profile?.lastname ?? user?.lastname,
+    avatar: getAvatarUrl(profile?.avatar ?? user?.avatar),
+    headline: profile?.headline ?? "Membre de la communauté",
+    email: profile?.email ?? user?.email,
+  };
+
   useEffect(() => {
-    if (query.length < 2) {
-      setResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      const data = await profileService.search(query);
-      setResults(data);
-      setShowSearch(true);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [query]);
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-  // Fermer le dropdown si clic extérieur
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowSearch(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const navLinks = [
-    { href: "/community", icon: HomeIcon, label: "Accueil" },
-    { href: "/messages", icon: ChatIcon, label: "Messages", badge: unreadMsgs },
-    {
-      href: "/notifications",
-      icon: BellIcon,
-      label: "Notifications",
-      badge: unreadNotifs,
-    },
-    { href: "/announcements", icon: MegaIcon, label: "Annonces" },
-  ];
-
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-4">
-        {/* Logo */}
-        <Link
-          href="/community"
-          className="font-bold text-xl text-blue-600 flex-shrink-0"
-        >
-          Community
-        </Link>
-
-        {/* Barre de recherche */}
-        <div ref={searchRef} className="relative flex-1 max-w-sm">
-          <div className="relative">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Rechercher..."
-              className="w-full pl-9 pr-4 py-2 text-sm bg-gray-100 rounded-full outline-none focus:bg-white focus:ring-2 focus:ring-blue-200 transition"
-            />
-          </div>
-
-          {/* Résultats de recherche */}
-          {showSearch && results.length > 0 && (
-            <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
-              {results.map((u) => (
-                <Link
-                  key={u.id}
-                  href={`/profile/${u.id}`}
-                  onClick={() => {
-                    setShowSearch(false);
-                    setQuery("");
-                  }}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition"
-                >
-                  <Avatar src={u.avatar} firstname={u.firstname} size="sm" />
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {u.firstname} {u.lastname}
-                    </p>
-                    {u.headline && (
-                      <p className="text-xs text-gray-500">{u.headline}</p>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Liens de navigation */}
-        <div className="hidden md:flex items-center gap-1">
-          {navLinks.map(({ href, icon: Icon, label, badge }) => (
+    <>
+      <nav
+        className="fixed top-0 right-0 z-50 left-0 transition-all duration-300 "
+        style={{
+          background: scrolled
+            ? "rgba(249,250,242,0.96)"
+            : "rgba(249,250,242,1)",
+          backdropFilter: "blur(16px)",
+          borderBottom: "1px solid rgba(194,201,187,0.4)",
+          boxShadow: scrolled ? "0 2px 16px rgba(21,66,18,0.06)" : "none",
+        }}
+      >
+        <div className="px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16 gap-4">
+            {/* Logo */}
             <Link
-              key={href}
-              href={href}
-              className="relative flex flex-col items-center px-4 py-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition group"
+              href="/community"
+              className="flex items-center gap-2.5 group flex-shrink-0"
             >
-              <div className="relative">
-                <Icon className="w-6 h-6" />
-                {badge! > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {badge! > 9 ? "9+" : badge}
-                  </span>
+              <div className="w-10 h-10 relative">
+                <Image
+                  src="/logo_agri_pulse.png"
+                  alt="AgriPulse"
+                  sizes="4"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <span
+                className="font-bold text-lg hidden sm:inline"
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  background:
+                    "linear-gradient(135deg, #154212 0%, #3b6934 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                AgriPulse
+              </span>
+            </Link>
+
+            {/* Barre de recherche desktop */}
+            <div className="hidden md:block flex-1 max-w-md">
+              <Search
+                placeholder="Rechercher utilisateurs ou publications..."
+                className="w-full"
+              />
+            </div>
+
+            {/* Actions droite */}
+            <div className="flex items-center gap-1">
+              {/* Recherche mobile */}
+              <button
+                onClick={() => setShowMobileSearch(!showMobileSearch)}
+                className="md:hidden p-2 rounded-xl transition-all duration-150"
+                style={{ color: "#42493e" }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLElement).style.background =
+                    "rgba(188,240,174,0.3)")
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLElement).style.background =
+                    "transparent")
+                }
+              >
+                <SearchIcon className="w-5 h-5" />
+              </button>
+
+              {/* Notifications */}
+              <Link
+                href="/notifications"
+                className="relative p-2 rounded-xl transition-all duration-150"
+                style={{ color: "#42493e" }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLElement).style.background =
+                    "rgba(188,240,174,0.3)")
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLElement).style.background =
+                    "transparent")
+                }
+              >
+                <Bell className="w-5 h-5" />
+                {unreadNotifs > 0 && (
+                  <span
+                    className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full ring-2"
+                    style={
+                      {
+                        background: "#ba1a1a",
+                        "--tw-ring-color": "rgb(249,250,242)",
+                      } as React.CSSProperties
+                    }
+                  />
+                )}
+              </Link>
+
+              {/* Support */}
+              <Link
+                href="/support"
+                className="hidden sm:flex p-2 rounded-xl transition-all duration-150"
+                style={{ color: "#42493e" }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLElement).style.background =
+                    "rgba(188,240,174,0.3)")
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLElement).style.background =
+                    "transparent")
+                }
+              >
+                <HelpCircle className="w-5 h-5" />
+              </Link>
+
+              {/* Menu utilisateur */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-xl transition-all duration-150"
+                  style={{ color: "#42493e" }}
+                  onMouseEnter={(e) =>
+                    ((e.currentTarget as HTMLElement).style.background =
+                      "rgba(194,201,187,0.3)")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.currentTarget as HTMLElement).style.background =
+                      "transparent")
+                  }
+                >
+                  <Avatar
+                    src={displayUser.avatar}
+                    firstname={displayUser.firstname}
+                    size="sm"
+                    ring={false}
+                  />
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                      showMenu ? "rotate-180" : ""
+                    }`}
+                    style={{ color: "#72796e" }}
+                  />
+                </button>
+
+                {/* Dropdown */}
+                {showMenu && (
+                  <div
+                    className="absolute right-0 top-full mt-2 w-64 rounded-2xl overflow-hidden z-50 animate-slideDown"
+                    style={{
+                      background: "rgba(249,250,242,0.98)",
+                      backdropFilter: "blur(20px)",
+                      border: "1px solid rgba(194,201,187,0.5)",
+                      boxShadow: "0 16px 40px rgba(21,66,18,0.12)",
+                    }}
+                  >
+                    {/* Header */}
+                    <div
+                      className="px-4 py-3.5"
+                      style={{
+                        borderBottom: "1px solid rgba(194,201,187,0.35)",
+                        background:
+                          "linear-gradient(135deg, rgba(188,240,174,0.25) 0%, rgba(244,187,146,0.12) 100%)",
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar
+                          src={displayUser.avatar}
+                          firstname={displayUser.firstname}
+                          size="md"
+                          ring={true}
+                        />
+                        <div className="min-w-0">
+                          <p
+                            className="text-sm font-semibold truncate"
+                            style={{
+                              color: "#191c18",
+                              fontFamily: "'Plus Jakarta Sans', sans-serif",
+                            }}
+                          >
+                            {displayUser.firstname} {displayUser.lastname}
+                          </p>
+                          <p
+                            className="text-xs truncate"
+                            style={{ color: "#72796e" }}
+                          >
+                            {displayUser.email}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Liens */}
+                    <div className="py-1.5">
+                      {[
+                        {
+                          href: "/profile",
+                          icon: User,
+                          label: "Mon profil",
+                        },
+                        {
+                          href: "/settings",
+                          icon: Settings,
+                          label: "Paramètres",
+                        },
+                        {
+                          href: "/support",
+                          icon: HelpCircle,
+                          label: "Aide & support",
+                        },
+                      ].map(({ href, icon: Icon, label }) => (
+                        <Link
+                          key={href}
+                          href={href}
+                          onClick={() => setShowMenu(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150"
+                          style={{ color: "#42493e" }}
+                          onMouseEnter={(e) =>
+                            ((e.currentTarget as HTMLElement).style.background =
+                              "rgba(188,240,174,0.2)")
+                          }
+                          onMouseLeave={(e) =>
+                            ((e.currentTarget as HTMLElement).style.background =
+                              "transparent")
+                          }
+                        >
+                          <Icon
+                            className="w-4 h-4"
+                            style={{ color: "#72796e" }}
+                          />
+                          {label}
+                        </Link>
+                      ))}
+                    </div>
+
+                    {/* Déconnexion */}
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-all duration-150"
+                      style={{
+                        color: "#ba1a1a",
+                        borderTop: "1px solid rgba(194,201,187,0.35)",
+                      }}
+                      onMouseEnter={(e) =>
+                        ((e.currentTarget as HTMLElement).style.background =
+                          "rgba(186,26,26,0.06)")
+                      }
+                      onMouseLeave={(e) =>
+                        ((e.currentTarget as HTMLElement).style.background =
+                          "transparent")
+                      }
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Se déconnecter
+                    </button>
+                  </div>
                 )}
               </div>
-              <span className="text-[10px] mt-0.5">{label}</span>
-            </Link>
-          ))}
+            </div>
+          </div>
         </div>
 
-        {/* Avatar + Menu utilisateur */}
-        <div className="relative ml-auto">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="flex items-center gap-2"
+        {/* Recherche mobile overlay */}
+        {showMobileSearch && (
+          <div
+            className="md:hidden absolute top-full left-0 right-0 border-b p-3 z-50 animate-slideDown"
+            style={{
+              background: "transparent",
+              backdropFilter: "blur(16px)",
+              borderColor: "rgba(194,201,187,0.4)",
+            }}
           >
-            <Avatar src={user?.avatar} firstname={user?.firstname} size="sm" />
-            <svg
-              className="w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
+            <div className="flex items-center gap-2">
+              <Search
+                placeholder="Rechercher..."
+                className="flex-1 bg-transparent"
               />
-            </svg>
-          </button>
-
-          {showMenu && (
-            <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
-              <div className="px-4 py-3 border-b border-gray-50">
-                <p className="text-sm font-semibold text-gray-900">
-                  {user?.firstname} {user?.lastname}
-                </p>
-                <p className="text-xs text-gray-400">{user?.email}</p>
-              </div>
-              {[
-                { label: "Mon profil", href: "/profile" },
-                { label: "Paramètres", href: "/settings" },
-              ].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setShowMenu(false)}
-                  className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
-                >
-                  {item.label}
-                </Link>
-              ))}
               <button
-                onClick={() => {
-                  setShowMenu(false);
-                  logout();
-                }}
-                className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition border-t border-gray-50"
+                onClick={() => setShowMobileSearch(false)}
+                className="p-2 rounded-xl transition-all duration-150"
+                style={{ color: "#72796e" }}
               >
-                Se déconnecter
+                <X className="w-4 h-4" />
               </button>
             </div>
-          )}
-        </div>
-      </div>
-    </nav>
+          </div>
+        )}
+      </nav>
+
+      {/* Spacer navbar */}
+      <div className="h-16" />
+    </>
   );
 }
-
-// Icônes SVG inline
-const HomeIcon = ({ className }: { className: string }) => (
-  <svg
-    className={className}
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-    />
-  </svg>
-);
-const ChatIcon = ({ className }: { className: string }) => (
-  <svg
-    className={className}
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-    />
-  </svg>
-);
-const BellIcon = ({ className }: { className: string }) => (
-  <svg
-    className={className}
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-    />
-  </svg>
-);
-const MegaIcon = ({ className }: { className: string }) => (
-  <svg
-    className={className}
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
-    />
-  </svg>
-);

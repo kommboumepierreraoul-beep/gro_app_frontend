@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { useState } from "react";
@@ -16,50 +17,105 @@ export function PostActions({ post, onCommentClick }: PostActionsProps) {
   const { likePost } = useFeed();
   const [shareOpen, setShareOpen] = useState(false);
 
+  const btnBase: React.CSSProperties = {
+    display: "flex",
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
+    padding: "8px 12px",
+    borderRadius: "12px",
+    fontSize: "13px",
+    fontWeight: 500,
+    fontFamily: "'Inter', sans-serif",
+    transition: "all 0.15s ease",
+    cursor: "pointer",
+    border: "none",
+    background: "transparent",
+  };
+
   return (
     <>
-      <div className="flex items-center gap-1 pt-2 border-t border-gray-50">
+      <div className="flex items-center w-full gap-1 p-1.5">
         {/* Like */}
         <button
           onClick={() => likePost.mutate(post.id)}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium transition ${
-            post.is_liked
-              ? "text-blue-600 bg-blue-50 hover:bg-blue-100"
-              : "text-gray-500 hover:bg-gray-50"
-          }`}
+          style={{
+            ...btnBase,
+            color: post.is_liked ? "#ba1a1a" : "#42493e",
+            background: post.is_liked
+              ? "rgba(186,26,26,0.08)"
+              : "transparent",
+          }}
+          onMouseEnter={(e) => {
+            if (!post.is_liked)
+              (e.currentTarget as HTMLElement).style.background =
+                "rgba(186,26,26,0.06)";
+          }}
+          onMouseLeave={(e) => {
+            if (!post.is_liked)
+              (e.currentTarget as HTMLElement).style.background = "transparent";
+          }}
         >
           <ThumbsUp
-            size={18}
-            className={`transition-transform ${
-              post.is_liked ? "fill-blue-600 scale-110" : ""
-            }`}
+            size={16}
+            style={{
+              fill: post.is_liked ? "#ba1a1a" : "none",
+              transition: "all 0.2s",
+            }}
           />
-
           <span>
-            {post.likes_count > 0 ? post.likes_count : ""} J&apos;aime
+            {post.likes_count > 0 && (
+              <span className="mr-1">{post.likes_count}</span>
+            )}
+            J'aime
           </span>
         </button>
 
-        {/* Commentaire */}
+        {/* Commenter */}
         <button
           onClick={onCommentClick}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
+          style={{ ...btnBase, color: "#42493e" }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.background =
+              "rgba(188,240,174,0.25)";
+            (e.currentTarget as HTMLElement).style.color = "#2d5a27";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background = "transparent";
+            (e.currentTarget as HTMLElement).style.color = "#42493e";
+          }}
         >
-          <MessageCircle size={18} />
-
+          <MessageCircle size={16} />
           <span>
-            {post.comments_count > 0 ? post.comments_count : ""} Commenter
+            {post.comments_count > 0 && (
+              <span className="mr-1">{post.comments_count}</span>
+            )}
+            Commenter
           </span>
         </button>
 
-        {/* Partage */}
+        {/* Partager */}
         <button
           onClick={() => setShareOpen(true)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
+          style={{ ...btnBase, color: "#42493e" }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.background =
+              "rgba(188,240,174,0.25)";
+            (e.currentTarget as HTMLElement).style.color = "#2d5a27";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background = "transparent";
+            (e.currentTarget as HTMLElement).style.color = "#42493e";
+          }}
         >
-          <Repeat2 size={18} />
-
-          <span>{post.shares_count > 0 ? post.shares_count : ""} Partager</span>
+          <Repeat2 size={16} />
+          <span>
+            {post.shares_count > 0 && (
+              <span className="mr-1">{post.shares_count}</span>
+            )}
+            Partager
+          </span>
         </button>
       </div>
 
