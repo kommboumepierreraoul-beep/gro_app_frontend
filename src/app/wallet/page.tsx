@@ -1,23 +1,56 @@
-'use client';
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-import VendorLayout from '@/components/layouts/VendorLayout';
-import { useState, useEffect } from 'react';
-import api from '@/lib/axios';
-import toast from 'react-hot-toast';
+import VendorLayout from "@/components/layouts/VendorLayout";
+import { useState, useEffect } from "react";
+import api from "@/lib/axios";
+import toast from "react-hot-toast";
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts';
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  Eye,
+  EyeOff,
+  Wallet,
+  TrendingUp,
+  PlusCircle,
+  MinusCircle,
+  ArrowDown,
+  ArrowUp,
+  RefreshCw,
+  FileText,
+  Grid,
+  BarChart3,
+  PiggyBank,
+  Receipt,
+  Leaf,
+  CreditCard,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Loader2,
+  WalletCards,
+  ArrowDownCircle,
+  ArrowUpCircle,
+} from "lucide-react";
 
 type Transaction = {
   id: number;
   amount: number;
-  type: 'credit' | 'debit' | 'deposit' | 'withdraw';
+  type: "credit" | "debit" | "deposit" | "withdraw";
   description: string;
   created_at: string;
   order_id?: number;
   order_number?: string;
   product_name?: string;
-  status?: 'pending' | 'completed' | 'failed';
+  status?: "pending" | "completed" | "failed";
 };
 
 type WalletData = {
@@ -34,12 +67,14 @@ function WalletContent() {
   const [showBalance, setShowBalance] = useState(true);
   const [depositModal, setDepositModal] = useState(false);
   const [withdrawModal, setWithdrawModal] = useState(false);
-  const [amount, setAmount] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [withdrawChannel, setWithdrawChannel] = useState('mtn');
-  const [paymentMethod, setPaymentMethod] = useState('notchpay');
+  const [amount, setAmount] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [withdrawChannel, setWithdrawChannel] = useState("mtn");
+  const [paymentMethod, setPaymentMethod] = useState("notchpay");
   const [loadingAction, setLoadingAction] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'credit' | 'debit' | 'deposit'>('all');
+  const [activeTab, setActiveTab] = useState<
+    "all" | "credit" | "debit" | "deposit"
+  >("all");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,16 +82,16 @@ function WalletContent() {
 
   const fetchWalletData = async () => {
     try {
-      const res = await api.get('/wallet/balance');
+      const res = await api.get("/wallet/balance");
       setWallet(res.data);
     } catch {
-      toast.error('Impossible de charger le solde');
+      toast.error("Impossible de charger le solde");
     }
   };
 
   const fetchTransactions = async () => {
     try {
-      const res = await api.get('/wallet/history');
+      const res = await api.get("/wallet/history");
       setTransactions(res.data.data || res.data || []);
     } catch {
       setTransactions([]);
@@ -70,21 +105,21 @@ function WalletContent() {
     fetchTransactions();
 
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('trxref') || urlParams.get('reference')) {
-      toast.success('Paiement reçu, vérification en cours…');
+    if (urlParams.get("trxref") || urlParams.get("reference")) {
+      toast.success("Paiement reçu, vérification en cours…");
       const interval = setInterval(() => {
         fetchWalletData();
         fetchTransactions();
       }, 2000);
       setTimeout(() => clearInterval(interval), 15000);
-      window.history.replaceState({}, '', '/wallet');
+      window.history.replaceState({}, "", "/wallet");
     }
   }, []);
 
   const handleDeposit = async () => {
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      toast.error('Montant invalide');
+      toast.error("Montant invalide");
       return;
     }
     setLoadingAction(true);
@@ -92,23 +127,22 @@ function WalletContent() {
       const payload: any = { amount: amountNum, method: paymentMethod };
       if (phoneNumber) payload.phone = phoneNumber;
 
-      const res = await api.post('/wallet/deposit', payload);
+      const res = await api.post("/wallet/deposit", payload);
 
-      // NotchPay retourne l'URL dans res.data.data.authorization_url
       const authUrl =
         res.data?.data?.authorization_url ||
         res.data?.authorization_url ||
         null;
 
       if (authUrl) {
-        toast.success('Redirection vers la page de paiement…');
+        toast.success("Redirection vers la page de paiement…");
         setDepositModal(false);
         window.location.href = authUrl;
       } else {
-        toast.error('Impossible d\'obtenir l\'URL de paiement');
+        toast.error("Impossible d'obtenir l'URL de paiement");
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Erreur lors du dépôt');
+      toast.error(err?.response?.data?.message || "Erreur lors du dépôt");
     } finally {
       setLoadingAction(false);
     }
@@ -117,68 +151,69 @@ function WalletContent() {
   const handleWithdraw = async () => {
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      toast.error('Montant invalide');
+      toast.error("Montant invalide");
       return;
     }
     if (!phoneNumber || phoneNumber.length < 9) {
-      toast.error('Numéro Mobile Money invalide');
+      toast.error("Numéro Mobile Money invalide");
       return;
     }
     setLoadingAction(true);
     try {
-      await api.post('/wallet/withdraw', {
+      await api.post("/wallet/withdraw", {
         amount: amountNum,
         phone: phoneNumber,
         channel: withdrawChannel,
       });
-      toast.success('Retrait effectué');
+      toast.success("Retrait effectué");
       setWithdrawModal(false);
-      setAmount('');
-      setPhoneNumber('');
-      setWithdrawChannel('mtn');
+      setAmount("");
+      setPhoneNumber("");
+      setWithdrawChannel("mtn");
       fetchWalletData();
       fetchTransactions();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Erreur lors du retrait');
+      toast.error(err?.response?.data?.message || "Erreur lors du retrait");
     } finally {
       setLoadingAction(false);
     }
   };
 
   const isDeposit = (tx: Transaction) =>
-    tx.type === 'deposit' || (tx.type === 'credit' && tx.description?.toLowerCase().includes('dépôt'));
+    tx.type === "deposit" ||
+    (tx.type === "credit" && tx.description?.toLowerCase().includes("dépôt"));
 
-  const isCredit = (tx: Transaction) =>
-    tx.type === 'credit' && !isDeposit(tx);
+  const isCredit = (tx: Transaction) => tx.type === "credit" && !isDeposit(tx);
 
-  const filteredTransactions = transactions.filter(t => {
-    if (activeTab === 'credit') return isCredit(t);
-    if (activeTab === 'debit') return t.type === 'debit' || t.type === 'withdraw';
-    if (activeTab === 'deposit') return isDeposit(t);
+  const filteredTransactions = transactions.filter((t) => {
+    if (activeTab === "credit") return isCredit(t);
+    if (activeTab === "debit")
+      return t.type === "debit" || t.type === "withdraw";
+    if (activeTab === "deposit") return isDeposit(t);
     return true;
   });
 
-  // Pagination
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const paginatedTransactions = filteredTransactions.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   const chartData = () => {
     const last30Days = [...Array(30)].map((_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (29 - i));
-      return d.toISOString().split('T')[0];
+      return d.toISOString().split("T")[0];
     });
     const grouped: Record<string, { credit: number; debit: number }> = {};
-    transactions.forEach(t => {
-      const day = t.created_at.split('T')[0];
+    transactions.forEach((t) => {
+      const day = t.created_at.split("T")[0];
       if (!grouped[day]) grouped[day] = { credit: 0, debit: 0 };
-      if (t.type === 'credit' || t.type === 'deposit') grouped[day].credit += t.amount;
+      if (t.type === "credit" || t.type === "deposit")
+        grouped[day].credit += t.amount;
       else grouped[day].debit += t.amount;
     });
-    return last30Days.map(day => ({
+    return last30Days.map((day) => ({
       date: day,
       credit: grouped[day]?.credit || 0,
       debit: grouped[day]?.debit || 0,
@@ -186,36 +221,37 @@ function WalletContent() {
   };
 
   const getTxLabel = (tx: Transaction) => {
-    if (isDeposit(tx)) return 'Dépôt via NotchPay';
-    if (tx.type === 'withdraw') return 'Retrait';
-    if (tx.type === 'credit' && tx.order_number)
-      return `Vente de ${tx.product_name || 'Produit'} #${tx.order_number}`;
+    if (isDeposit(tx)) return "Dépôt via NotchPay";
+    if (tx.type === "withdraw") return "Retrait";
+    if (tx.type === "credit" && tx.order_number)
+      return `Vente de ${tx.product_name || "Produit"} #${tx.order_number}`;
     return tx.description;
   };
 
   const getTxSign = (tx: Transaction) => {
-    if (tx.type === 'credit' || tx.type === 'deposit') return '+';
-    return '-';
+    if (tx.type === "credit" || tx.type === "deposit") return "+";
+    return "-";
   };
 
   const getTxColor = (tx: Transaction) => {
-    if (tx.type === 'credit' || tx.type === 'deposit') return 'text-lime-400';
-    return 'text-white';
+    if (tx.type === "credit" || tx.type === "deposit") return "text-lime-400";
+    return "text-white";
   };
 
   const getStatusLabel = (tx: Transaction) => {
-    if (tx.status === 'completed') return isDeposit(tx) || tx.type === 'deposit' ? 'Succès' : 'Effectué';
-    if (tx.status === 'pending') return 'En attente';
-    return 'Échec';
+    if (tx.status === "completed")
+      return isDeposit(tx) || tx.type === "deposit" ? "Succès" : "Effectué";
+    if (tx.status === "pending") return "En attente";
+    return "Échec";
   };
 
   const getStatusClass = (tx: Transaction) => {
-    if (tx.status === 'completed')
-      return (tx.type === 'credit' || tx.type === 'deposit')
-        ? 'bg-lime-500/20 text-lime-400'
-        : 'bg-cyan-500/20 text-cyan-400';
-    if (tx.status === 'pending') return 'bg-yellow-500/20 text-yellow-400';
-    return 'bg-red-500/20 text-red-400';
+    if (tx.status === "completed")
+      return tx.type === "credit" || tx.type === "deposit"
+        ? "bg-lime-500/20 text-lime-400"
+        : "bg-cyan-500/20 text-cyan-400";
+    if (tx.status === "pending") return "bg-yellow-500/20 text-yellow-400";
+    return "bg-red-500/20 text-red-400";
   };
 
   if (loading) {
@@ -232,8 +268,17 @@ function WalletContent() {
         {/* Carte solde principale */}
         <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 overflow-hidden">
           <div className="absolute inset-0 opacity-20 pointer-events-none">
-            <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 400 200">
-              <path d="M0,150 Q50,140 100,160 T200,120 T300,140 T400,80" fill="none" stroke="#a3e635" strokeWidth="4" />
+            <svg
+              className="w-full h-full"
+              preserveAspectRatio="none"
+              viewBox="0 0 400 200"
+            >
+              <path
+                d="M0,150 Q50,140 100,160 T200,120 T300,140 T400,80"
+                fill="none"
+                stroke="#a3e635"
+                strokeWidth="4"
+              />
             </svg>
           </div>
           <div className="relative z-10">
@@ -241,38 +286,52 @@ function WalletContent() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
                   SOLDE DISPONIBLE
-                  <button onClick={() => setShowBalance(!showBalance)}>
-                    <span className="material-symbols-outlined text-sm">{showBalance ? 'visibility' : 'visibility_off'}</span>
+                  <button
+                    onClick={() => setShowBalance(!showBalance)}
+                    className="hover:text-lime-400 transition"
+                  >
+                    {showBalance ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
+                    )}
                   </button>
                 </p>
                 <h1 className="text-4xl font-bold text-white mt-2">
-                  {showBalance ? (wallet?.balance || 0).toLocaleString() : '••••••'}
-                  <span className="text-xl font-medium text-lime-400"> FCFA</span>
+                  {showBalance
+                    ? (wallet?.balance || 0).toLocaleString()
+                    : "••••••"}
+                  <span className="text-xl font-medium text-lime-400">
+                    {" "}
+                    FCFA
+                  </span>
                 </h1>
               </div>
               <div className="bg-lime-500/20 p-2 rounded-full">
-                <span className="material-symbols-outlined text-lime-400">account_balance_wallet</span>
+                <Wallet className="text-lime-400 w-6 h-6" />
               </div>
             </div>
             <div className="flex flex-wrap justify-between items-center gap-4 mt-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-sm text-lime-400">trending_up</span>
+                  <TrendingUp className="w-4 h-4 text-lime-400" />
                 </div>
-                <span className="text-xs text-lime-400 bg-lime-400/10 px-2 py-1 rounded-full">+12.5% ce mois</span>
+                <span className="text-xs text-lime-400 bg-lime-400/10 px-2 py-1 rounded-full">
+                  +12.5% ce mois
+                </span>
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => setDepositModal(true)}
                   className="bg-lime-500 hover:bg-lime-400 text-slate-950 font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2 transition"
                 >
-                  <span className="material-symbols-outlined text-base">add_circle</span> Déposer
+                  <PlusCircle className="w-4 h-4" /> Déposer
                 </button>
                 <button
                   onClick={() => setWithdrawModal(true)}
                   className="bg-white/10 hover:bg-white/20 text-white font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2 transition"
                 >
-                  <span className="material-symbols-outlined text-base">remove_circle</span> Retirer
+                  <MinusCircle className="w-4 h-4" /> Retirer
                 </button>
               </div>
             </div>
@@ -281,20 +340,48 @@ function WalletContent() {
 
         {/* Actions rapides */}
         <div>
-          <h2 className="text-lg font-semibold text-white mb-4">Actions Rapides</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">
+            Actions Rapides
+          </h2>
           <div className="flex gap-4 overflow-x-auto pb-2">
             {[
-              { icon: 'vertical_align_bottom', label: 'Retirer', onClick: () => setWithdrawModal(true) },
-              { icon: 'add_circle', label: 'Déposer', onClick: () => setDepositModal(true) },
-              { icon: 'sync_alt', label: 'Transférer', onClick: () => toast('Bientôt disponible') },
-              { icon: 'description', label: 'Relevés', onClick: () => toast('Export PDF bientôt') },
-              { icon: 'grid_view', label: 'Plus', onClick: () => toast('Plus d\'options à venir') },
-            ].map(action => (
-              <button key={action.label} onClick={action.onClick} className="flex flex-col items-center gap-2 min-w-[70px] group">
+              {
+                icon: ArrowDownCircle,
+                label: "Retirer",
+                onClick: () => setWithdrawModal(true),
+              },
+              {
+                icon: PlusCircle,
+                label: "Déposer",
+                onClick: () => setDepositModal(true),
+              },
+              {
+                icon: RefreshCw,
+                label: "Transférer",
+                onClick: () => toast("Bientôt disponible"),
+              },
+              {
+                icon: FileText,
+                label: "Relevés",
+                onClick: () => toast("Export PDF bientôt"),
+              },
+              {
+                icon: Grid,
+                label: "Plus",
+                onClick: () => toast("Plus d'options à venir"),
+              },
+            ].map((action) => (
+              <button
+                key={action.label}
+                onClick={action.onClick}
+                className="flex flex-col items-center gap-2 min-w-[70px] group"
+              >
                 <div className="w-14 h-14 rounded-full bg-white/5 backdrop-blur border border-white/10 flex items-center justify-center group-hover:bg-lime-500/20 transition">
-                  <span className="material-symbols-outlined text-lime-400 text-2xl">{action.icon}</span>
+                  <action.icon className="text-lime-400 w-6 h-6" />
                 </div>
-                <span className="text-xs text-slate-400 group-hover:text-white transition">{action.label}</span>
+                <span className="text-xs text-slate-400 group-hover:text-white transition">
+                  {action.label}
+                </span>
               </button>
             ))}
           </div>
@@ -303,9 +390,14 @@ function WalletContent() {
         {/* Graphique d'évolution */}
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-white">Évolution (30j)</h2>
-            <button onClick={fetchTransactions} className="text-lime-400 hover:scale-105 transition">
-              <span className="material-symbols-outlined">refresh</span>
+            <h2 className="text-lg font-semibold text-white">
+              Évolution (30j)
+            </h2>
+            <button
+              onClick={fetchTransactions}
+              className="text-lime-400 hover:scale-105 transition"
+            >
+              <RefreshCw className="w-5 h-5" />
             </button>
           </div>
           <div className="h-64 w-full">
@@ -322,17 +414,46 @@ function WalletContent() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={val => val.slice(5)} />
-                <YAxis tickFormatter={val => `${(val / 1000).toFixed(0)}k`} tick={{ fill: '#94a3b8' }} />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px' }} />
-                <Area type="monotone" dataKey="credit" stroke="#a3e635" fill="url(#creditGrad)" name="Entrées" />
-                <Area type="monotone" dataKey="debit" stroke="#06b6d4" fill="url(#debitGrad)" name="Sorties" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "#94a3b8" }}
+                  tickFormatter={(val) => val.slice(5)}
+                />
+                <YAxis
+                  tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`}
+                  tick={{ fill: "#94a3b8" }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1e293b",
+                    border: "none",
+                    borderRadius: "12px",
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="credit"
+                  stroke="#a3e635"
+                  fill="url(#creditGrad)"
+                  name="Entrées"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="debit"
+                  stroke="#06b6d4"
+                  fill="url(#debitGrad)"
+                  name="Sorties"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
           <div className="flex justify-center gap-6 mt-3 text-sm text-slate-400">
-            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-lime-500 rounded-full"></div> Entrées</div>
-            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-cyan-500 rounded-full"></div> Sorties</div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-lime-500 rounded-full"></div> Entrées
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-cyan-500 rounded-full"></div> Sorties
+            </div>
           </div>
         </div>
 
@@ -340,15 +461,17 @@ function WalletContent() {
         <div>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-white">Activités</h2>
-            <button className="text-lime-400 text-sm font-semibold">Voir tout</button>
+            <button className="text-lime-400 text-sm font-semibold">
+              Voir tout
+            </button>
           </div>
           <div className="flex gap-2 mb-4">
             {[
-              { key: 'all', label: 'Tout' },
-              { key: 'credit', label: 'Ventes' },
-              { key: 'debit', label: 'Retraits' },
-              { key: 'deposit', label: 'Dépôts' },
-            ].map(tab => (
+              { key: "all", label: "Tout" },
+              { key: "credit", label: "Ventes" },
+              { key: "debit", label: "Retraits" },
+              { key: "deposit", label: "Dépôts" },
+            ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => {
@@ -357,8 +480,8 @@ function WalletContent() {
                 }}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
                   activeTab === tab.key
-                    ? 'bg-lime-500 text-slate-950'
-                    : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                    ? "bg-lime-500 text-slate-950"
+                    : "bg-white/5 text-slate-300 hover:bg-white/10"
                 }`}
               >
                 {tab.label}
@@ -368,34 +491,49 @@ function WalletContent() {
           <div className="space-y-3">
             {paginatedTransactions.length === 0 ? (
               <div className="bg-white/5 backdrop-blur p-8 text-center text-slate-400 rounded-2xl">
-                <span className="material-symbols-outlined text-4xl mb-2">receipt_long</span>
+                <Receipt className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>Aucune transaction</p>
               </div>
             ) : (
-              paginatedTransactions.map(tx => (
-                <div key={tx.id} className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-4 flex items-center justify-between hover:bg-white/10 transition">
+              paginatedTransactions.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-4 flex items-center justify-between hover:bg-white/10 transition"
+                >
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      tx.type === 'credit' || tx.type === 'deposit' ? 'bg-lime-500/20' : 'bg-white/10'
-                    }`}>
-                      <span className="material-symbols-outlined text-2xl">
-                        {tx.type === 'credit' || tx.type === 'deposit' ? 'eco' : 'payments'}
-                      </span>
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        tx.type === "credit" || tx.type === "deposit"
+                          ? "bg-lime-500/20"
+                          : "bg-white/10"
+                      }`}
+                    >
+                      {tx.type === "credit" || tx.type === "deposit" ? (
+                        <Leaf className="w-6 h-6 text-lime-400" />
+                      ) : (
+                        <CreditCard className="w-6 h-6 text-white/60" />
+                      )}
                     </div>
                     <div>
                       <p className="font-medium text-white">{getTxLabel(tx)}</p>
                       <p className="text-xs text-slate-400">
-                        {new Date(tx.created_at).toLocaleDateString('fr-FR', {
-                          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                        {new Date(tx.created_at).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className={`font-semibold ${getTxColor(tx)}`}>
-                      {getTxSign(tx)}{tx.amount.toLocaleString()} FCFA
+                      {getTxSign(tx)}
+                      {tx.amount.toLocaleString()} FCFA
                     </p>
-                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mt-1 ${getStatusClass(tx)}`}>
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mt-1 ${getStatusClass(tx)}`}
+                    >
                       {getStatusLabel(tx)}
                     </span>
                   </div>
@@ -408,21 +546,23 @@ function WalletContent() {
           {totalPages > 1 && (
             <div className="flex justify-center gap-2 mt-6">
               <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-300 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-300 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1"
               >
-                Précédent
+                <ChevronLeft className="w-4 h-4" /> Précédent
               </button>
               <span className="px-4 py-2 text-slate-300">
                 Page {currentPage} / {totalPages}
               </span>
               <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-300 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-300 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1"
               >
-                Suivant
+                Suivant <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           )}
@@ -431,29 +571,46 @@ function WalletContent() {
         {/* Bento stats */}
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white/5 backdrop-blur rounded-2xl p-4">
-            <span className="material-symbols-outlined text-cyan-400">monitoring</span>
+            <BarChart3 className="text-cyan-400 w-6 h-6" />
             <p className="text-xs text-slate-400 mt-2">Prêts en cours</p>
             <p className="text-xl font-bold text-white">0 FCFA</p>
           </div>
           <div className="bg-white/5 backdrop-blur rounded-2xl p-4">
-            <span className="material-symbols-outlined text-lime-400">savings</span>
+            <PiggyBank className="text-lime-400 w-6 h-6" />
             <p className="text-xs text-slate-400 mt-2">Épargne Projet</p>
-            <p className="text-xl font-bold text-white">850K <span className="text-xs text-lime-400">/ 2M</span></p>
+            <p className="text-xl font-bold text-white">
+              850K <span className="text-xs text-lime-400">/ 2M</span>
+            </p>
           </div>
         </div>
       </div>
 
       {/* Modal Dépôt */}
       {depositModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setDepositModal(false)}>
-          <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl border border-white/10" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setDepositModal(false)}
+        >
+          <div
+            className="bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center mb-5">
-              <h2 className="text-xl font-bold text-white">Approvisionner le wallet</h2>
-              <button onClick={() => setDepositModal(false)} className="text-slate-400 hover:text-white transition">✕</button>
+              <h2 className="text-xl font-bold text-white">
+                Approvisionner le wallet
+              </h2>
+              <button
+                onClick={() => setDepositModal(false)}
+                className="text-slate-400 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Montant (FCFA)</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Montant (FCFA)
+                </label>
                 <input
                   type="number"
                   value={amount}
@@ -464,7 +621,9 @@ function WalletContent() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Numéro de téléphone</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Numéro de téléphone
+                </label>
                 <input
                   type="tel"
                   value={phoneNumber}
@@ -474,21 +633,31 @@ function WalletContent() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Service</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Service
+                </label>
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
                   className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
                 >
-                  <option value="notchpay">Paiement par carte / Mobile Money (NotchPay)</option>
+                  <option value="notchpay">
+                    Paiement par carte / Mobile Money (NotchPay)
+                  </option>
                 </select>
               </div>
               <button
                 onClick={handleDeposit}
                 disabled={loadingAction}
-                className="w-full py-3 bg-lime-500 hover:bg-lime-400 text-slate-950 font-semibold rounded-xl transition disabled:opacity-50"
+                className="w-full py-3 bg-lime-500 hover:bg-lime-400 text-slate-950 font-semibold rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loadingAction ? 'Traitement...' : 'Continuer vers le paiement →'}
+                {loadingAction ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Traitement...
+                  </>
+                ) : (
+                  "Continuer vers le paiement →"
+                )}
               </button>
             </div>
           </div>
@@ -497,15 +666,30 @@ function WalletContent() {
 
       {/* Modal Retrait */}
       {withdrawModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setWithdrawModal(false)}>
-          <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl border border-white/10" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setWithdrawModal(false)}
+        >
+          <div
+            className="bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center mb-5">
-              <h2 className="text-xl font-bold text-white">Retirer des fonds</h2>
-              <button onClick={() => setWithdrawModal(false)} className="text-slate-400 hover:text-white transition">✕</button>
+              <h2 className="text-xl font-bold text-white">
+                Retirer des fonds
+              </h2>
+              <button
+                onClick={() => setWithdrawModal(false)}
+                className="text-slate-400 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Montant (FCFA)</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Montant (FCFA)
+                </label>
                 <input
                   type="number"
                   value={amount}
@@ -513,10 +697,14 @@ function WalletContent() {
                   placeholder="Ex: 5000"
                   className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
                 />
-                <p className="text-xs text-slate-400 mt-1">Maximum : {wallet?.balance?.toLocaleString()} FCFA</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Maximum : {wallet?.balance?.toLocaleString()} FCFA
+                </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Téléphone Mobile Money</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Téléphone Mobile Money
+                </label>
                 <input
                   type="tel"
                   value={phoneNumber}
@@ -526,7 +714,9 @@ function WalletContent() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Opérateur</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Opérateur
+                </label>
                 <select
                   value={withdrawChannel}
                   onChange={(e) => setWithdrawChannel(e.target.value)}
@@ -539,9 +729,15 @@ function WalletContent() {
               <button
                 onClick={handleWithdraw}
                 disabled={loadingAction}
-                className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl transition disabled:opacity-50"
+                className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loadingAction ? 'Envoi...' : 'Demander le retrait'}
+                {loadingAction ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Envoi...
+                  </>
+                ) : (
+                  "Demander le retrait"
+                )}
               </button>
             </div>
           </div>

@@ -16,6 +16,7 @@ import {
   HelpCircle,
   LogOut,
   Search,
+  Store,
 } from "lucide-react";
 
 import { useAuthStore } from "@/stores/auth.store";
@@ -94,6 +95,11 @@ export function LeftSidebar() {
       href: "/missions",
       icon: Target,
       label: "Missions",
+    },
+    {
+      href: "/marketplace",
+      icon: Store,
+      label: "Marketplace",
     },
     {
       href: "/search",
