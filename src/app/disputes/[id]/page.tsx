@@ -135,7 +135,7 @@ export default function ClientDisputeDetailPage() {
                 <ChevronLeft size={22} />
               </Link>
               <div className="min-w-0">
-                <h1 className="text-base md:text-lg font-bold text-slate-800 truncate">Détails du Litige #{dispute.id}</h1>
+                <h1 className="text-base md:text-lg font-bold text-slate-800 truncate">Détails du Litige : {dispute.order?.items?.[0]?.product?.name || `Litige #${dispute.id}`}</h1>
                 <p className={`text-[11px] font-bold uppercase tracking-wide flex items-center gap-1.5 mt-0.5 ${cfg.color}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${isResolved ? 'bg-emerald-500' : 'bg-orange-500 animate-pulse'}`} />
                   {cfg.label}

@@ -384,7 +384,7 @@ export default function MarketplacePage() {
           <span className="material-symbols-outlined text-xl sm:text-2xl">shopping_bag</span>
           <span className="text-[9px] sm:text-[10px] font-semibold mt-0.5">Commandes</span>
         </Link>
-        <Link href="/profile" className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition">
+        <Link href="/account" className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition">
           <span className="material-symbols-outlined text-xl sm:text-2xl">person</span>
           <span className="text-[9px] sm:text-[10px] font-semibold mt-0.5">Profil</span>
         </Link>
