@@ -139,7 +139,7 @@ export default function VendorLayout({ children }: VendorLayoutProps) {
         <div className="flex flex-col h-full">
           <div className="p-5 border-b border-emerald-100 flex items-center gap-2">
             <Store className="w-6 h-6 text-emerald-600" />
-            <span className="font-bold text-xl bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent">AgriConnect</span>
+            <span className="font-bold text-xl bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent">Agripulse</span>
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {filteredNavItems.map(item => {
@@ -196,7 +196,7 @@ export default function VendorLayout({ children }: VendorLayoutProps) {
             </button>
             <div className="flex items-center gap-2 lg:hidden">
               <Store className="w-5 h-5 text-emerald-600" />
-              <span className="font-bold text-lg text-emerald-700">AgriConnect</span>
+              <span className="font-bold text-lg text-emerald-700">Agripulse</span>
             </div>
 
             {/* Cloche + panel */}

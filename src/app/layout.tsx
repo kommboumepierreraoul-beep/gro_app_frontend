@@ -1,5 +1,6 @@
 import "./globals.css";
 import { CartProvider } from '@/context/CartContext';
+import QueryProvider from '@/providers/query-provider';
 
 export const metadata = {
   title: "Gro App",
@@ -20,9 +21,11 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning>
-        <CartProvider>
-          {children}
-        </CartProvider>
+        <QueryProvider>
+          <CartProvider>
+            {children}
+          </CartProvider>
+        </QueryProvider>
       </body>
     </html>
   );

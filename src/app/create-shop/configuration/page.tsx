@@ -146,7 +146,7 @@ router.push('/shop-created');
                 <Store size={20} className="text-white" />
               </div>
               <span className="font-bold text-xl bg-gradient-to-r from-emerald-800 to-teal-700 bg-clip-text text-transparent">
-                AgriConnect
+                Agripulse
               </span>
             </div>
           </div>
@@ -274,7 +274,7 @@ router.push('/shop-created');
                         className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-200 ${focusedField === 'slug' ? 'border-emerald-400 ring-4 ring-emerald-100' : 'border-slate-200'} bg-white/80 focus:outline-none text-slate-800 font-mono text-sm`} required />
                     </div>
                     <div className="flex justify-between items-center mt-2">
-                      <p className="text-xs text-slate-400">agriconnect.com/{form.slug || 'votre-boutique'}</p>
+                      <p className="text-xs text-slate-400">agripulse.com/{form.slug || 'votre-boutique'}</p>
                       {form.name && !form.slug && (<button type="button" onClick={generateSlug} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Générer automatiquement</button>)}
                     </div>
                   </div>
@@ -341,7 +341,7 @@ router.push('/shop-created');
           </form>
 
           <footer className={`mt-16 pt-8 border-t border-emerald-100/50 text-center transition-all duration-700 delay-600 ease-out ${animate ? 'opacity-100' : 'opacity-0'}`}>
-            <p className="text-slate-400 text-sm">© 2024 AgriConnect. Tous droits réservés.</p>
+            <p className="text-slate-400 text-sm">© 2024 Agripulse. Tous droits réservés.</p>
           </footer>
         </div>
       </main>

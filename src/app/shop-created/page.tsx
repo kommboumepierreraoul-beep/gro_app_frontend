@@ -49,7 +49,7 @@ export default function ShopCreatedPage() {
               Félicitations ! <br /> <span className="text-emerald-700">Votre boutique est prête.</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed animate-on-load" style={{ opacity: 0, transform: 'translateY(20px)', transition: 'all 0.6s ease-out 0.1s' }}>
-              Votre exploitation agricole est désormais en ligne sur AgriConnect. Vous pouvez dès maintenant commencer à vendre vos produits à travers le monde.
+              Votre exploitation agricole est désormais en ligne sur Agripulse. Vous pouvez dès maintenant commencer à vendre vos produits à travers le monde.
             </p>
           </div>
 

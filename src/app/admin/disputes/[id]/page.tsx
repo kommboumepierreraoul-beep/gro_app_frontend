@@ -275,7 +275,7 @@ export default function AdminDisputeDetailPage() {
               </div>
               <div>
                 <h2 className="text-sm font-bold text-slate-800">Historique de la discussion</h2>
-                <p className="text-[10px] text-slate-400">Vous intervenez en tant qu'arbitre AgriConnect</p>
+                <p className="text-[10px] text-slate-400">Vous intervenez en tant qu'arbitre Agripulse</p>
               </div>
             </div>
             <DisputeChat disputeId={dispute.id} currentUserId={currentUser?.id || 0} isAdmin={true} />

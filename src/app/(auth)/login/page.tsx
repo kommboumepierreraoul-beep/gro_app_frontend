@@ -59,8 +59,6 @@ const handleSubmit = async (e: React.FormEvent) => {
       // ✅ Redirection selon email vérifié et rôle
       if (!data.user?.email_verified_at) {
         window.location.href = '/verify-email';
-      } else if (data.user?.role === 'admin') {
-        window.location.href = '/dashboard';
       } else {
         window.location.href = '/community';
       }
