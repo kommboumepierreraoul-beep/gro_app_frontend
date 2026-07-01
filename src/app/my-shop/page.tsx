@@ -57,6 +57,10 @@ function MyShopContent() {
         }));
         setProducts(parsed);
       } catch (err: any) {
+        if (err?.response?.status === 404) {
+          router.push('/create-shop');
+          return;
+        }
         setError(err?.response?.data?.message || 'Erreur de chargement');
         toast.error('Erreur de chargement');
       } finally {
