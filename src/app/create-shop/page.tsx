@@ -69,7 +69,7 @@ export default function CreateShopHomePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#00422b]/60 to-transparent flex items-end p-8 rounded-[3rem]">
               <h2 className="text-white font-headline text-3xl md:text-5xl font-extrabold tracking-tight">
-                Lancez votre boutique AgriConnect
+                Lancez votre boutique Agripulse
               </h2>
             </div>
           </div>

@@ -113,7 +113,7 @@ export default function ClientDisputeDetailPage() {
   const steps = [
     { key: 'opened', label: 'Litige initié', done: true, date: dispute.created_at },
     { key: 'discussion', label: 'Phase de discussion', done: true, date: dispute.created_at },
-    { key: 'arbitration', label: 'Arbitrage AgriConnect', done: isEscalated || isResolved, active: isEscalated },
+    { key: 'arbitration', label: 'Arbitrage Agripulse', done: isEscalated || isResolved, active: isEscalated },
     { key: 'resolved', label: 'Litige résolu', done: isResolved, date: isResolved ? dispute.updated_at : null },
   ];
 
@@ -179,7 +179,7 @@ export default function ClientDisputeDetailPage() {
                 <div>
                   <p className="text-[11px] text-slate-400 uppercase font-bold">Montant bloqué</p>
                   <p className="text-xl font-bold text-emerald-700">{Number(dispute.order?.total_amount || 0).toLocaleString('fr-FR')} FCFA</p>
-                  <p className="text-[11px] text-slate-400 italic">Fonds sécurisés par AgriConnect</p>
+                  <p className="text-[11px] text-slate-400 italic">Fonds sécurisés par Agripulse</p>
                 </div>
                 <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-3">
                   <div>
@@ -217,7 +217,7 @@ export default function ClientDisputeDetailPage() {
                 <Info size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs font-bold text-blue-800 uppercase mb-1">Intervention médiateur</p>
-                  <p className="text-xs text-blue-700 leading-relaxed">L'équipe AgriConnect examine les preuves. Réponse attendue sous 24h.</p>
+                  <p className="text-xs text-blue-700 leading-relaxed">L'équipe Agripulse examine les preuves. Réponse attendue sous 24h.</p>
                 </div>
               </section>
             )}

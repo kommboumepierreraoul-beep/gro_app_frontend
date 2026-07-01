@@ -69,8 +69,12 @@ function MyShopContent() {
         setShop(shopData?.id ? shopData : null);
         setProducts(Array.isArray(productsData) ? productsData : []);
       } catch (err: any) {
-        setError(err?.response?.data?.message || "Erreur de chargement");
-        toast.error("Erreur de chargement");
+        if (err?.response?.status === 404) {
+          router.push('/create-shop');
+          return;
+        }
+        setError(err?.response?.data?.message || 'Erreur de chargement');
+        toast.error('Erreur de chargement');
       } finally {
         setLoading(false);
       }
