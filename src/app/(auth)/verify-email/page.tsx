@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/immutability */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/no-unescaped-entities */
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -76,7 +79,7 @@ export default function VerifyEmailPage() {
     try {
       const response = await authService.verifyEmail(code);
       if (response.success) {
-        router.push('/dashboard');
+        router.push('/');
       } else {
         setError(response.message || 'Code invalide ou expiré. Veuillez réessayer.');
         // On ne vide pas l'OTP pour permettre à l'utilisateur de corriger

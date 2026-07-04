@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/static-components */
 'use client';
 
 import { useState } from 'react';
@@ -141,7 +142,7 @@ export default function RegisterPage() {
                   onChange={(e) => setLastname(e.target.value)}
                   onBlur={() => setTouched({ ...touched, lastname: true })}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                  placeholder="Doe"
+                  placeholder="Votre Nom"
                   required
                 />
                 {getLastnameError() && <ErrorMessage message={getLastnameError()!} />}
@@ -154,7 +155,7 @@ export default function RegisterPage() {
                   onChange={(e) => setFirstname(e.target.value)}
                   onBlur={() => setTouched({ ...touched, firstname: true })}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                  placeholder="John"
+                  placeholder="Votre Prénom"
                   required
                 />
                 {getFirstnameError() && <ErrorMessage message={getFirstnameError()!} />}
@@ -185,7 +186,7 @@ export default function RegisterPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     onBlur={() => setTouched({ ...touched, email: true })}
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="john@agritech.com"
+                    placeholder="votreemail@domain.com"
                     required
                   />
                 </div>
@@ -204,9 +205,9 @@ export default function RegisterPage() {
                   onBlur={() => setTouched({ ...touched, gender: true })}
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 appearance-none focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all cursor-pointer"
                 >
-                  <option value="">Choisir...</option>
-                  <option value="male">male</option>
-                  <option value="female">female</option>
+                  <option value="">--Choisir--</option>
+                  <option value="male">Femme</option>
+                  <option value="female">Homme</option>
       
                 </select>
                 <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
