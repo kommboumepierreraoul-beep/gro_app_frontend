@@ -203,6 +203,8 @@ export interface Announcement {
   is_liked: boolean;
   expires_at?: string;
   created_at: string;
+  comments_count: number; 
+  shares_count: number;
 }
 
 export interface Paginated<T> {
