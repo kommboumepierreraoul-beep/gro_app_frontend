@@ -5,10 +5,11 @@ import { ConversationList } from "@/components/community/messages/ConversationLi
 import { ChatWindow } from "@/components/community/messages/ChatWindow";
 import { CreateDiscussion } from "@/components/community/messages/CreateDiscussion";
 import { MessageCircle, Plus } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // ✅ Extraire la logique useSearchParams dans un composant séparé
 function MessagesContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const conversationId = searchParams.get("id");
 
@@ -18,8 +19,33 @@ function MessagesContent() {
 
   const [isCreateDiscussionOpen, setIsCreateDiscussionOpen] = useState(false);
 
-  const handleDiscussionCreated = (id: number) => {
+  const updateConversationInUrl = (id: number | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (id) {
+      params.set("id", String(id));
+    } else {
+      params.delete("id");
+    }
+
+    const query = params.toString();
+    const nextUrl = query ? `/messages?${query}` : "/messages";
+
+    router.replace(nextUrl, { scroll: false });
+  };
+
+  const handleSelectConversation = (id: number) => {
     setSelectedConversation(id);
+    updateConversationInUrl(id);
+  };
+
+  const handleBackToList = () => {
+    setSelectedConversation(null);
+    updateConversationInUrl(null);
+  };
+
+  const handleDiscussionCreated = (id: number) => {
+    handleSelectConversation(id);
     setIsCreateDiscussionOpen(false);
   };
 
@@ -40,11 +66,11 @@ function MessagesContent() {
       >
         {/* HEADER */}
         <div
-          className="px-6 py-4 border-b border-[rgba(194,201,187,0.35)] flex items-center justify-between flex-shrink-0"
+          className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[rgba(194,201,187,0.35)] flex items-center justify-between flex-shrink-0"
           style={{ background: "rgba(249,250,242,0.98)" }}
         >
           <h3
-            className="text-2xl font-semibold"
+            className="text-xl sm:text-2xl font-semibold"
             style={{
               color: "#154212",
               fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -73,7 +99,7 @@ function MessagesContent() {
         >
           <ConversationList
             activeId={selectedConversation || undefined}
-            onSelectConversation={setSelectedConversation}
+            onSelectConversation={handleSelectConversation}
           />
         </div>
       </section>
@@ -81,10 +107,7 @@ function MessagesContent() {
       {/* ================= RIGHT ================= */}
       <section className="flex-1 flex flex-col min-w-0 relative">
         {selectedConversation ? (
-          <ChatWindow
-            convId={selectedConversation}
-            onBack={() => setSelectedConversation(null)}
-          />
+          <ChatWindow convId={selectedConversation} onBack={handleBackToList} />
         ) : (
           <div className="hidden lg:flex flex-1 items-center justify-center text-center px-6">
             <div className="max-w-sm">
