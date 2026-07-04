@@ -163,7 +163,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
     if (inputElement) inputElement.focus();
   };
 
-  const handleForward = async (_message: any) => {
+  const handleForward = async () => {
     toast.success("Fonctionnalité à venir");
   };
 
@@ -209,7 +209,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
   if (isLoading) {
     return (
       <div
-        className="flex items-center justify-center h-full"
+        className="flex items-center justify-center h-full min-h-[200px]"
         style={{ background: "rgba(249,250,242,0.5)" }}
       >
         <div
@@ -232,11 +232,6 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
      */
     <div className="flex flex-col h-[100dvh] md:h-full bg-[#f9faf2] overflow-hidden">
       {/* ================= HEADER ================= */}
-      {/*
-       * Plus de `fixed` ici : on laisse le header dans le flux normal.
-       * flex-shrink-0 empêche le header de se comprimer.
-       * Le z-10 reste pour que le dropdown reste visible au-dessus des messages.
-       */}
       <div
         ref={headerRef}
         className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0 z-10 relative"
@@ -247,13 +242,15 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
         }}
       >
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          {/* ===== BOUTON RETOUR (visible sur mobile) ===== */}
           {onBack && (
             <button
               onClick={onBack}
-              className="md:hidden p-1.5 sm:p-2 -ml-1 rounded-xl transition-all duration-150 active:bg-black/5"
+              className="lg:hidden p-1.5 sm:p-2 -ml-1 rounded-xl transition-all duration-150 active:bg-black/5 hover:bg-black/5"
               style={{ color: "#42493e" }}
+              aria-label="Retour à la liste des conversations"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={20} className="sm:w-5 sm:h-5" />
             </button>
           )}
 
@@ -530,11 +527,6 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
       )}
 
       {/* ================= MESSAGES ================= */}
-      {/*
-       * flex-1 + min-h-0 : la zone de messages prend tout l'espace restant
-       * entre le header et l'input, et peut scroller librement.
-       * min-h-0 est ESSENTIEL en flex column pour que overflow-y-auto fonctionne.
-       */}
       <div
         ref={messagesContainerRef}
         className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 py-3 sm:py-4 space-y-2 sm:space-y-3 gro-chat-scroll"
@@ -610,13 +602,6 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
       </div>
 
       {/* ================= INPUT ZONE ================= */}
-      {/*
-       * flex-shrink-0 : l'input zone ne se comprime jamais.
-       * Sur mobile le safe-area-inset-bottom (notch / barre home) est géré
-       * via pb-safe en Tailwind ou padding-bottom inline.
-       * On supprime le mb-24 mobile qui causait un espace fantôme,
-       * puisque le header n'est plus fixed.
-       */}
       <div
         ref={inputZoneRef}
         className="flex-shrink-0 bg-[#f9faf2] border-t border-[rgba(194,201,187,0.4)]"

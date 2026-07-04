@@ -1,11 +1,11 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import { CommunityNavbar } from "@/components/community/layout/CommunityNavbar";
 import { LeftSidebar } from "@/components/community/layout/LeftSidebar";
 import { MobileBottomNav } from "@/components/community/layout/MobileBottomNav";
 import { Toaster } from "react-hot-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function MessagesLayout({
   children,
@@ -13,26 +13,42 @@ export default function MessagesLayout({
   children: React.ReactNode;
 }) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   // 👉 source de vérité = URL
   const conversationId = searchParams.get("id");
   const isChatOpen = Boolean(conversationId);
 
-  // Logs pour vérifier le comportement
+  // État pour le mobile
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Détecter le mobile
   useEffect(() => {
-    console.log("=== MessagesLayout Debug ===");
-    console.log("conversationId from URL:", conversationId);
-    console.log("isChatOpen:", isChatOpen);
-    console.log(
-      "searchParams全体:",
-      Object.fromEntries(searchParams.entries()),
-    );
-    console.log("Mobile navbar should show:", !isChatOpen);
-    console.log("============================");
-  }, [conversationId, isChatOpen, searchParams]);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Logs pour vérifier le comportement (uniquement en dev)
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("=== MessagesLayout Debug ===");
+      console.log("conversationId from URL:", conversationId);
+      console.log("isChatOpen:", isChatOpen);
+      console.log("pathname:", pathname);
+      console.log("isMobile:", isMobile);
+      console.log("Mobile navbar should show:", !isChatOpen && isMobile);
+      console.log("============================");
+    }
+  }, [conversationId, isChatOpen, pathname, isMobile]);
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-[#f9faf2] overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col bg-[#f9faf2]">
       {/* ================= TOASTER ================= */}
       <Toaster position="top-right" />
 
@@ -42,16 +58,13 @@ export default function MessagesLayout({
       {/* ================= MAIN BODY ================= */}
       <div className="flex flex-1 overflow-hidden">
         {/* ================= LEFT SIDEBAR ================= */}
-        <aside className="hidden lg:block w-72 flex-shrink-0 fixed top-16 left-0 bottom-0 z-40">
+        <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 flex-shrink-0 z-40 border-r border-[#d9ddd2]/30 bg-white/50">
           <LeftSidebar />
         </aside>
 
-        {/* Spacer pour sidebar */}
-        <div className="hidden lg:block w-72 flex-shrink-0" />
-
         {/* ================= CONTENT ================= */}
         <main
-          className="flex-1 min-w-0 overflow-y-hidden"
+          className="flex-1 min-w-0 overflow-y-auto lg:ml-72"
           style={{ background: "rgba(243,244,237,0.4)" }}
         >
           {children}
@@ -65,6 +78,9 @@ export default function MessagesLayout({
           <MobileBottomNav />
         </div>
       )}
+
+      {/* Padding bottom pour mobile quand la navbar est visible */}
+      {!isChatOpen && isMobile && <div className="lg:hidden h-16" />}
     </div>
   );
 }
