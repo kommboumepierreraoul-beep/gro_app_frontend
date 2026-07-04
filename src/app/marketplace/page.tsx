@@ -576,7 +576,7 @@ export default function MarketplacePage() {
           </span>
         </Link>
         <Link
-          href="/profile"
+          href="/account"
           className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition"
         >
           <User className="w-5 h-5 sm:w-6 sm:h-6" />
