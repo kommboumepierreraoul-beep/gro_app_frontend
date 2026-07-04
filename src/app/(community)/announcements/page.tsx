@@ -114,7 +114,8 @@ export default function AnnouncementsPage() {
   const [category, setCategory] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [editingAnnouncement, setEditingAnnouncement] =
+    useState<Announcement | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
@@ -125,7 +126,8 @@ export default function AnnouncementsPage() {
   });
 
   const announcements = data?.data ?? [];
-  const selectedCategory = CATEGORIES.find((c) => c.value === category) || CATEGORIES[0];
+  const selectedCategory =
+    CATEGORIES.find((c) => c.value === category) || CATEGORIES[0];
   const color = CATEGORY_META[selectedCategory.color] || CATEGORY_META.emerald;
 
   const filteredAnnouncements = announcements.filter(
@@ -137,8 +139,14 @@ export default function AnnouncementsPage() {
   // Stats rapides
   const stats = {
     total: filteredAnnouncements.length,
-    views: announcements.reduce((acc: number, a: any) => acc + (a.views || 0), 0),
-    likes: announcements.reduce((acc: number, a: any) => acc + (a.likes_count || 0), 0),
+    views: announcements.reduce(
+      (acc: number, a: any) => acc + (a.views || 0),
+      0,
+    ),
+    likes: announcements.reduce(
+      (acc: number, a: any) => acc + (a.likes_count || 0),
+      0,
+    ),
     categories: CATEGORIES.length - 1,
   };
 
@@ -158,14 +166,14 @@ export default function AnnouncementsPage() {
   };
 
   return (
-    <div className="w-full min-h-screen mx-auto p-4 sm:p-6 md:p-8 lg:p-12 pb-24 md:pb-6 max-w-[1440px] bg-[#f9faf2]">
+    <div className="w-full min-h-screen px-4 sm:px-6 md:px-8 lg:px-12 py-4 sm:py-6 md:py-8 lg:py-12 pb-24 md:pb-6 max-w-[1440px] mx-auto bg-[#f9faf2]">
       {/* ── HEADER ── */}
-      <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8 md:mb-12">
+      <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 md:mb-12">
         <div className="flex-1">
           <p className="text-[#3b6934] text-[10px] sm:text-xs tracking-widest uppercase mb-1">
             COMMUNAUTÉ GRO
           </p>
-          <h1 className="text-3xl sm:text-[40px] font-bold leading-tight tracking-tight text-[#191c18]">
+          <h1 className="text-2xl sm:text-3xl md:text-[40px] font-bold leading-tight tracking-tight text-[#191c18]">
             Annonces
           </h1>
           <p className="text-xs sm:text-sm text-[#42493e] mt-1">
@@ -177,7 +185,10 @@ export default function AnnouncementsPage() {
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           {/* Barre recherche + filtres */}
           <div className="flex items-center gap-3 px-3 sm:px-4 py-2 bg-white/70 backdrop-blur-xl border border-[#c2c9bb]/40 rounded-xl flex-1 sm:flex-initial">
-            <Search size={14} className="sm:h-4 sm:w-4 text-[#42493e] shrink-0" />
+            <Search
+              size={14}
+              className="sm:h-4 sm:w-4 text-[#42493e] shrink-0"
+            />
             <input
               type="text"
               placeholder="Rechercher une annonce..."
@@ -238,25 +249,28 @@ export default function AnnouncementsPage() {
 
       {/* ── FILTRES EXPANDABLES ── */}
       {showFilters && (
-        <div className="mb-6 md:mb-10">
-          <div className="bg-white/70 backdrop-blur-sm border border-[#c2c9bb]/30 rounded-2xl p-4 sm:p-6">
-            <div className="flex flex-wrap gap-2">
+        <div className="mb-4 sm:mb-6 md:mb-10">
+          <div className="bg-white/70 backdrop-blur-sm border border-[#c2c9bb]/30 rounded-2xl p-3 sm:p-4 md:p-6">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {CATEGORIES.map((cat) => {
                 const Icon = cat.icon;
                 const isActive = category === cat.value;
-                const catColor = CATEGORY_META[cat.color] || CATEGORY_META.emerald;
+                const catColor =
+                  CATEGORY_META[cat.color] || CATEGORY_META.emerald;
                 return (
                   <button
                     key={cat.value}
                     onClick={() => setCategory(cat.value)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                    className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 ${
                       isActive
                         ? `bg-gradient-to-r ${catColor.gradient} text-white shadow-lg scale-105`
                         : "bg-white text-[#42493e] hover:bg-[#eaf3de] border border-[#c2c9bb]/20 hover:border-[#bcf0ae]"
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-[#72796e]"}`} />
-                    <span>{cat.label}</span>
+                    <Icon
+                      className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isActive ? "text-white" : "text-[#72796e]"}`}
+                    />
+                    <span className="hidden xs:inline">{cat.label}</span>
                   </button>
                 );
               })}
@@ -265,8 +279,8 @@ export default function AnnouncementsPage() {
         </div>
       )}
 
-      {/* ── STATS RAPIDES ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8 md:mb-12">
+      {/* ── STATS RAPIDES - MASQUÉES SUR MOBILE ── */}
+      <div className="hidden sm:grid sm:grid-cols-4 gap-3 md:gap-4 mb-6 sm:mb-8 md:mb-12">
         {[
           {
             label: "Annonces actives",
@@ -291,16 +305,16 @@ export default function AnnouncementsPage() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="bg-white/70 backdrop-blur-sm border border-[#c2c9bb]/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
+            className="bg-white/70 backdrop-blur-sm border border-[#c2c9bb]/30 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 md:p-4 flex items-center gap-2 sm:gap-3"
           >
-            <div className="w-7 h-7 sm:w-9 sm:h-9 bg-[#2d5a27]/10 text-[#154212] rounded-lg sm:rounded-xl flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 bg-[#2d5a27]/10 text-[#154212] rounded-lg sm:rounded-xl flex items-center justify-center shrink-0">
               {stat.icon}
             </div>
             <div className="min-w-0">
-              <p className="text-lg sm:text-[22px] font-bold leading-none text-[#191c18]">
+              <p className="text-base sm:text-lg md:text-[22px] font-bold leading-none text-[#191c18]">
                 {stat.value}
               </p>
-              <p className="text-[8px] sm:text-[10px] text-[#72796e] font-medium mt-0.5 truncate">
+              <p className="text-[8px] xs:text-[9px] sm:text-[10px] text-[#72796e] font-medium mt-0.5 truncate">
                 {stat.label}
               </p>
             </div>
@@ -312,11 +326,11 @@ export default function AnnouncementsPage() {
       {isLoading ? (
         <AnnouncementsSkeleton viewMode={viewMode} />
       ) : filteredAnnouncements.length === 0 ? (
-        <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-12 sm:p-20 text-center border border-[#c2c9bb]/30">
+        <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 sm:p-12 md:p-20 text-center border border-[#c2c9bb]/30">
           <div className="inline-flex p-4 sm:p-5 bg-gradient-to-br from-[#eaf3de] to-[#f3f4ed] rounded-3xl mb-6 sm:mb-8">
-            <Sprout className="w-12 h-12 sm:w-16 sm:h-16 text-[#154212]" />
+            <Sprout className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 text-[#154212]" />
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-[#191c18] mb-2 sm:mb-3">
+          <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#191c18] mb-2 sm:mb-3">
             {searchQuery ? "Aucun résultat" : "Pas encore d'annonce"}
           </h3>
           <p className="text-sm sm:text-base text-[#72796e] mb-6 sm:mb-8 max-w-md mx-auto">
@@ -343,15 +357,17 @@ export default function AnnouncementsPage() {
           )}
         </div>
       ) : (
-        <div className="space-y-8 sm:space-y-12">
+        <div className="space-y-6 sm:space-y-8 md:space-y-12">
           {/* Annonces */}
-          <section className="space-y-4 sm:space-y-5">
+          <section className="space-y-3 sm:space-y-4 md:space-y-5">
             <div className="flex items-center justify-between border-b border-[#c2c9bb]/20 pb-2 sm:pb-3">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 ${color.light} ${color.text} flex items-center justify-center rounded-lg sm:rounded-xl shrink-0`}>
-                  <Compass size={18} className="sm:h-5 sm:w-5" />
+                <div
+                  className={`w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 ${color.light} ${color.text} flex items-center justify-center rounded-lg sm:rounded-xl shrink-0`}
+                >
+                  <Compass size={16} className="sm:h-4 sm:w-4 md:h-5 md:w-5" />
                 </div>
-                <h2 className="text-base sm:text-xl font-semibold text-[#191c18] truncate">
+                <h2 className="text-sm sm:text-base md:text-xl font-semibold text-[#191c18] truncate">
                   {selectedCategory.label}
                 </h2>
                 <span className="bg-[#e2e3dc] text-[#42493e] px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold whitespace-nowrap">
@@ -363,36 +379,38 @@ export default function AnnouncementsPage() {
             <div
               className={
                 viewMode === "grid"
-                  ? "grid grid-cols-1 lg:grid-cols-2 gap-4"
-                  : "flex flex-col gap-4"
+                  ? "grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
+                  : "flex flex-col gap-3 sm:gap-4"
               }
             >
-              {filteredAnnouncements.map((announcement: Announcement, index: number) => (
-                <div
-                  key={announcement.id}
-                  className="animate-fade-up"
-                  style={{ animationDelay: `${index * 60}ms` }}
-                >
-                  <AnnouncementCard
-                    announcement={announcement}
-                    viewMode={viewMode}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                </div>
-              ))}
+              {filteredAnnouncements.map(
+                (announcement: Announcement, index: number) => (
+                  <div
+                    key={announcement.id}
+                    className="animate-fade-up"
+                    style={{ animationDelay: `${index * 60}ms` }}
+                  >
+                    <AnnouncementCard
+                      announcement={announcement}
+                      viewMode={viewMode}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
+                  </div>
+                ),
+              )}
             </div>
           </section>
 
           {/* Section tendances */}
           {filteredAnnouncements.length > 3 && (
-            <div className="p-4 sm:p-6 bg-gradient-to-r from-[#eaf3de] to-[#f3f4ed] rounded-2xl sm:rounded-3xl border border-[#bcf0ae]/30">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="p-2 sm:p-3 bg-[#154212] rounded-xl sm:rounded-2xl shadow-lg shadow-[#154212]/25">
-                  <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="p-3 sm:p-4 md:p-6 bg-gradient-to-r from-[#eaf3de] to-[#f3f4ed] rounded-2xl sm:rounded-3xl border border-[#bcf0ae]/30">
+              <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+                <div className="p-1.5 sm:p-2 md:p-3 bg-[#154212] rounded-xl sm:rounded-2xl shadow-lg shadow-[#154212]/25">
+                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[#191c18] text-base sm:text-lg">
+                  <h3 className="font-bold text-[#191c18] text-sm sm:text-base md:text-lg">
                     En pleine croissance
                   </h3>
                   <p className="text-xs sm:text-sm text-[#72796e]">
@@ -442,6 +460,11 @@ export default function AnnouncementsPage() {
           animation: fadeUp 0.4s ease-out both;
           opacity: 0;
         }
+        @media (max-width: 480px) {
+          .xs\\:inline {
+            display: inline;
+          }
+        }
       `}</style>
     </div>
   );
@@ -451,18 +474,18 @@ export default function AnnouncementsPage() {
 
 function AnnouncementsSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
   return (
-    <div className="space-y-8 sm:space-y-12">
-      <section className="space-y-4 sm:space-y-5">
+    <div className="space-y-6 sm:space-y-8 md:space-y-12">
+      <section className="space-y-3 sm:space-y-4 md:space-y-5">
         <div className="flex items-center gap-2 sm:gap-3 pb-2 sm:pb-3 border-b border-[#c2c9bb]/20">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#e7e9e1] rounded-lg sm:rounded-xl animate-pulse" />
-          <div className="h-4 sm:h-5 w-32 sm:w-48 bg-[#e7e9e1] rounded animate-pulse" />
-          <div className="h-3 sm:h-4 w-12 sm:w-16 bg-[#e7e9e1] rounded-full animate-pulse" />
+          <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-[#e7e9e1] rounded-lg sm:rounded-xl animate-pulse" />
+          <div className="h-3 sm:h-4 md:h-5 w-24 sm:w-32 md:w-48 bg-[#e7e9e1] rounded animate-pulse" />
+          <div className="h-2 sm:h-3 md:h-4 w-10 sm:w-12 md:w-16 bg-[#e7e9e1] rounded-full animate-pulse" />
         </div>
         <div
           className={
             viewMode === "grid"
-              ? "grid grid-cols-1 lg:grid-cols-2 gap-4"
-              : "flex flex-col gap-4"
+              ? "grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
+              : "flex flex-col gap-3 sm:gap-4"
           }
         >
           {[1, 2, 3, 4].map((i) => (
@@ -470,25 +493,25 @@ function AnnouncementsSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
               key={i}
               className="bg-white/70 border border-[#c2c9bb]/30 rounded-xl sm:rounded-2xl overflow-hidden animate-pulse"
             >
-              <div className="h-48 bg-gradient-to-r from-[#e7e9e1] to-[#f3f4ed]" />
-              <div className="p-4 sm:p-5 space-y-3">
+              <div className="h-32 sm:h-40 md:h-48 bg-gradient-to-r from-[#e7e9e1] to-[#f3f4ed]" />
+              <div className="p-3 sm:p-4 md:p-5 space-y-2 sm:space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#e7e9e1] rounded-full" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-[#e7e9e1] rounded-full" />
                   <div className="flex-1">
-                    <div className="h-3 sm:h-4 w-24 sm:w-32 bg-[#e7e9e1] rounded" />
-                    <div className="h-2 w-16 sm:w-20 bg-[#e7e9e1] rounded mt-1" />
+                    <div className="h-2 sm:h-3 md:h-4 w-20 sm:w-24 md:w-32 bg-[#e7e9e1] rounded" />
+                    <div className="h-1.5 sm:h-2 w-12 sm:w-16 md:w-20 bg-[#e7e9e1] rounded mt-1" />
                   </div>
                 </div>
-                <div className="h-4 sm:h-5 w-3/4 bg-[#e7e9e1] rounded" />
+                <div className="h-3 sm:h-4 md:h-5 w-3/4 bg-[#e7e9e1] rounded" />
                 <div className="space-y-1 sm:space-y-1.5">
-                  <div className="h-2 sm:h-3 w-full bg-[#e7e9e1] rounded" />
-                  <div className="h-2 sm:h-3 w-2/3 bg-[#e7e9e1] rounded" />
-                  <div className="h-2 sm:h-3 w-3/4 bg-[#e7e9e1] rounded" />
+                  <div className="h-1.5 sm:h-2 md:h-3 w-full bg-[#e7e9e1] rounded" />
+                  <div className="h-1.5 sm:h-2 md:h-3 w-2/3 bg-[#e7e9e1] rounded" />
+                  <div className="h-1.5 sm:h-2 md:h-3 w-3/4 bg-[#e7e9e1] rounded" />
                 </div>
                 <div className="pt-2 sm:pt-3 border-t border-[#e2e3dc]">
                   <div className="flex gap-2">
-                    <div className="h-7 sm:h-8 w-16 sm:w-20 bg-[#e7e9e1] rounded-lg" />
-                    <div className="h-7 sm:h-8 w-16 sm:w-20 bg-[#e7e9e1] rounded-lg" />
+                    <div className="h-6 sm:h-7 md:h-8 w-14 sm:w-16 md:w-20 bg-[#e7e9e1] rounded-lg" />
+                    <div className="h-6 sm:h-7 md:h-8 w-14 sm:w-16 md:w-20 bg-[#e7e9e1] rounded-lg" />
                   </div>
                 </div>
               </div>

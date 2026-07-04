@@ -12,48 +12,29 @@ export default function AnnouncementsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className="min-h-screen bg-[#f3f4ed]/40"
-    >
+    <div className="min-h-screen flex flex-col bg-[#f3f4ed]/40">
       {/* Navbar */}
       <CommunityNavbar />
 
       <Toaster position="top-right" />
 
-      <div className="flex">
+      <div className="flex flex-1">
         {/* Sidebar gauche */}
-        <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-56">
+        <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-56 border-r border-[#d9ddd2] bg-white/50">
           <LeftSidebar />
         </aside>
 
         {/* Contenu principal */}
         <div className="flex-1 lg:ml-56">
-          <div className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 py-6">
-            <div className="flex gap-6 items-start">
-              
+          <div className="h-full w-full px-3 sm:px-4 lg:px-6">
+            <div className="flex gap-6 items-start h-full">
               {/* Feed principal */}
-              <main
-                className="
-                  flex-1
-                  w-full
-                  max-w-4xl
-                  mx-auto
-                "
-              >
+              <main className="flex-1 w-full min-h-[calc(100vh-4rem)] overflow-y-auto">
                 {children}
               </main>
 
               {/* Sidebar droite */}
-              <aside
-                className="
-                  hidden
-                  xl:block
-                  w-[320px]
-                  shrink-0
-                  sticky
-                  top-24
-                "
-              >
+              <aside className="hidden xl:block w-[320px] shrink-0 sticky top-24">
                 <RightSidebar />
               </aside>
             </div>
