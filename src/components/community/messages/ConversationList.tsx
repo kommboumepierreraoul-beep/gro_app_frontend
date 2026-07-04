@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, useEffect } from "react";
@@ -30,18 +29,21 @@ export function ConversationList({
   const { user } = useAuthStore();
   const [showNewConversation, setShowNewConversation] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+
+  // ── Deux états de recherche séparés ──
   const [convSearch, setConvSearch] = useState("");
   const [modalSearch, setModalSearch] = useState("");
+
   const [users, setUsers] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [usersError, setUsersError] = useState<string | null>(null);
+
+  // ✅ Types corrigés pour accepter null et undefined
   const [userAvatars, setUserAvatars] = useState<Record<number, string | null>>(
     {},
   );
   const [userHeadlines, setUserHeadlines] = useState<
     Record<number, string | undefined>
   >({});
-  const [isUserLoaded, setIsUserLoaded] = useState(false);
 
   const {
     data: conversationsData,
@@ -64,14 +66,9 @@ export function ConversationList({
     return name.includes(q);
   });
 
-  // ✅ Vérifier si l'utilisateur est chargé
-  useEffect(() => {
-    if (user?.id) {
-      setIsUserLoaded(true);
-    }
-  }, [user]);
-
+  // ✅ Fonction corrigée avec gestion des types null/undefined
   const loadUserProfile = async (userId: number) => {
+    // Vérifier si déjà chargé (undefined = pas encore chargé)
     if (userAvatars[userId] !== undefined) return;
 
     try {
@@ -79,6 +76,7 @@ export function ConversationList({
         await import("@/services/community/profile.service");
       const profile = await profileService.getProfile(userId);
 
+      // Mettre à jour avec des valeurs par défaut
       setUserAvatars((prev) => ({
         ...prev,
         [userId]: profile.avatar || null,
@@ -89,62 +87,25 @@ export function ConversationList({
       }));
     } catch (error) {
       console.error(`Error loading profile for user ${userId}:`, error);
+      // Marquer comme chargé avec des valeurs null pour éviter de re-tenter
       setUserAvatars((prev) => ({ ...prev, [userId]: null }));
       setUserHeadlines((prev) => ({ ...prev, [userId]: undefined }));
     }
   };
 
-  // ✅ Version corrigée avec vérification de l'utilisateur
   const loadUsers = async () => {
-    // ✅ Vérifier que l'utilisateur est chargé
-    if (!user?.id) {
-      console.warn("[ConversationList] User not loaded yet, skipping loadUsers");
-      return;
-    }
-
+    if (!user?.id) return;
     if (users.length > 0) return;
-
     setUsersLoading(true);
-    setUsersError(null);
-
     try {
       const { followService } =
         await import("@/services/community/follow.service");
-      
-      let allUsers: any[] = [];
-
-      // ✅ Essayer les suggestions d'abord
-      try {
-        const suggestionsRes = await followService.getSuggestions();
-        if (suggestionsRes?.success && suggestionsRes?.data) {
-          allUsers = suggestionsRes.data;
-        }
-      } catch (suggestionsErr) {
-        console.warn("[ConversationList] Could not load suggestions:", suggestionsErr);
-      }
-
-      // ✅ Si pas de suggestions, essayer les followers
-      if (allUsers.length === 0) {
-        try {
-          const followersRes = await followService.getFollowers(user.id);
-          if (followersRes?.success && followersRes?.data) {
-            const followersData = followersRes.data.data || followersRes.data;
-            allUsers = Array.isArray(followersData) ? followersData : [];
-          }
-        } catch (followersErr) {
-          console.warn("[ConversationList] Could not load followers:", followersErr);
-        }
-      }
-
-      // ✅ Si toujours pas d'utilisateurs
-      if (allUsers.length === 0) {
-        setUsersError("Aucun contact disponible");
-        setUsers([]);
-        setUsersLoading(false);
-        return;
-      }
-
-      // Déduplication
+      const response = await followService.getFollowers(user?.id);
+      const followersList = response?.data?.data ?? response?.data ?? [];
+      const suggestionsRes = await followService.getSuggestions();
+      const suggestionsList =
+        suggestionsRes?.data?.data ?? suggestionsRes?.data ?? [];
+      const allUsers = [...followersList, ...suggestionsList];
       const uniqueUsers = allUsers.filter(
         (u: any, index: number, self: any[]) => {
           const userId = u.follower?.id || u.id;
@@ -155,29 +116,19 @@ export function ConversationList({
           );
         },
       );
-
-      // Charger les profils
       for (const userItem of uniqueUsers) {
         const userData = userItem.follower || userItem;
-        if (userData.id) {
-          await loadUserProfile(userData.id);
-        }
+        await loadUserProfile(userData.id);
       }
-
       setUsers(uniqueUsers);
     } catch (error) {
       console.error("Error loading users:", error);
-      setUsersError("Erreur lors du chargement des contacts");
-      setUsers([]);
     } finally {
       setUsersLoading(false);
     }
   };
 
-  // ✅ Charger les profils des participants des conversations
   useEffect(() => {
-    if (!user?.id) return;
-    
     allConversations.forEach((conv: any) => {
       if (!conv.is_group) {
         const other = conv.participants?.find((p: any) => p.id !== user?.id);
@@ -186,20 +137,14 @@ export function ConversationList({
         }
       }
     });
-  }, [allConversations, user?.id, userAvatars]);
+  }, [allConversations, user?.id]);
 
   const handleOpenNewConversation = () => {
+    if (!user?.id) return;
+
     setShowNewConversation(true);
     setModalSearch("");
-    setUsersError(null);
-    
-    // ✅ Vérifier que l'utilisateur est chargé avant de charger les contacts
-    if (user?.id && users.length === 0 && !usersLoading) {
-      loadUsers();
-    } else if (!user?.id) {
-      console.warn("[ConversationList] Cannot load users: user not authenticated");
-      setUsersError("Veuillez vous connecter pour voir vos contacts");
-    }
+    if (users.length === 0 && !usersLoading) loadUsers();
   };
 
   const handleSelectConversation = (convId: number) => {
@@ -207,17 +152,13 @@ export function ConversationList({
   };
 
   const handleStartConversation = async (userId: number) => {
-    try {
-      const { messageService } =
-        await import("@/services/community/message.service");
-      const conv = await messageService.createOrFindConversation(userId);
-      handleSelectConversation(conv.id);
-      setShowNewConversation(false);
-      setModalSearch("");
-      refetch();
-    } catch (error) {
-      console.error("Error starting conversation:", error);
-    }
+    const { messageService } =
+      await import("@/services/community/message.service");
+    const conv = await messageService.createOrFindConversation(userId);
+    handleSelectConversation(conv.id);
+    setShowNewConversation(false);
+    setModalSearch("");
+    refetch();
   };
 
   const filteredUsers = users.filter((item: any) => {
@@ -226,15 +167,6 @@ export function ConversationList({
       `${userData.firstname || ""} ${userData.lastname || ""}`.toLowerCase();
     return name.includes(modalSearch.toLowerCase());
   });
-
-  // ✅ Si l'utilisateur n'est pas chargé, afficher un loader
-  if (!isUserLoaded) {
-    return (
-      <div className="flex items-center justify-center h-full min-h-[200px]">
-        <Loader2 className="w-6 h-6 animate-spin text-[#154212]" />
-      </div>
-    );
-  }
 
   if (convLoading) return <ConversationListSkeleton />;
 
@@ -596,27 +528,6 @@ export function ConversationList({
                       className="animate-spin"
                       style={{ color: "#154212" }}
                     />
-                  </div>
-                ) : usersError ? (
-                  <div
-                    className="text-center py-6 text-sm rounded-xl"
-                    style={{
-                      color: "#72796e",
-                      background: "rgba(239,68,68,0.05)",
-                    }}
-                  >
-                    <p className="text-xs" style={{ color: "#72796e" }}>
-                      {usersError}
-                    </p>
-                    {user?.id && (
-                      <button
-                        onClick={loadUsers}
-                        className="mt-2 text-xs font-medium px-3 py-1 rounded-lg transition-colors hover:bg-black/5"
-                        style={{ color: "#154212" }}
-                      >
-                        Réessayer
-                      </button>
-                    )}
                   </div>
                 ) : filteredUsers.length === 0 ? (
                   <p
