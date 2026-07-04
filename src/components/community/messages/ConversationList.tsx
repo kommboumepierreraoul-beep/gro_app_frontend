@@ -94,7 +94,6 @@ export function ConversationList({
   };
 
   const loadUsers = async () => {
-    if (!user?.id) return;
     if (users.length > 0) return;
     setUsersLoading(true);
     try {
@@ -140,8 +139,6 @@ export function ConversationList({
   }, [allConversations, user?.id]);
 
   const handleOpenNewConversation = () => {
-    if (!user?.id) return;
-
     setShowNewConversation(true);
     setModalSearch("");
     if (users.length === 0 && !usersLoading) loadUsers();
