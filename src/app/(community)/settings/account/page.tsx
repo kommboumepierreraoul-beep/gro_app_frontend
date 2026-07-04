@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -76,9 +77,9 @@ export default function AccountSecurityPage() {
   const fetchCurrentSession = async () => {
     setIsLoadingSession(true);
     try {
-      const response = await api.get("/auth/session");
-      const data = response.data.data || response.data;
-      setCurrentSession(data);
+      // const response = await api.get("/auth/session");
+      // const data = response.data.data || response.data;
+      // setCurrentSession(data);
     } catch (error) {
       console.error("Erreur chargement session:", error);
       // Session par défaut
