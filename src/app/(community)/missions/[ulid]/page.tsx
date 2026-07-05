@@ -30,6 +30,24 @@ import { useMissionStore } from "@/stores/useMissionStore";
 import ApplicationModal from "@/components/missions/Form/ApplicationModal";
 import MissionStatusBadge from "@/components/missions/MissionStatusBadge";
 import MissionRouteMap from "@/components/missions/Map/MissionRouteMap";
+import { messageService } from "@/services/community/message.service";
+import toast from "react-hot-toast";
+
+type ApiError = {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+};
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === "object") {
+    return (error as ApiError).response?.data?.message || fallback;
+  }
+
+  return fallback;
+};
 
 const REMUNERATION_LABELS: Record<string, string> = {
   fixed: "Montant fixe",
@@ -62,10 +80,11 @@ export default function MissionDetailPage() {
 
   const [reportOpen, setReportOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isOpeningConversation, setIsOpeningConversation] = useState(false);
 
   if (isLoading) {
     return (
-      <div className="md:ml-64 flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center min-h-[60dvh]">
         <Loader2 className="animate-spin text-[#154212]" size={32} />
       </div>
     );
@@ -73,7 +92,7 @@ export default function MissionDetailPage() {
 
   if (!mission) {
     return (
-      <div className="md:ml-64 flex flex-col items-center justify-center h-screen gap-3">
+      <div className="flex flex-col items-center justify-center min-h-[60dvh] gap-3">
         <AlertTriangle size={32} className="text-[#72796e]" />
         <p className="text-[#42493e]">Mission introuvable.</p>
         <button
@@ -103,8 +122,29 @@ export default function MissionDetailPage() {
     });
   };
 
+  const handleMessageAuthor = async () => {
+    if (!mission.author?.id) {
+      toast.error("Impossible d'identifier l'auteur");
+      return;
+    }
+
+    setIsOpeningConversation(true);
+    try {
+      const conversation = await messageService.createOrFindConversation(
+        mission.author.id,
+      );
+      router.push(`/messages?id=${conversation.id}`);
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(error, "Impossible d'ouvrir la conversation"),
+      );
+    } finally {
+      setIsOpeningConversation(false);
+    }
+  };
+
   return (
-    <div className="md:ml-10 max-w-6xl mx-autop md:p-12 pb-32 md:pb-12">
+    <div className="max-w-6xl mx-auto p-4 md:p-12 pb-32 md:pb-12">
       {/* Header navigation */}
       <div className="flex items-center justify-between mb-6">
         {/* Bouton de retour avec navigation arrière */}
@@ -425,6 +465,18 @@ export default function MissionDetailPage() {
                   Postuler à la mission
                 </button>
               ))}
+
+            {/* Messagerie directe */}
+            {!isOwner && mission.status === "published" && (
+              <button
+                onClick={handleMessageAuthor}
+                disabled={isOpeningConversation}
+                className="flex items-center justify-center gap-2 w-full mt-2 py-3 border border-[#154212] text-[#154212] text-xs font-semibold uppercase tracking-wider rounded-xl hover:bg-[#eaf3de] transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <MessageCircle size={14} />
+                {isOpeningConversation ? "Ouverture..." : "Message auteur"}
+              </button>
+            )}
 
             {/* WhatsApp direct */}
             {!isOwner &&

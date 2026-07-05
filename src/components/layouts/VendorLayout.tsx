@@ -198,9 +198,10 @@ export default function VendorLayout({ children }: VendorLayoutProps) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await api.get("/user");
-        setUserRole(res.data.role);
-        setIsAdmin(res.data.role === "admin" || res.data.is_admin === true);
+        const res = await api.get("/auth/profile");
+        const user = res.data?.user ?? res.data?.data ?? res.data;
+        setUserRole(user.role);
+        setIsAdmin(user.role === "admin" || user.is_admin === true);
       } catch {}
     };
 

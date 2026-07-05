@@ -8,6 +8,7 @@ export interface PendingProduct {
   price: number;
   images: string[];
   status: "pending" | "approved" | "rejected";
+  approval_status?: "pending" | "approved" | "rejected";
   category?: { id: number; name: string };
   shop?: { id: number; name: string; logo: string };
   created_at: string;

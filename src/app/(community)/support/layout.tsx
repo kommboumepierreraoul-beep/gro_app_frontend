@@ -1,4 +1,3 @@
-// app/community/settings/layout.tsx
 "use client";
 
 import { CommunityNavbar } from "@/components/community/layout/CommunityNavbar";
@@ -12,37 +11,22 @@ export default function SupportsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen w-full flex flex-col bg-[#f9faf2]">
+    <div className="flex h-dvh w-full flex-col overflow-hidden bg-[#f9faf2]">
       <Toaster position="top-right" />
+      <div className="z-50 flex-shrink-0">
+        <CommunityNavbar />
+      </div>
 
-      {/* Navbar */}
-      <CommunityNavbar />
-
-      {/* Corps principal */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* LeftSidebar - fixée à gauche sur desktop */}
-        <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 flex-shrink-0 z-40 border-r border-[#d9ddd2]/30 bg-white/50">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <aside className="hidden w-72 shrink-0 border-r border-[#d9ddd2]/60 lg:block">
           <LeftSidebar />
         </aside>
-
-        {/* Espace pour la sidebar */}
-        <div className="hidden lg:block w-72 flex-shrink-0" />
-
-        {/* Zone de contenu scrollable */}
-        <main
-          className={`
-            flex-1 overflow-y-auto min-w-0
-            px-4 sm:px-6 md:px-8
-            py-4 sm:py-6 md:py-8
-            pb-20 lg:pb-8
-          `}
-        >
-          <div className="max-w-6xl mx-auto w-full">{children}</div>
+        <main className="min-w-0 flex-1 overflow-y-auto px-3 py-4 pb-24 sm:px-6 sm:py-6 lg:px-8 lg:pb-8">
+          <div className="mx-auto w-full max-w-6xl">{children}</div>
         </main>
       </div>
 
-      {/* Mobile bottom navigation - visible uniquement sur mobile */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
         <MobileBottomNav />
       </div>
     </div>

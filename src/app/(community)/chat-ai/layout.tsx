@@ -8,7 +8,7 @@ import { Toaster } from "react-hot-toast";
 
 export default function AiLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="h-screen w-full overflow-hidden flex flex-col bg-[#f9faf2]">
+    <div className="flex h-dvh w-full flex-col overflow-hidden bg-[#f9faf2]">
       <Toaster
         position="top-right"
         toastOptions={{

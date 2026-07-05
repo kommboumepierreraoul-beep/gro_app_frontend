@@ -12,38 +12,30 @@ export default function AnnouncementsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-[#f3f4ed]/40">
-      {/* Navbar */}
-      <CommunityNavbar />
-
+    <div className="flex h-dvh w-full flex-col overflow-hidden bg-[#f3f4ed]/40">
       <Toaster position="top-right" />
+      <div className="z-50 flex-shrink-0">
+        <CommunityNavbar />
+      </div>
 
-      <div className="flex flex-1">
-        {/* Sidebar gauche */}
-        <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-56 border-r border-[#d9ddd2] bg-white/50">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <aside className="hidden w-72 shrink-0 border-r border-[#d9ddd2]/60 lg:block">
           <LeftSidebar />
         </aside>
 
-        {/* Contenu principal */}
-        <div className="flex-1 lg:ml-56">
-          <div className="h-full w-full px-3 sm:px-4 lg:px-6">
-            <div className="flex gap-6 items-start h-full">
-              {/* Feed principal */}
-              <main className="flex-1 w-full min-h-[calc(100vh-4rem)] overflow-y-auto">
-                {children}
-              </main>
-
-              {/* Sidebar droite */}
-              <aside className="hidden xl:block w-[320px] shrink-0 sticky top-24">
+        <main className="min-w-0 flex-1 overflow-y-auto px-3 py-4 pb-24 sm:px-4 sm:py-6 lg:px-6 lg:pb-8">
+          <div className="mx-auto flex w-full max-w-7xl items-start gap-6">
+            <div className="min-w-0 flex-1">{children}</div>
+            <aside className="hidden w-[320px] shrink-0 xl:block">
+              <div className="sticky top-4">
                 <RightSidebar />
-              </aside>
-            </div>
+              </div>
+            </aside>
           </div>
-        </div>
+        </main>
       </div>
 
-      {/* Navigation mobile */}
-      <div className="lg:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
         <MobileBottomNav />
       </div>
     </div>

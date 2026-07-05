@@ -176,30 +176,30 @@ export default function AddProductPage() {
   return (
     <div className="min-h-screen bg-transparent pb-8">
       <header className="sticky top-16 z-30 rounded-2xl border border-[#c2c9bb]/35 bg-white/90 shadow-sm backdrop-blur-xl">
-        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between px-3 py-3 sm:px-5 lg:px-6">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5 lg:px-6">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <button
               onClick={() => router.back()}
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#c2c9bb]/45 bg-white/70 transition hover:bg-[#eaf3de]"
             >
               <ArrowLeft className="h-5 w-5 text-[#154212]" />
             </button>
-            <div>
+            <div className="min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-[3px] text-[#154212]">Seller Center</p>
-              <h1 className="text-xl font-black text-[#191c18]">Nouveau produit</h1>
+              <h1 className="truncate text-lg font-black text-[#191c18] sm:text-xl">Nouveau produit</h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
             <button
               onClick={handleDraft}
-              className="h-10 rounded-xl border border-[#c2c9bb]/45 bg-white px-5 text-sm font-medium text-[#154212] transition hover:bg-[#eaf3de]"
+              className="h-10 flex-1 rounded-xl border border-[#c2c9bb]/45 bg-white px-3 text-sm font-medium text-[#154212] transition hover:bg-[#eaf3de] sm:flex-none sm:px-5"
             >
               Sauvegarder
             </button>
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="h-10 rounded-xl bg-[#154212] px-6 text-sm font-medium text-white shadow-sm transition hover:bg-[#2d5a27] disabled:opacity-60"
+              className="h-10 flex-1 rounded-xl bg-[#154212] px-3 text-sm font-medium text-white shadow-sm transition hover:bg-[#2d5a27] disabled:opacity-60 sm:flex-none sm:px-6"
             >
               {isLoading ? 'Publication...' : 'Publier'}
             </button>
@@ -207,13 +207,13 @@ export default function AddProductPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-0 py-5 sm:py-6">
-        <div className="mb-10 text-center md:text-left md:flex md:items-center md:justify-between gap-6">
+      <main className="mx-auto max-w-7xl py-4 sm:py-6">
+        <div className="mb-8 gap-6 text-center md:mb-10 md:flex md:items-center md:justify-between md:text-left">
           <div>
             <h2 className="text-3xl md:text-4xl font-black text-gray-800">Créer un produit</h2>
             <p className="text-emerald-600 text-sm mt-1">Remplissez les informations ci-dessous</p>
           </div>
-          <div className="flex items-center gap-4 mt-4 md:mt-0">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-4 md:mt-0 md:justify-end">
             <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-full">
               <Package className="h-4 w-4 text-emerald-600" />
               <span className="text-sm font-medium text-emerald-800">Stock: {form.stock || 0} unités</span>

@@ -1,4 +1,3 @@
-// app/community/notifications/layout.tsx
 "use client";
 
 import { CommunityNavbar } from "@/components/community/layout/CommunityNavbar";
@@ -12,35 +11,23 @@ export default function NotificationsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="h-screen w-full overflow-hidden flex flex-col bg-[#f9faf2]">
+    <div className="flex h-dvh w-full flex-col overflow-hidden bg-[#f9faf2]">
       <Toaster position="top-right" />
+      <div className="z-50 flex-shrink-0">
+        <CommunityNavbar />
+      </div>
 
-      {/* Navbar fixée */}
-      <CommunityNavbar />
-
-      {/* Corps principal */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Spacer pour la LeftSidebar - visible uniquement sur desktop */}
-        <div className="hidden lg:block w-72 flex-shrink-0" />
-
-        {/* Zone de contenu scrollable */}
-        <main
-          className={`
-          flex-1 overflow-y-auto min-w-0
-        `}
-        >
-          <div className="max-w-2xl mx-auto w-full">{children}</div>
-        </main>
-
-        {/* LeftSidebar - visible uniquement sur desktop (lg et plus) */}
-        <div className="hidden lg:block">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <aside className="hidden w-72 shrink-0 border-r border-[#d9ddd2]/60 lg:block">
           <LeftSidebar />
-        </div>
+        </aside>
+        <main className="min-w-0 flex-1 overflow-y-auto px-3 py-4 pb-24 sm:px-6 sm:py-6 lg:px-8 lg:pb-8">
+          <div className="mx-auto w-full max-w-2xl">{children}</div>
+        </main>
+      </div>
 
-        {/* Mobile bottom navigation - visible uniquement sur mobile */}
-        <div className="lg:hidden">
-          <MobileBottomNav />
-        </div>
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
+        <MobileBottomNav />
       </div>
     </div>
   );

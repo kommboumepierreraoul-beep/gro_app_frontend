@@ -12,14 +12,14 @@ export default function MarketplaceAreaLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#f9faf2]">
+    <div className="min-h-dvh overflow-x-hidden bg-[#f9faf2]">
       <CommunityNavbar />
       <Toaster position="top-right" />
       <MarketplaceLeftSidebar />
-      <div className="pt-4 pb-24 lg:pb-8 lg:pl-64">
-        <div className="mx-auto max-w-[1440px] px-3 sm:px-4 lg:px-6">
+      <div className="pb-28 pt-3 lg:pb-8 lg:pl-64">
+        <div className="mx-auto w-full max-w-[1440px] px-3 sm:px-4 lg:px-6">
           <div className="flex items-start gap-5 xl:gap-6">
-            <main className="min-w-0 flex-1">{children}</main>
+            <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
             <MarketplaceRightSidebar />
           </div>
         </div>

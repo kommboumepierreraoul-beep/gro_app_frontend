@@ -33,7 +33,7 @@ export default function CommunityLayout({
             pt-10
             pb-20
             lg:pb-6
-            lg:pl-56
+            lg:pl-72
           "
         >
           <div
@@ -82,7 +82,7 @@ export default function CommunityLayout({
       </div>
 
       {/* Navigation mobile uniquement */}
-      <div className="xl:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
         <MobileBottomNav />
       </div>
     </div>

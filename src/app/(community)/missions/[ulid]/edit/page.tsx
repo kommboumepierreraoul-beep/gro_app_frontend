@@ -113,7 +113,7 @@ export default function MissionEditPage() {
 
   if (isLoading || !form) {
     return (
-      <div className="md:ml-64 flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center min-h-[60dvh]">
         <Loader2 className="animate-spin text-[#154212]" size={32} />
       </div>
     );
@@ -186,7 +186,7 @@ export default function MissionEditPage() {
   };
 
   return (
-    <div className="md:ml-64 max-w-3xl mx-auto p-6 md:p-12 pb-32">
+    <div className="max-w-3xl mx-auto p-6 md:p-12 pb-32">
       <Link
         href={`/missions/${ulid}`}
         className="flex items-center gap-2 text-[#42493e] text-sm font-medium hover:text-[#154212] transition-colors mb-6"

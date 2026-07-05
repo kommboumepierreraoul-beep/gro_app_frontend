@@ -30,7 +30,12 @@ function AdminDashboardContent() {
         adminService.getActivityLog(15),
         adminService.getAnalytics()
       ]);
-      setPendingProducts(pendingRes.data || []);
+      setPendingProducts(
+        (pendingRes.data || []).filter(
+          (product: PendingProduct) =>
+            !product.approval_status || product.approval_status === "pending",
+        ),
+      );
       setActivities(activitiesRes.data || []);
       setAnalytics(analyticsRes.data || null);
     } catch (err: any) {

@@ -37,7 +37,7 @@ export default function MissionApplicationsPage() {
   // Attendre que l'authentification et la mission soient chargées
   if (isLoadingAuth || isLoadingMission) {
     return (
-      <div className="md:ml-64 flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center min-h-[60dvh]">
         <Loader2 className="animate-spin text-[#154212]" size={32} />
       </div>
     );
@@ -46,7 +46,7 @@ export default function MissionApplicationsPage() {
   // Vérifier si l'utilisateur est authentifié
   if (!isAuthenticated || !user) {
     return (
-      <div className="md:ml-64 flex flex-col items-center justify-center h-screen gap-3">
+      <div className="flex flex-col items-center justify-center min-h-[60dvh] gap-3">
         <AlertTriangle size={32} className="text-[#72796e]" />
         <p className="text-[#42493e]">
           Vous devez être connecté pour accéder à cette page.
@@ -64,7 +64,7 @@ export default function MissionApplicationsPage() {
   // Vérifier si la mission existe
   if (!mission && missionError) {
     return (
-      <div className="md:ml-64 flex flex-col items-center justify-center h-screen gap-3">
+      <div className="flex flex-col items-center justify-center min-h-[60dvh] gap-3">
         <AlertTriangle size={32} className="text-[#72796e]" />
         <p className="text-[#42493e]">Mission introuvable.</p>
         <p className="text-sm text-red-500 mb-4">{missionError.message}</p>
@@ -88,7 +88,7 @@ export default function MissionApplicationsPage() {
 
   if (!mission) {
     return (
-      <div className="md:ml-64 flex flex-col items-center justify-center h-screen gap-3">
+      <div className="flex flex-col items-center justify-center min-h-[60dvh] gap-3">
         <AlertTriangle size={32} className="text-[#72796e]" />
         <p className="text-[#42493e]">Mission introuvable.</p>
         <Link
@@ -104,7 +104,7 @@ export default function MissionApplicationsPage() {
   // Sécurité : seul l'auteur peut voir cette page
   if (user.id !== mission.author.id) {
     return (
-      <div className="md:ml-64 flex flex-col items-center justify-center h-screen gap-3">
+      <div className="flex flex-col items-center justify-center min-h-[60dvh] gap-3">
         <AlertTriangle size={32} className="text-[#72796e]" />
         <p className="text-[#42493e]">
           Vous n'êtes pas autorisé à voir cette page.
@@ -120,7 +120,7 @@ export default function MissionApplicationsPage() {
   }
 
   return (
-    <div className="md:ml-64 max-w-4xl mx-auto p-6 md:p-12 pb-32 md:pb-12">
+    <div className="max-w-4xl mx-auto p-6 md:p-12 pb-32 md:pb-12">
       {/* Header */}
       <Link
         href="/missions/dashboard"

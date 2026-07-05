@@ -1,8 +1,6 @@
-/* app/community/missions/layout.tsx */
-
 "use client";
 
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 
 import { CommunityNavbar } from "@/components/community/layout/CommunityNavbar";
@@ -29,35 +27,33 @@ export default function MissionsLayout({ children }: Props) {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-[#f9faf2] overflow-hidden">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[#f9faf2]">
       <Toaster position="top-right" />
 
-      {/* TOP NAV */}
-      <header className="h-16 flex-shrink-0 z-40">
+      <header className="z-40 h-16 flex-shrink-0">
         <CommunityNavbar />
       </header>
 
-      {/* MAIN */}
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="hidden lg:block w-72 border-r border-[#d9ddd2]">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <aside className="hidden w-72 border-r border-[#d9ddd2] lg:block">
           <LeftSidebar />
         </aside>
 
-        <div
-          className="
-      hidden xl:block
-      transition-all duration-300
-    "
-        >
+        <div className="hidden transition-all duration-300 xl:block">
           <MissionNavbar />
         </div>
 
-        <main className="flex-1 overflow-y-auto min-w-0">{children}</main>
+        <main className="min-w-0 flex-1 overflow-y-auto pb-20 xl:pb-0">
+          {children}
+        </main>
       </div>
 
-      {/* MOBILE BOTTOM NAV - Caché quand MissionNavbar est ouvert sur mobile */}
+      <div className="xl:hidden">
+        <MissionNavbar />
+      </div>
+
       {isMobile && (
-        <div className="xl:hidden fixed bottom-0 left-0 right-0 z-40">
+        <div className="fixed bottom-0 left-0 right-0 z-40 xl:hidden">
           <MobileBottomNav />
         </div>
       )}

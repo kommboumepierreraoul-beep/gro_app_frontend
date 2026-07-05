@@ -37,12 +37,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUser = useCallback(async (authToken: string) => {
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/user`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/profile`,
         {
           headers: { Authorization: `Bearer ${authToken}` },
         },
       );
-      setUser(response.data);
+      setUser(response.data?.user ?? response.data?.data ?? response.data);
     } catch (error) {
       localStorage.removeItem("token");
       setToken(null);

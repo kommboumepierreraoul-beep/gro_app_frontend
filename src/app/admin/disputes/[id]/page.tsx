@@ -47,10 +47,10 @@ export default function AdminDisputeDetailPage() {
   useEffect(() => {
     Promise.all([
       api.get(`/disputes/${id}`),
-      api.get("/user"),
+      api.get("/auth/profile"),
     ]).then(([dRes, uRes]) => {
       setDispute(dRes.data.data);
-      setCurrentUser(uRes.data);
+      setCurrentUser(uRes.data?.user ?? uRes.data?.data ?? uRes.data);
     }).catch(() => {
       toast.error("Litige introuvable");
       router.push("/admin/disputes");
