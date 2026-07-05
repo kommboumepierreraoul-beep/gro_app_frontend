@@ -62,10 +62,10 @@ export default function MyApplicationCard({ application }: Props) {
   const authorFirstname = author?.firstname ?? "";
   const authorLastname = author?.lastname ?? "";
   const authorFullName =
-    authorFirstname || authorLastname
-      ? `${authorFirstname} ${authorLastname}`.trim()
-      : "Auteur";
-  const authorAvatar = author?.avatar;
+    [authorFirstname, authorLastname].filter(Boolean).join(" ").trim() ||
+    author?.name ||
+    "Auteur";
+  const authorAvatar = author?.avatar ?? mission.author?.avatar;
   const authorRating = author?.rating;
 
   const isLoading = isLoadingMission && !mission.author;
@@ -77,6 +77,9 @@ export default function MyApplicationCard({ application }: Props) {
     }
     if (authorLastname && authorLastname.length > 0) {
       return authorLastname.charAt(0).toUpperCase();
+    }
+    if (author?.name && author.name.length > 0) {
+      return author.name.charAt(0).toUpperCase();
     }
     return "?";
   };
@@ -108,7 +111,7 @@ export default function MyApplicationCard({ application }: Props) {
       </div>
 
       <Link href={`/missions/${mission.ulid}`}>
-        <h3 className="font-[Plus_Jakarta_Sans] text-lg font-semibold text-[#191c18] mb-2 hover:text-[#154212] transition-colors leading-snug">
+        <h3 className="text-lg font-semibold text-[#191c18] mb-2 hover:text-[#154212] transition-colors leading-snug">
           {mission.title}
         </h3>
       </Link>

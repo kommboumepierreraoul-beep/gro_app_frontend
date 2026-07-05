@@ -4,9 +4,7 @@ import {
   Paperclip, 
   Send, 
   X, 
-  Image as ImageIcon, 
   Film, 
-  Smile,
   CornerDownLeft,
   Loader2
 } from "lucide-react";
@@ -117,7 +115,7 @@ export function MessageInput({
 
   return (
     <div
-      className="px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0"
+      className="flex-shrink-0 px-2 py-2 sm:px-4 sm:py-3"
       style={{
         background: "rgba(249,250,242,0.98)",
         backdropFilter: "blur(20px)",
@@ -186,7 +184,7 @@ export function MessageInput({
 
       {/* Zone de saisie */}
       <div
-        className={`flex items-end gap-1.5 p-1.5 rounded-2xl transition-all duration-200 ${
+        className={`flex items-end gap-1.5 rounded-2xl p-1.5 transition-all duration-200 ${
           isFocused ? 'ring-2 ring-[#154212]/20' : ''
         }`}
         style={{
@@ -202,7 +200,7 @@ export function MessageInput({
         {/* Bouton pièce jointe */}
         <button
           onClick={() => fileRef.current?.click()}
-          className="p-1.5 rounded-full transition-all duration-200 flex items-center justify-center flex-shrink-0 hover:bg-[rgba(114,121,110,0.1)] active:scale-90"
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200 hover:bg-[rgba(114,121,110,0.1)] active:scale-90"
           style={{ color: "#72796e" }}
           title="Joindre un fichier (max 10MB)"
         >
@@ -228,7 +226,7 @@ export function MessageInput({
           onCompositionEnd={handleCompositionEnd}
           placeholder={placeholder}
           rows={1}
-          className="flex-1 resize-none outline-none bg-transparent text-sm py-1.5 px-1 transition-all duration-200"
+          className="min-w-0 flex-1 resize-none bg-transparent px-1 py-1.5 text-sm outline-none transition-all duration-200"
           style={{
             fontFamily: "'Inter', sans-serif",
             color: "#191c18",
@@ -245,7 +243,7 @@ export function MessageInput({
         <button
           onClick={handleSend}
           disabled={(!message.trim() && !mediaFile) || isLoading}
-          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl transition-all duration-200 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10"
           style={{
             background: (!message.trim() && !mediaFile) || isLoading
               ? "#e5e7e0"
@@ -268,7 +266,7 @@ export function MessageInput({
       </div>
 
       {/* Indicateurs */}
-      <div className="flex justify-between items-center mt-1.5 px-1">
+      <div className="mt-1.5 hidden items-center justify-between px-1 sm:flex">
         {message.length > 0 && !isLoading && (
           <span className="text-[10px]" style={{ color: "#72796e" }}>
             {message.length} caractères

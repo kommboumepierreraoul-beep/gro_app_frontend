@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   X,
   MapPin,
@@ -21,6 +22,7 @@ import {
 import { Mission } from "@/lib/missions/types";
 import { useMissionStore } from "@/stores/useMissionStore";
 import { useMission } from "@/hooks/missions/useMissions";
+import { messageService } from "@/services/community/message.service";
 import MissionStatusBadge from "../MissionStatusBadge";
 import MissionMap from "../Map/MissionDetailMap";
 
@@ -44,6 +46,8 @@ export default function MissionDetailModal({
   isOpen,
   onClose,
 }: Props) {
+  const router = useRouter();
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const openApplyModal = useMissionStore((s) => s.openApplyModal);
 
   // Charger la mission complète avec reviews/coords
@@ -77,6 +81,22 @@ export default function MissionDetailModal({
   const emailContact = mission.contact_methods?.find(
     (c: any) => c.type === "email",
   );
+
+  const handleMessageAuthor = async () => {
+    if (!mission.author?.id) return;
+
+    setIsCreatingConversation(true);
+    try {
+      const conversation = await messageService.createOrFindConversation(
+        mission.author.id,
+      );
+      router.push(`/messages?id=${conversation.id}`);
+    } catch (error) {
+      console.error("Erreur lors de la création de la conversation", error);
+    } finally {
+      setIsCreatingConversation(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -146,6 +166,16 @@ export default function MissionDetailModal({
                 <p className="font-semibold text-[#191c18] text-sm">
                   {mission.author?.firstname || "Auteur"}
                 </p>
+                <button
+                  onClick={handleMessageAuthor}
+                  disabled={isCreatingConversation}
+                  className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[#154212] hover:underline disabled:opacity-60"
+                >
+                  <MessageCircle size={12} />
+                  {isCreatingConversation
+                    ? "Ouverture..."
+                    : "Envoyer un message"}
+                </button>
                 {mission.author?.rating && mission.author.rating > 0 && (
                   <div className="flex items-center gap-1 mt-0.5">
                     {[1, 2, 3, 4, 5].map((i) => (

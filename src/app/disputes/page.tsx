@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import VendorLayout from '@/components/layouts/VendorLayout';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
@@ -44,8 +43,7 @@ export default function ClientDisputesPage() {
   };
 
   return (
-    <VendorLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6 py-5 sm:py-6">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Mes litiges</h1>
@@ -138,6 +136,5 @@ export default function ClientDisputesPage() {
           </div>
         )}
       </div>
-    </VendorLayout>
   );
 }

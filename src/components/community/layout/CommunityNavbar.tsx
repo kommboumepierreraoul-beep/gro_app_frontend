@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
 import {
@@ -13,6 +12,7 @@ import {
   LogOut,
   Bell,
   HelpCircle,
+  ShieldCheck,
   X,
 } from "lucide-react";
 
@@ -35,9 +35,9 @@ const getAvatarUrl = (avatar?: string | null): string | undefined => {
 };
 
 export function CommunityNavbar() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const { logout } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const unreadNotifs = useCommunityStore((s) => s.unreadNotifs);
 
@@ -150,6 +150,25 @@ export function CommunityNavbar() {
               >
                 <SearchIcon className="w-5 h-5" />
               </button>
+
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="hidden sm:flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150"
+                  style={{ color: "#154212" }}
+                  onMouseEnter={(e) =>
+                    ((e.currentTarget as HTMLElement).style.background =
+                      "rgba(194,201,187,0.3)")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.currentTarget as HTMLElement).style.background =
+                      "transparent")
+                  }
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Admin
+                </Link>
+              )}
 
               {/* Notifications */}
               <Link
@@ -276,6 +295,12 @@ export function CommunityNavbar() {
                     <div className="py-1.5">
                       {[
                         {
+                          href: "/admin",
+                          icon: ShieldCheck,
+                          label: "Espace admin",
+                          adminOnly: true,
+                        },
+                        {
                           href: "/profile",
                           icon: User,
                           label: "Mon profil",
@@ -290,29 +315,31 @@ export function CommunityNavbar() {
                           icon: HelpCircle,
                           label: "Aide & support",
                         },
-                      ].map(({ href, icon: Icon, label }) => (
-                        <Link
-                          key={href}
-                          href={href}
-                          onClick={() => setShowMenu(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150"
-                          style={{ color: "#42493e" }}
-                          onMouseEnter={(e) =>
-                            ((e.currentTarget as HTMLElement).style.background =
-                              "rgba(188,240,174,0.2)")
-                          }
-                          onMouseLeave={(e) =>
-                            ((e.currentTarget as HTMLElement).style.background =
-                              "transparent")
-                          }
-                        >
-                          <Icon
-                            className="w-4 h-4"
-                            style={{ color: "#72796e" }}
-                          />
-                          {label}
-                        </Link>
-                      ))}
+                      ]
+                        .filter((item) => !item.adminOnly || isAdmin)
+                        .map(({ href, icon: Icon, label }) => (
+                          <Link
+                            key={href}
+                            href={href}
+                            onClick={() => setShowMenu(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150"
+                            style={{ color: "#42493e" }}
+                            onMouseEnter={(e) =>
+                              ((e.currentTarget as HTMLElement).style.background =
+                                "rgba(188,240,174,0.2)")
+                            }
+                            onMouseLeave={(e) =>
+                              ((e.currentTarget as HTMLElement).style.background =
+                                "transparent")
+                            }
+                          >
+                            <Icon
+                              className="w-4 h-4"
+                              style={{ color: "#72796e" }}
+                            />
+                            {label}
+                          </Link>
+                        ))}
                     </div>
 
                     {/* Déconnexion */}

@@ -230,11 +230,11 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
      * de la barre d'adresse Safari qui rétrécit la fenêtre.
      * Sur md+ on laisse le parent gérer la hauteur (h-full).
      */
-    <div className="flex flex-col h-[100dvh] md:h-full bg-[#f9faf2] overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f9faf2]">
       {/* ================= HEADER ================= */}
       <div
         ref={headerRef}
-        className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0 z-10 relative"
+        className="relative z-10 flex flex-shrink-0 items-center justify-between px-3 py-2 sm:px-4 sm:py-3"
         style={{
           background: "rgba(249,250,242,0.97)",
           backdropFilter: "blur(12px)",
@@ -529,7 +529,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
       {/* ================= MESSAGES ================= */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 py-3 sm:py-4 space-y-2 sm:space-y-3 gro-chat-scroll"
+        className="gro-chat-scroll min-h-0 flex-1 space-y-2 overflow-y-auto px-2 py-3 sm:space-y-3 sm:px-4 sm:py-4"
         style={{ background: "rgba(243,244,237,0.6)" }}
         onScroll={handleScroll}
       >
@@ -604,7 +604,7 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
       {/* ================= INPUT ZONE ================= */}
       <div
         ref={inputZoneRef}
-        className="flex-shrink-0 bg-[#f9faf2] border-t border-[rgba(194,201,187,0.4)]"
+        className="flex-shrink-0 border-t border-[rgba(194,201,187,0.4)] bg-[#f9faf2]"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         {/* REPLY BAR */}

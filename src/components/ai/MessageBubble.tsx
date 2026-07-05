@@ -27,8 +27,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         <div
           className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm mb-1"
           style={{
-            background: "linear-gradient(135deg, #2d5a27 0%, #154212 100%)",
-            color: "#bcf0ae",
+            background: "linear-gradient(135deg, #31452d 0%, #1f2d1d 100%)",
+            color: "#e8f5df",
           }}
         >
           <Bot size={14} className="sm:w-[16px] sm:h-[16px]" />
@@ -39,7 +39,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       <div
         className={`max-w-[85%] sm:max-w-[80%] px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl text-sm leading-relaxed shadow-sm transition-all ${
           isUser
-            ? "bg-[#2d5a27] text-white rounded-br-sm"
+            ? "bg-[#31452d] text-white rounded-br-sm"
             : "bg-white border border-[rgba(194,201,187,0.3)] text-[#191c18] rounded-bl-sm"
         }`}
         style={{ fontFamily: "'Inter', sans-serif" }}
@@ -73,8 +73,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         <div
           className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm mb-1"
           style={{
-            background: "linear-gradient(135deg, #42493e 0%, #2d5a27 100%)",
-            color: "#bcf0ae",
+            background: "linear-gradient(135deg, #42493e 0%, #31452d 100%)",
+            color: "#e8f5df",
           }}
         >
           <User size={14} className="sm:w-[16px] sm:h-[16px]" />

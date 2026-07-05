@@ -7,60 +7,63 @@ import { ArrowRight, Leaf, Sparkles } from "lucide-react";
 
 export function CTASection() {
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#154212]">
-      <div className="container mx-auto max-w-4xl text-center">
+    <section className="bg-[#f3f4ed]/40 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1200px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
+          className="rounded-2xl border border-[#c2c9bb]/30 bg-white/75 p-5 shadow-[0_16px_40px_rgba(21,66,18,0.08)] backdrop-blur-sm sm:p-7 lg:p-8"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#bcf0ae]/10 border border-[#bcf0ae]/20 mb-6">
-            <Sparkles className="w-4 h-4 text-[#bcf0ae]" />
-            <span className="text-xs font-medium text-[#bcf0ae] tracking-wider uppercase">
-              Rejoignez la communauté
-            </span>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#bcf0ae]/50 bg-[#eaf3de] px-3.5 py-2">
+                <Sparkles className="h-4 w-4 text-[#154212]" />
+                <span className="text-xs font-medium uppercase tracking-wider text-[#3b6934]">
+                  Rejoignez la communaute
+                </span>
+              </div>
+
+              <h2 className="mb-3 text-3xl font-bold text-[#191c18] sm:text-4xl">
+                Pret a cultiver votre avenir agricole ?
+              </h2>
+
+              <p className="text-sm leading-relaxed text-[#72796e] sm:text-base">
+                Rejoignez des milliers d'agriculteurs et d'experts qui utilisent
+                Agripulse pour grandir ensemble.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#154212] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#154212]/15 transition-all hover:bg-[#2d5a27] active:scale-[0.98]"
+              >
+                Commencer maintenant
+                <ArrowRight size={18} />
+              </Link>
+              <Link
+                href="/community"
+                className="inline-flex items-center justify-center rounded-xl border border-[#c2c9bb]/50 bg-white/70 px-5 py-3 text-sm font-semibold text-[#42493e] transition-all hover:border-[#bcf0ae] hover:bg-[#eaf3de]"
+              >
+                Explorer la communaute
+              </Link>
+            </div>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
-            Prêt à cultiver votre <br />
-            <span className="text-[#bcf0ae]">avenir agricole</span> ?
-          </h2>
-
-          <p className="text-white/60 text-lg max-w-2xl mx-auto mb-8">
-            Rejoignez des milliers d'agriculteurs et d'experts qui utilisent
-            Agripulse pour grandir ensemble.
-          </p>
-
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-[#bcf0ae] text-[#154212] font-semibold rounded-xl hover:bg-[#a1d494] transition-all hover:scale-[1.02] shadow-lg shadow-[#bcf0ae]/20"
-            >
-              Commencer maintenant
-              <ArrowRight size={18} />
-            </Link>
-            <Link
-              href="/community"
-              className="inline-flex items-center gap-2 px-8 py-4 border border-white/20 text-white font-semibold rounded-xl hover:bg-white/10 transition-all"
-            >
-              Explorer la communauté
-            </Link>
-          </div>
-
-          <div className="flex items-center justify-center gap-8 mt-8 pt-8 border-t border-white/10">
-            <div className="flex items-center gap-2">
-              <Leaf className="w-4 h-4 text-[#bcf0ae]" />
-              <span className="text-sm text-white/50">Gratuit</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Leaf className="w-4 h-4 text-[#bcf0ae]" />
-              <span className="text-sm text-white/50">Sans engagement</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Leaf className="w-4 h-4 text-[#bcf0ae]" />
-              <span className="text-sm text-white/50">Communauté active</span>
-            </div>
+          <div className="mt-6 grid gap-2 border-t border-[#c2c9bb]/30 pt-5 sm:grid-cols-3">
+            {["Gratuit", "Sans engagement", "Communaute active"].map(
+              (item) => (
+                <div
+                  key={item}
+                  className="flex items-center gap-2 rounded-xl bg-[#f3f4ed]/70 px-3 py-2 text-sm text-[#42493e]"
+                >
+                  <Leaf className="h-4 w-4 text-[#154212]" />
+                  <span>{item}</span>
+                </div>
+              ),
+            )}
           </div>
         </motion.div>
       </div>

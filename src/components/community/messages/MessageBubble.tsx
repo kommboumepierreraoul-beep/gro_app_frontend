@@ -263,7 +263,7 @@ export default function MessageBubble({
     <>
       <div
         id={`msg-${message.id}`}
-        className={`flex flex-col gap-0.5 max-w-[85%] sm:max-w-[75%] md:max-w-[70%] lg:max-w-[60%] ${
+        className={`flex max-w-[88%] flex-col gap-0.5 sm:max-w-[78%] md:max-w-[72%] lg:max-w-[62%] xl:max-w-[56%] ${
           message.isOwn ? "items-end self-end" : "items-start"
         }`}
         onContextMenu={handleContextMenu}
@@ -273,7 +273,7 @@ export default function MessageBubble({
           <div
             onClick={scrollToRepliedMessage}
             className="relative group cursor-pointer mb-1 max-w-full transition-all duration-200 hover:opacity-80"
-            style={{ maxWidth: "280px" }}
+            style={{ maxWidth: "min(280px, 78vw)" }}
           >
             <div
               className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full"
@@ -331,8 +331,8 @@ export default function MessageBubble({
           <div
             className="mb-1 rounded-xl overflow-hidden cursor-pointer group relative"
             style={{
-              maxWidth: "250px",
-              maxHeight: "250px",
+              maxWidth: "min(250px, 72vw)",
+              maxHeight: "min(250px, 45vh)",
               background: "#edefe7",
             }}
             onClick={() => setShowMediaModal(true)}
@@ -371,7 +371,7 @@ export default function MessageBubble({
         {/* BULLE */}
         <div className="relative group max-w-full">
           <div
-            className="px-3.5 py-2.5 text-sm leading-relaxed relative break-words"
+            className="relative break-words px-3 py-2 text-sm leading-relaxed sm:px-3.5 sm:py-2.5"
             style={
               message.isOwn
                 ? {
@@ -435,7 +435,7 @@ export default function MessageBubble({
           />
           <div
             ref={actionButtonRef}
-            className="fixed z-50 bg-white rounded-2xl overflow-hidden shadow-xl animate-slideUp"
+            className="fixed z-50 max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl bg-white shadow-xl animate-slideUp"
             style={{
               width: "320px",
               bottom: "20px",

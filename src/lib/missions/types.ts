@@ -68,6 +68,7 @@ export interface MissionCategory {
 
 export interface MissionAuthor {
   id: number;
+  name?: string | null;
   firstname?: string;
   lastname?: string;
   email?: string;
@@ -77,7 +78,6 @@ export interface MissionAuthor {
   created_at?: string;
   rating?: number;
 }
-
 
 export interface MissionReview {
   id: number;

@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { useState, useRef } from "react";
@@ -8,7 +9,6 @@ import {
   Maximize,
   Volume2,
   VolumeX,
-  Clock,
   Users,
   MessageCircle,
   Search,
@@ -23,219 +23,208 @@ export function DemoSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
+    if (!videoRef.current) return;
+
+    if (isPlaying) {
+      videoRef.current.pause();
+    } else {
+      videoRef.current.play();
     }
+
+    setIsPlaying(!isPlaying);
   };
 
   const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
+    if (!videoRef.current) return;
+
+    videoRef.current.muted = !isMuted;
+    setIsMuted(!isMuted);
   };
 
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      const progress =
-        (videoRef.current.currentTime / videoRef.current.duration) * 100;
-      setProgress(progress);
-    }
+    if (!videoRef.current || !videoRef.current.duration) return;
+
+    setProgress(
+      (videoRef.current.currentTime / videoRef.current.duration) * 100,
+    );
   };
 
   return (
-    <section id="demo" className="py-20 px-4 sm:px-6 lg:px-8 bg-[#f9faf2]">
-      <div className="container mx-auto max-w-5xl">
-        {/* Header */}
+    <section id="demo" className="bg-[#f3f4ed]/40 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1200px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
         >
-          <p className="text-[#3b6934] text-xs tracking-widest uppercase font-semibold mb-2">
-            Découvrez Agripulse
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#191c18] mb-4">
-            Voyez comment ça fonctionne
-          </h2>
-          <p className="text-[#72796e] max-w-2xl mx-auto">
-            Une démonstration interactive de la plateforme Agripulse en action.
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#3b6934]">
+              Decouvrez Agripulse
+            </p>
+            <h2 className="text-3xl font-bold text-[#191c18] sm:text-4xl">
+              Voyez comment ca fonctionne
+            </h2>
+          </div>
+          <p className="max-w-xl text-sm leading-relaxed text-[#72796e] sm:text-base">
+            Une demonstration interactive de la plateforme Agripulse en action,
+            presentee dans une surface claire comme le reste de l'application.
           </p>
         </motion.div>
 
-        {/* Video player */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          viewport={{ once: true }}
-          className="relative rounded-2xl overflow-hidden shadow-2xl border border-[#c2c9bb]/20 bg-black"
-        >
-          {/* Video */}
-          <div className="aspect-video relative bg-gradient-to-br from-[#154212] to-[#2d5a27]">
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover"
-              poster="/images/demo-poster.jpg"
-              onTimeUpdate={handleTimeUpdate}
-              playsInline
-            >
-              <source src="/videos/demo.mp4" type="video/mp4" />
-            </video>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="overflow-hidden rounded-2xl border border-[#c2c9bb]/30 bg-white/80 shadow-xl shadow-[#154212]/5 backdrop-blur-sm"
+          >
+            <div className="relative aspect-video bg-gradient-to-br from-[#154212] to-[#2d5a27]">
+              <video
+                ref={videoRef}
+                className="h-full w-full object-cover"
+                poster="/images/demo-poster.jpg"
+                onTimeUpdate={handleTimeUpdate}
+                playsInline
+              >
+                <source src="/videos/demo.mp4" type="video/mp4" />
+              </video>
 
-            {/* Overlay UI Demo */}
-            <div className="absolute inset-0 pointer-events-none">
-              {/* Top bar */}
-              <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#154212] flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-[#bcf0ae]">
-                      A
-                    </span>
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute left-4 right-4 top-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f9faf2]">
+                      <span className="text-[10px] font-bold text-[#154212]">
+                        A
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-white">
+                        Agripulse
+                      </p>
+                      <p className="text-[8px] text-white/50">
+                        Communaute agricole
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-white text-xs font-semibold">
-                      Agripulse
-                    </p>
-                    <p className="text-white/40 text-[8px]">
-                      Communauté agricole
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/10">
-                    <span className="text-[8px] text-white font-medium">
-                      DÉMO
+                  <div className="rounded-full border border-white/10 bg-white/10 px-3 py-1 backdrop-blur-sm">
+                    <span className="text-[8px] font-medium text-white">
+                      DEMO
                     </span>
                   </div>
                 </div>
-              </div>
 
-              {/* Center elements */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="grid grid-cols-2 gap-4 w-64">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5">
-                    <Users className="w-6 h-6 text-[#bcf0ae] mx-auto" />
-                    <p className="text-white text-xs font-semibold text-center mt-1">
-                      250+
-                    </p>
-                    <p className="text-white/40 text-[8px] text-center">
-                      Membres
-                    </p>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="grid w-64 grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-white/10 bg-white/10 p-3 backdrop-blur-sm">
+                      <Users className="mx-auto h-6 w-6 text-[#bcf0ae]" />
+                      <p className="mt-1 text-center text-xs font-semibold text-white">
+                        250+
+                      </p>
+                      <p className="text-center text-[8px] text-white/50">
+                        Membres
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/10 p-3 backdrop-blur-sm">
+                      <MessageCircle className="mx-auto h-6 w-6 text-[#bcf0ae]" />
+                      <p className="mt-1 text-center text-xs font-semibold text-white">
+                        120
+                      </p>
+                      <p className="text-center text-[8px] text-white/50">
+                        Messages
+                      </p>
+                    </div>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5">
-                    <MessageCircle className="w-6 h-6 text-[#bcf0ae] mx-auto" />
-                    <p className="text-white text-xs font-semibold text-center mt-1">
-                      120
-                    </p>
-                    <p className="text-white/40 text-[8px] text-center">
-                      Messages
-                    </p>
+                </div>
+
+                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-red-500" />
+                    <span className="text-[10px] font-medium text-white">
+                      LIVE
+                    </span>
+                    <span className="text-[8px] text-white/50">12:34</span>
                   </div>
+                  <span className="text-[8px] text-white/50">2.4k vues</span>
                 </div>
               </div>
 
-              {/* Bottom bar - live indicators */}
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-white text-[10px] font-medium">
-                    LIVE
+              {!isPlaying && (
+                <button
+                  onClick={togglePlay}
+                  className="absolute inset-0 flex items-center justify-center bg-black/30 transition-all hover:bg-black/40"
+                >
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/20 bg-white/20 backdrop-blur-sm transition-all hover:scale-105">
+                    <Play className="ml-1 h-8 w-8 text-white" />
                   </span>
-                  <span className="text-white/40 text-[8px]">• 12:34</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#bcf0ae]" />
-                    <span className="text-white/40 text-[8px]">2.4k</span>
-                  </div>
-                </div>
-              </div>
+                </button>
+              )}
             </div>
 
-            {/* Play button overlay */}
-            {!isPlaying && (
+            <div className="flex items-center gap-3 bg-white/95 p-3 backdrop-blur-sm">
               <button
                 onClick={togglePlay}
-                className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-all group"
+                className="rounded-xl p-2 text-[#191c18] transition-colors hover:bg-[#f3f4ed]"
               >
-                <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-all border border-white/20">
-                  <Play className="w-10 h-10 text-white ml-1" />
-                </div>
+                {isPlaying ? (
+                  <Pause className="h-4 w-4" />
+                ) : (
+                  <Play className="ml-0.5 h-4 w-4" />
+                )}
               </button>
-            )}
-          </div>
 
-          {/* Controls */}
-          <div className="bg-white/95 backdrop-blur-sm p-3 flex items-center gap-3">
-            <button
-              onClick={togglePlay}
-              className="p-2 rounded-full hover:bg-[#f3f4ed] transition-colors"
-            >
-              {isPlaying ? (
-                <Pause className="w-4 h-4 text-[#191c18]" />
-              ) : (
-                <Play className="w-4 h-4 text-[#191c18] ml-0.5" />
-              )}
-            </button>
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#e7e9e1]">
+                <div
+                  className="h-full rounded-full bg-[#154212] transition-all"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
 
-            <div className="flex-1 h-1 bg-[#e7e9e1] rounded-full overflow-hidden cursor-pointer">
-              <div
-                className="h-full bg-[#154212] rounded-full transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-
-            <button
-              onClick={toggleMute}
-              className="p-2 rounded-full hover:bg-[#f3f4ed] transition-colors"
-            >
-              {isMuted ? (
-                <VolumeX className="w-4 h-4 text-[#191c18]" />
-              ) : (
-                <Volume2 className="w-4 h-4 text-[#191c18]" />
-              )}
-            </button>
-
-            <button className="p-2 rounded-full hover:bg-[#f3f4ed] transition-colors">
-              <Maximize className="w-4 h-4 text-[#191c18]" />
-            </button>
-          </div>
-        </motion.div>
-
-        {/* Demo features list */}
-        <div className="grid sm:grid-cols-3 gap-4 mt-8">
-          {[
-            { icon: Search, label: "Recherche avancée" },
-            { icon: Filter, label: "Filtres intelligents" },
-            { icon: Plus, label: "Création rapide" },
-          ].map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="flex items-center gap-3 p-3 rounded-xl bg-white border border-[#c2c9bb]/20"
+              <button
+                onClick={toggleMute}
+                className="rounded-xl p-2 text-[#191c18] transition-colors hover:bg-[#f3f4ed]"
               >
-                <div className="w-8 h-8 rounded-lg bg-[#f3f4ed] flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-[#72796e]" />
-                </div>
-                <span className="text-xs font-medium text-[#42493e]">
-                  {item.label}
-                </span>
-              </motion.div>
-            );
-          })}
+                {isMuted ? (
+                  <VolumeX className="h-4 w-4" />
+                ) : (
+                  <Volume2 className="h-4 w-4" />
+                )}
+              </button>
+
+              <button className="rounded-xl p-2 text-[#191c18] transition-colors hover:bg-[#f3f4ed]">
+                <Maximize className="h-4 w-4" />
+              </button>
+            </div>
+          </motion.div>
+
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            {[
+              { icon: Search, label: "Recherche avancee" },
+              { icon: Filter, label: "Filtres intelligents" },
+              { icon: Plus, label: "Creation rapide" },
+            ].map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <motion.div
+                  key={item.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.08 }}
+                  viewport={{ once: true }}
+                  className="flex items-center gap-3 rounded-2xl border border-[#c2c9bb]/30 bg-white/70 p-4 backdrop-blur-sm"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f3f4ed]">
+                    <Icon className="h-4 w-4 text-[#154212]" />
+                  </div>
+                  <span className="text-sm font-medium text-[#42493e]">
+                    {item.label}
+                  </span>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>

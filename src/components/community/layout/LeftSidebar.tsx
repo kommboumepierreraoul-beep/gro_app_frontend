@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
-  FileText,
   MessageCircle,
   Bell,
   Megaphone,
@@ -119,7 +118,7 @@ export function LeftSidebar() {
   const handleLogout = async () => {
     try {
       await logout();
-      router.push("/auth/login");
+      router.push("/login");
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error);
     }

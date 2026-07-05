@@ -6,24 +6,29 @@ import { LeftSidebar } from "@/components/community/layout/LeftSidebar";
 import { MobileBottomNav } from "@/components/community/layout/MobileBottomNav";
 import { Toaster } from "react-hot-toast";
 
-export default function SettingsLayout({
+export default function SupportsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="h-screen w-full overflow-hidden flex flex-col bg-[#f9faf2]">
+    <div className="min-h-screen w-full flex flex-col bg-[#f9faf2]">
       <Toaster position="top-right" />
 
-      {/* Navbar fixée */}
+      {/* Navbar */}
       <CommunityNavbar />
 
       {/* Corps principal */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Spacer pour la LeftSidebar - visible uniquement sur desktop */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* LeftSidebar - fixée à gauche sur desktop */}
+        <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 flex-shrink-0 z-40 border-r border-[#d9ddd2]/30 bg-white/50">
+          <LeftSidebar />
+        </aside>
+
+        {/* Espace pour la sidebar */}
         <div className="hidden lg:block w-72 flex-shrink-0" />
 
-        {/* Zone de contenu scrollable avec padding adaptatif */}
+        {/* Zone de contenu scrollable */}
         <main
           className={`
             flex-1 overflow-y-auto min-w-0
@@ -34,16 +39,11 @@ export default function SettingsLayout({
         >
           <div className="max-w-6xl mx-auto w-full">{children}</div>
         </main>
+      </div>
 
-        {/* LeftSidebar - visible uniquement sur desktop (lg et plus) */}
-        <div className="hidden lg:block">
-          <LeftSidebar />
-        </div>
-
-        {/* Mobile bottom navigation - visible uniquement sur mobile */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
-          <MobileBottomNav />
-        </div>
+      {/* Mobile bottom navigation - visible uniquement sur mobile */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+        <MobileBottomNav />
       </div>
     </div>
   );

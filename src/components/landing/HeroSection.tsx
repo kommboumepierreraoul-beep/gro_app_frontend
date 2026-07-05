@@ -7,126 +7,122 @@ import { motion } from "framer-motion";
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#154212] via-[#2d5a27] to-[#1a3d16] min-h-[90vh] flex items-center">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-10">
+    <section className="relative overflow-hidden bg-[#f9faf2] px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+      <div className="absolute inset-0 opacity-70">
         <div
-          className="absolute inset-0"
+          className="absolute inset-x-0 top-0 h-64"
           style={{
-            backgroundImage: `radial-gradient(circle at 20% 50%, rgba(188,240,174,0.3) 0%, transparent 50%)`,
+            background:
+              "linear-gradient(180deg, rgba(188,240,174,0.32) 0%, rgba(249,250,242,0) 100%)",
           }}
         />
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: `radial-gradient(circle at 80% 50%, rgba(188,240,174,0.2) 0%, transparent 50%)`,
+            backgroundImage:
+              "radial-gradient(circle at 16% 18%, rgba(188,240,174,0.22) 0%, transparent 32%), radial-gradient(circle at 86% 28%, rgba(244,187,146,0.16) 0%, transparent 30%)",
           }}
         />
       </div>
 
-      {/* Animated leaves decoration */}
-      <div className="absolute left-10 top-20 opacity-20 animate-float">
-        <Leaf size={60} className="text-[#bcf0ae]" />
+      <div className="absolute left-8 top-16 hidden opacity-20 sm:block animate-float">
+        <Leaf size={48} className="text-[#154212]" />
       </div>
-      <div className="absolute right-20 bottom-20 opacity-20 animate-float-delayed">
-        <Sprout size={50} className="text-[#bcf0ae]" />
+      <div className="absolute bottom-16 right-12 hidden opacity-20 lg:block animate-float-delayed">
+        <Sprout size={44} className="text-[#3b6934]" />
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left content */}
+      <div className="relative z-10 mx-auto max-w-[1200px]">
+        <div className="grid items-center gap-8 rounded-2xl border border-[#c2c9bb]/30 bg-white/70 p-4 shadow-[0_16px_40px_rgba(21,66,18,0.08)] backdrop-blur-sm sm:p-6 lg:grid-cols-[1.02fr_0.98fr] lg:gap-10 lg:p-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#bcf0ae]/20 backdrop-blur-sm border border-[#bcf0ae]/30 mb-6">
-              <Shield className="w-4 h-4 text-[#bcf0ae]" />
-              <span className="text-xs font-medium text-[#bcf0ae] tracking-wider uppercase">
-                Communauté agricole GRO
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#bcf0ae]/50 bg-[#eaf3de] px-3.5 py-2">
+              <Shield className="h-4 w-4 text-[#154212]" />
+              <span className="text-xs font-medium text-[#3b6934] tracking-wider uppercase">
+                Communaute agricole GRO
               </span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              Cultivez votre <br />
-              <span className="text-[#bcf0ae]">avenir agricole</span>
+            <h1 className="mb-4 text-4xl font-bold leading-tight text-[#191c18] sm:text-5xl lg:text-[56px]">
+              Cultivez votre avenir agricole
+              <span className="block text-[#154212]">avec la communaute</span>
             </h1>
 
-            <p className="text-lg text-white/70 leading-relaxed mb-8 max-w-lg">
+            <p className="mb-6 max-w-xl text-base leading-relaxed text-[#42493e] sm:text-lg">
               Agripulse connecte les agriculteurs, les experts et les acteurs du
-              monde rural. Échangez, apprenez et développez vos projets
+              monde rural. Echangez, apprenez et developpez vos projets
               agricoles.
             </p>
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#bcf0ae] text-[#154212] font-semibold rounded-xl hover:bg-[#a1d494] transition-all hover:scale-[1.02] shadow-lg shadow-[#bcf0ae]/20"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#154212] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#154212]/15 transition-all hover:bg-[#2d5a27] active:scale-[0.98]"
               >
                 Commencer gratuitement
                 <ArrowRight size={18} />
               </Link>
               <Link
                 href="#demo"
-                className="inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-semibold rounded-xl hover:bg-white/10 transition-all"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#c2c9bb]/50 bg-white/70 px-5 py-3 text-sm font-semibold text-[#42493e] transition-all hover:border-[#bcf0ae] hover:bg-[#eaf3de]"
               >
                 <Play size={18} />
-                Voir la démo
+                Voir la demo
               </Link>
             </div>
 
-            {/* Trust indicators */}
-            <div className="flex items-center gap-6 mt-8 pt-8 border-t border-white/10">
+            <div className="mt-7 flex flex-wrap items-center gap-5 border-t border-[#c2c9bb]/30 pt-6">
               <div className="flex -space-x-2">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="w-8 h-8 rounded-full border-2 border-[#154212] bg-gradient-to-br from-[#bcf0ae] to-[#a1d494] flex items-center justify-center text-[10px] font-bold text-[#154212]"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#f9faf2] bg-gradient-to-br from-[#bcf0ae] to-[#eaf3de] text-[10px] font-bold text-[#154212]"
                   >
                     {String.fromCharCode(64 + i)}
                   </div>
                 ))}
               </div>
               <div>
-                <p className="text-white font-semibold">2,500+</p>
-                <p className="text-xs text-white/50">Agriculteurs actifs</p>
+                <p className="font-semibold text-[#191c18]">2,500+</p>
+                <p className="text-xs text-[#72796e]">Agriculteurs actifs</p>
               </div>
               <div>
-                <p className="text-white font-semibold">150+</p>
-                <p className="text-xs text-white/50">Communautés</p>
+                <p className="font-semibold text-[#191c18]">150+</p>
+                <p className="text-xs text-[#72796e]">Communautes</p>
               </div>
             </div>
           </motion.div>
 
-          {/* Right content - Hero image / preview */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="relative"
           >
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-              <div className="aspect-[16/10] bg-[#2d5a27] flex items-center justify-center">
-                <div className="text-center p-8">
-                  <Leaf className="w-16 h-16 text-[#bcf0ae] mx-auto mb-4" />
-                  <p className="text-white/40 text-sm">
-                    Aperçu de l'application
+            <div className="relative overflow-hidden rounded-2xl border border-[#c2c9bb]/30 bg-[#f3f4ed]/80 shadow-xl">
+              <div className="flex aspect-[16/10] items-center justify-center bg-gradient-to-br from-[#f9faf2] via-[#eaf3de] to-[#dce8d3]">
+                <div className="p-8 text-center">
+                  <Leaf className="mx-auto mb-4 h-14 w-14 text-[#154212]" />
+                  <p className="text-sm font-semibold text-[#42493e]">
+                    Apercu de l'application
                   </p>
-                  <p className="text-white/20 text-xs mt-2">
-                    Interface de démonstration
+                  <p className="mt-2 text-xs text-[#72796e]">
+                    Interface de demonstration
                   </p>
                 </div>
               </div>
-              {/* Floating elements */}
-              <div className="absolute -top-4 -right-4 w-16 h-16 bg-[#bcf0ae] rounded-full opacity-20 animate-pulse" />
-              <div className="absolute -bottom-4 -left-4 w-12 h-12 bg-[#bcf0ae] rounded-full opacity-15 animate-pulse-delayed" />
+              <div className="absolute right-4 top-4 rounded-full border border-[#bcf0ae]/40 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#154212]">
+                Live
+              </div>
             </div>
 
-            {/* Stats floating cards */}
-            <div className="absolute -bottom-6 -left-6 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-xl hidden sm:block">
+            <div className="absolute -bottom-5 -left-4 hidden rounded-xl border border-[#c2c9bb]/30 bg-white/95 p-4 shadow-xl backdrop-blur-sm sm:block">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#154212] flex items-center justify-center">
-                  <Users className="w-5 h-5 text-[#bcf0ae]" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#154212]">
+                  <Users className="h-5 w-5 text-[#bcf0ae]" />
                 </div>
                 <div>
                   <p className="text-sm font-bold text-[#191c18]">+1,200</p>
@@ -162,9 +158,6 @@ export function HeroSection() {
         }
         .animate-float-delayed {
           animation: float-delayed 4s ease-in-out infinite;
-        }
-        .animate-pulse-delayed {
-          animation: pulse 3s ease-in-out infinite;
         }
       `}</style>
     </section>

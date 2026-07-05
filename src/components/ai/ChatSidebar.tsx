@@ -78,18 +78,20 @@ export function ChatSidebar({
 
   const iconBtnStyle: React.CSSProperties = {
     padding: "8px 16px",
-    borderRadius: "16px",
+    borderRadius: "14px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     gap: "8px",
     fontSize: "13px",
     fontWeight: 600,
-    border: "none",
+    border: "1px solid rgba(49,69,45,0.12)",
     cursor: "pointer",
     transition: "all 0.15s",
     fontFamily: "'Inter', sans-serif",
     width: "100%",
+    background: "#31452d",
+    color: "#f3f7ee",
   };
 
   return (
@@ -97,12 +99,13 @@ export function ChatSidebar({
       {/* Bouton toggle mobile */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed bottom-4 right-4 md:hidden z-50 p-3 rounded-full shadow-lg"
+        className="fixed bottom-20 right-4 z-50 rounded-full p-3 shadow-lg md:hidden"
         style={{
-          background: "linear-gradient(135deg, #2d5a27 0%, #154212 100%)",
-          color: "#bcf0ae",
-          boxShadow: "0 4px 16px rgba(45,90,39,0.3)",
+          background: "#31452d",
+          color: "#f3f7ee",
+          boxShadow: "0 10px 24px rgba(25,28,24,0.22)",
         }}
+        aria-label="Afficher les conversations IA"
       >
         <MessageSquare size={20} />
       </button>
@@ -117,9 +120,9 @@ export function ChatSidebar({
 
       <aside
         className={`
-          w-72 sm:w-80 shrink-0 border-r border-[rgba(194,201,187,0.3)] 
-          bg-[rgba(249,250,242,0.95)] backdrop-blur-sm flex flex-col h-full
-          fixed md:relative inset-y-0 left-0 z-50
+          h-full w-[86vw] max-w-80 shrink-0 border-r border-[rgba(194,201,187,0.45)] 
+          bg-[rgba(249,250,242,0.98)] backdrop-blur-sm flex flex-col
+          fixed md:relative inset-y-0 left-0 z-50 md:z-auto
           transform transition-transform duration-300 ease-in-out
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
@@ -134,8 +137,8 @@ export function ChatSidebar({
             <div
               className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
               style={{
-                background: "linear-gradient(135deg, #2d5a27 0%, #154212 100%)",
-                color: "#bcf0ae",
+                background: "linear-gradient(135deg, #31452d 0%, #1f2d1d 100%)",
+                color: "#e8f5df",
               }}
             >
               <Bot size={20} />
@@ -168,11 +171,11 @@ export function ChatSidebar({
             className="hover:scale-[1.02] active:scale-[0.98]"
             onMouseEnter={(e) => {
               const target = e.currentTarget as HTMLElement;
-              target.style.boxShadow = "0 4px 12px rgba(45,90,39,0.25)";
+              target.style.boxShadow = "0 8px 18px rgba(25,28,24,0.16)";
             }}
             onMouseLeave={(e) => {
               const target = e.currentTarget as HTMLElement;
-              target.style.boxShadow = "0 2px 8px rgba(45,90,39,0.15)";
+              target.style.boxShadow = "none";
             }}
           >
             <Plus size={16} />
@@ -205,11 +208,11 @@ export function ChatSidebar({
                 className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(188,240,174,0.35) 0%, rgba(244,187,146,0.15) 100%)",
+                    "linear-gradient(135deg, rgba(49,69,45,0.12) 0%, rgba(244,187,146,0.16) 100%)",
                   border: "1px solid rgba(194,201,187,0.4)",
                 }}
               >
-                <MessageCircle size={28} style={{ color: "#72796e" }} />
+                <MessageCircle size={28} style={{ color: "#31452d" }} />
               </div>
               <p
                 className="text-sm font-medium mb-1"
@@ -239,8 +242,8 @@ export function ChatSidebar({
                   onClick={() => handleSelectConversation(conv.id)}
                   className={`group flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all duration-150 ${
                     isActive
-                      ? "bg-[rgba(45,90,39,0.08)] border border-[rgba(45,90,39,0.15)] shadow-sm"
-                      : "hover:bg-[rgba(45,90,39,0.04)] border border-transparent hover:border-[rgba(194,201,187,0.3)]"
+                      ? "border border-[rgba(49,69,45,0.16)] bg-[rgba(49,69,45,0.08)] shadow-sm"
+                      : "hover:bg-[rgba(49,69,45,0.05)] border border-transparent hover:border-[rgba(194,201,187,0.4)]"
                   }`}
                   role="button"
                   tabIndex={0}
@@ -254,8 +257,8 @@ export function ChatSidebar({
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
                       isActive
-                        ? "bg-[#2d5a27] text-white"
-                        : "bg-[rgba(45,90,39,0.08)] text-[#2d5a27] group-hover:bg-[rgba(45,90,39,0.15)]"
+                        ? "bg-[#31452d] text-white"
+                        : "bg-[rgba(49,69,45,0.08)] text-[#31452d] group-hover:bg-[rgba(49,69,45,0.14)]"
                     }`}
                   >
                     <MessageSquare size={16} />
@@ -264,7 +267,7 @@ export function ChatSidebar({
                   <div className="flex-1 min-w-0">
                     <p
                       className={`text-sm font-semibold truncate ${
-                        isActive ? "text-[#2d5a27]" : "text-[#191c18]"
+                        isActive ? "text-[#31452d]" : "text-[#191c18]"
                       }`}
                       style={{ fontFamily: "'Inter', sans-serif" }}
                     >
@@ -330,7 +333,7 @@ export function ChatSidebar({
           border-radius: 10px;
         }
         .gro-sidebar-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(45, 90, 39, 0.35);
+          background: rgba(49, 69, 45, 0.35);
         }
       `}</style>
     </>

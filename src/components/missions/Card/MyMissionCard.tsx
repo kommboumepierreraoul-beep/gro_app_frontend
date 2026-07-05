@@ -10,6 +10,9 @@ import {
   Trash2,
   MoreVertical,
   AlertCircle,
+  MapPin,
+  Calendar,
+  Banknote,
 } from "lucide-react";
 import { useState } from "react";
 import { Mission } from "@/lib/missions/types";
@@ -22,6 +25,23 @@ import MissionStatusBadge from "../MissionStatusBadge";
 interface Props {
   mission: Mission;
 }
+
+const REMUNERATION_LABELS: Record<string, string> = {
+  fixed: "Montant fixe",
+  daily_rate: "Taux journalier",
+  hourly_rate: "Taux horaire",
+  negotiable: "À négocier",
+  in_kind: "En nature",
+  volunteer: "Bénévolat",
+};
+
+const DURATION_LABELS: Record<string, string> = {
+  hours: "h",
+  day: "journée",
+  days: "j",
+  weeks: "sem.",
+  flexible: "flexible",
+};
 
 const STATUS_TRANSITIONS: Record<
   string,
@@ -76,6 +96,33 @@ const STATUS_TRANSITIONS: Record<
   ],
 };
 
+function getAuthorName(author?: Mission["author"]): string {
+  if (!author) return "Auteur";
+
+  const candidate = author as Mission["author"] & {
+    name?: string;
+    full_name?: string;
+    first_name?: string;
+    last_name?: string;
+  };
+
+  const firstName = candidate.firstname ?? candidate.first_name;
+  const lastName = candidate.lastname ?? candidate.last_name;
+  const fullName = candidate.name ?? candidate.full_name;
+
+  if (firstName && lastName) return `${firstName} ${lastName}`.trim();
+  if (firstName) return firstName.trim();
+  if (lastName) return lastName.trim();
+  if (fullName) return fullName.trim();
+
+  return "Auteur";
+}
+
+function getAuthorInitial(author?: Mission["author"]): string {
+  if (!author) return "A";
+  return getAuthorName(author).charAt(0).toUpperCase();
+}
+
 export default function MyMissionCard({ mission }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -84,6 +131,15 @@ export default function MyMissionCard({ mission }: Props) {
 
   const transitions = STATUS_TRANSITIONS[mission.status] ?? [];
   const hasPendingApplications = (mission.pending_count ?? 0) > 0;
+  const authorName = getAuthorName(mission.author);
+  const authorInitial = getAuthorInitial(mission.author);
+  const remuLabel = mission.remuneration_amount
+    ? `${Number(mission.remuneration_amount).toLocaleString("fr-FR")} ${mission.remuneration_currency}`
+    : (REMUNERATION_LABELS[mission.remuneration_type] ?? "");
+  const durationLabel =
+    mission.duration_type === "flexible"
+      ? "Flexible"
+      : `${mission.duration_value ?? ""}${DURATION_LABELS[mission.duration_type] ?? ""}`;
 
   return (
     <div className="bg-[#fafbf3] border border-[#c2c9bb]/30 rounded-2xl p-5 relative">
@@ -145,47 +201,95 @@ export default function MyMissionCard({ mission }: Props) {
         </div>
       </div>
 
-      {/* Titre */}
-      <Link href={`/missions/${mission.ulid}`}>
-        <h3 className="font-[Plus_Jakarta_Sans] text-lg font-semibold text-[#191c18] mb-2 hover:text-[#154212] transition-colors leading-snug">
-          {mission.title}
-        </h3>
-      </Link>
-
-      {/* Stats */}
-      <div className="flex items-center gap-4 text-xs text-[#72796e] mb-4">
-        <span className="flex items-center gap-1.5">
-          <Users size={13} className="text-[#3b6934]" />
-          {mission.applications_count} candidature
-          {mission.applications_count !== 1 ? "s" : ""}
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="min-w-0">
+          <Link href={`/missions/${mission.ulid}`}>
+            <h3 className="font-[Plus_Jakarta_Sans] text-lg font-semibold text-[#191c18] hover:text-[#154212] transition-colors leading-snug">
+              {mission.title}
+            </h3>
+          </Link>
+          <p className="text-sm text-[#72796e] mt-2 line-clamp-2 leading-relaxed">
+            {mission.description}
+          </p>
+        </div>
+        <span className="text-green-950 font-bold text-lg shrink-0">
+          {remuLabel}
         </span>
-        <span className="flex items-center gap-1.5">
-          <Eye size={13} className="text-[#3b6934]" />
-          {mission.views_count} vue{mission.views_count !== 1 ? "s" : ""}
-        </span>
-        {mission.start_date && (
-          <span className="flex items-center gap-1.5">
-            <Clock size={13} className="text-[#3b6934]" />
-            {new Date(mission.start_date).toLocaleDateString("fr-FR", {
-              day: "numeric",
-              month: "short",
-            })}
-          </span>
-        )}
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="space-y-2 mb-4 border-t border-gray-100 pt-4">
+        {mission.location_label && (
+          <div className="flex items-center gap-2 text-sm text-[#72796e]">
+            <MapPin size={14} className="text-[#3b6934] shrink-0" />
+            <span>{mission.location_label}</span>
+          </div>
+        )}
+        <div className="flex items-center gap-4 text-sm text-[#72796e] flex-wrap">
+          <span className="flex items-center gap-1.5">
+            <Clock size={14} className="text-[#3b6934]" />
+            {durationLabel}
+          </span>
+          {mission.start_date && (
+            <span className="flex items-center gap-1.5">
+              <Calendar size={14} className="text-[#3b6934]" />
+              {new Date(mission.start_date).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "short",
+              })}
+            </span>
+          )}
+          <span className="flex items-center gap-1.5 ml-auto">
+            <Users size={14} className="text-[#3b6934]" />
+            {mission.applications_count} candidature
+            {mission.applications_count !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2.5 mb-5">
+        {mission.author?.avatar ? (
+          <img
+            src={mission.author.avatar}
+            alt={authorName}
+            className="w-8 h-8 rounded-full object-cover border border-[#c2c9bb]/30"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-[#154212] flex items-center justify-center text-white text-xs font-bold border border-[#c2c9bb]/30">
+            {authorInitial}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-[#191c18]">{authorName}</p>
+          <p className="text-[11px] text-[#72796e]">Créateur de la mission</p>
+        </div>
+      </div>
+
+      <div className="flex gap-2 flex-wrap mt-auto">
+        <Link
+          href={`/missions/${mission.ulid}`}
+          className="group relative flex items-center justify-center w-10 h-10 rounded-xl border border-[#154212] text-[#154212] hover:bg-[#154212] hover:text-white transition-colors"
+          title="Voir les détails"
+        >
+          <Eye size={15} />
+          <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-md bg-[#154212] px-2 py-1 text-[10px] font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 whitespace-nowrap">
+            Voir les détails
+          </span>
+        </Link>
+
         <Link
           href={`/missions/${mission.ulid}/applications`}
-          className="flex items-center gap-1.5 px-3 py-2 bg-[#154212]/5 text-[#154212] text-xs font-semibold uppercase tracking-wider rounded-lg hover:bg-[#154212]/10 transition-colors"
+          className="group relative flex items-center justify-center w-10 h-10 rounded-xl bg-[#154212]/5 text-[#154212] hover:bg-[#154212]/10 transition-colors"
+          title="Candidatures"
         >
-          <Users size={13} /> Candidatures
+          <Users size={15} />
           {hasPendingApplications && (
-            <span className="ml-1 bg-amber-400 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px]">
+            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[8px] font-bold text-white">
               {mission.pending_count}
             </span>
           )}
+          <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-md bg-[#154212] px-2 py-1 text-[10px] font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 whitespace-nowrap">
+            Candidatures
+          </span>
         </Link>
 
         {transitions.map((t) => (
@@ -195,9 +299,13 @@ export default function MyMissionCard({ mission }: Props) {
               updateStatus.mutate({ ulid: mission.ulid, status: t.value })
             }
             disabled={updateStatus.isPending}
-            className={`px-3 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors disabled:opacity-60 ${t.classes}`}
+            className={`group relative flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold uppercase tracking-wider transition-colors disabled:opacity-60 ${t.classes}`}
+            title={t.label}
           >
-            {t.label}
+            <span className="text-[11px]">{t.label.charAt(0)}</span>
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-md bg-[#191c18] px-2 py-1 text-[10px] font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 whitespace-nowrap">
+              {t.label}
+            </span>
           </button>
         ))}
       </div>

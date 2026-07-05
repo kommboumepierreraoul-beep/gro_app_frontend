@@ -3,6 +3,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { ArrowLeft, BadgeCheck, CheckCircle2, Globe2, Info, Package } from 'lucide-react';
 import api from '@/lib/axios';
 
 export default function CreateShopHomePage() {
@@ -35,21 +36,21 @@ export default function CreateShopHomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#e6fff4]">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-[#006c49]">Chargement...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#e6fff4] flex flex-col items-center">
-      <header className="fixed top-0 w-full z-50 bg-[#e6fff4]/80 backdrop-blur-xl border-b border-[#bbcabf]/30 shadow-sm h-20">
+    <div className="min-h-[calc(100vh-7rem)] rounded-2xl bg-[#e6fff4] flex flex-col items-center">
+      <header className="sticky top-16 w-full z-30 rounded-t-2xl bg-[#e6fff4]/85 backdrop-blur-xl border-b border-[#bbcabf]/30 shadow-sm h-20">
         <div className="flex items-center justify-between px-4 md:px-12 h-full max-w-7xl mx-auto">
           <button
             onClick={() => router.back()}
             className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#10b981]/20 transition-colors active:scale-95 duration-200 text-[#3c4a42]"
           >
-            <span className="material-symbols-outlined">arrow_back</span>
+            <ArrowLeft className="h-5 w-5" />
           </button>
           <h1 className="font-headline text-2xl font-bold text-[#006c49] tracking-tighter">
             AgriGrow Marketplace
@@ -58,7 +59,7 @@ export default function CreateShopHomePage() {
         </div>
       </header>
 
-      <main className="w-full max-w-4xl pt-24 pb-32 px-4 md:px-8">
+      <main className="w-full max-w-4xl px-4 py-12 md:px-8">
         {/* Hero Image avec animation */}
         <div className={`transition-all duration-700 ease-out ${animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <div className="relative w-full h-[300px] md:h-[400px] rounded-[3rem] overflow-hidden shadow-lg mb-10 group">
@@ -85,7 +86,7 @@ export default function CreateShopHomePage() {
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-full bg-[#aeeecb] flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-[#316e52]">public</span>
+                    <Globe2 className="h-5 w-5 text-[#316e52]" />
                   </div>
                   <div>
                     <h4 className="font-bold text-lg text-[#002118]">Vendez partout</h4>
@@ -96,7 +97,7 @@ export default function CreateShopHomePage() {
                 </div>
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-full bg-[#aeeecb] flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-[#316e52]">inventory</span>
+                    <Package className="h-5 w-5 text-[#316e52]" />
                   </div>
                   <div>
                     <h4 className="font-bold text-lg text-[#002118]">Gérez vos stocks</h4>
@@ -107,7 +108,7 @@ export default function CreateShopHomePage() {
                 </div>
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-full bg-[#aeeecb] flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-[#316e52]">verified_user</span>
+                    <BadgeCheck className="h-5 w-5 text-[#316e52]" />
                   </div>
                   <div>
                     <h4 className="font-bold text-lg text-[#002118]">Paiements sécurisés</h4>
@@ -128,27 +129,21 @@ export default function CreateShopHomePage() {
                 </h3>
                 <ul className="space-y-4">
                   <li className="flex items-center gap-3 text-[#002118] font-medium">
-                    <span className="material-symbols-outlined text-[#006c49]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      check_circle
-                    </span>
+                    <CheckCircle2 className="h-5 w-5 text-[#006c49]" />
                     Nom de la boutique
                   </li>
                   <li className="flex items-center gap-3 text-[#002118] font-medium">
-                    <span className="material-symbols-outlined text-[#006c49]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      check_circle
-                    </span>
+                    <CheckCircle2 className="h-5 w-5 text-[#006c49]" />
                     Photos professionnelles
                   </li>
                   <li className="flex items-center gap-3 text-[#002118] font-medium">
-                    <span className="material-symbols-outlined text-[#006c49]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      check_circle
-                    </span>
+                    <CheckCircle2 className="h-5 w-5 text-[#006c49]" />
                     Coordonnées complètes
                   </li>
                 </ul>
               </div>
               <div className="bg-[#caf1e1] p-6 rounded-[2rem] border border-[#bbcabf]/30 flex items-start gap-3">
-                <span className="material-symbols-outlined text-[#3c4a42]">info</span>
+                <Info className="h-5 w-5 shrink-0 text-[#3c4a42]" />
                 <p className="text-xs text-[#3c4a42] leading-relaxed">
                   En créant votre boutique, vous acceptez nos conditions d'utilisation et notre politique de commission de 5% par vente. Cette commission nous permet de maintenir la plateforme et de sécuriser vos transactions.
                 </p>
@@ -179,9 +174,6 @@ export default function CreateShopHomePage() {
           background: rgba(255, 255, 255, 0.7);
           backdrop-filter: blur(12px);
           border: 1px solid rgba(255, 255, 255, 0.4);
-        }
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
       `}</style>
     </div>

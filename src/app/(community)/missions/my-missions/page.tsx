@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
-import MissionCard from "@/components/missions/Card/MissionCard";
+import MyMissionCard from "@/components/missions/Card/MyMissionCard";
 import EmptyMissions from "@/components/missions/EmptyMission";
 import { useMissionStore } from "@/stores/useMissionStore";
 import { useRouter } from "next/navigation";
@@ -109,7 +109,7 @@ export default function MyMissionPage() {
       const pending = data.filter(
         (m: any) => m.status === "pending_review",
       ).length;
-      const in_progress = missions.filter(
+      const in_progress = data.filter(
         (m: any) => m.status === "in_progress",
       ).length;
 
@@ -199,7 +199,7 @@ export default function MyMissionPage() {
             mission pour commencer à recruter.
           </p>
           <button
-            onClick={() => router.push("/community/missions/create")}
+            onClick={() => router.push("/missions/create")}
             className="inline-flex items-center gap-2 px-6 py-3 bg-green-950 hover:bg-green-900 text-white font-semibold text-sm rounded-xl transition shadow-sm"
           >
             <Plus size={18} />
@@ -213,7 +213,6 @@ export default function MyMissionPage() {
   // ── LIST ────────────────────────
   return (
     <div className="max-w-7xl mx-auto space-y-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div className=" rounded-2xl shadow-sm border border-gray-100 p-6">
         <div className="flex flex-col sm:flex-row sm:items-start md:items-center justify-between gap-4">
@@ -229,7 +228,7 @@ export default function MyMissionPage() {
             </p>
           </div>
           <button
-            onClick={() => router.push("/community/missions/create")}
+            onClick={() => router.push("/missions/create")}
             className="flex items-center justify-center gap-2 px-5 py-2.5 bg-green-950 hover:bg-green-900 text-white font-semibold text-sm rounded-xl shadow-sm transition active:scale-95 shrink-0 w-full sm:w-auto"
           >
             <Plus size={16} />
@@ -266,7 +265,7 @@ export default function MyMissionPage() {
         />
         <StatCard
           label="En cours"
-          value={stats.in_progress|| 0}
+          value={stats.in_progress || 0}
           color="bg-indigo-50"
           textColor="text-indigo-700"
         />
@@ -443,7 +442,7 @@ export default function MyMissionPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredMissions.map((mission) => (
-            <MissionCard key={mission.id} mission={mission} viewMode="grid" />
+            <MyMissionCard key={mission.id} mission={mission} />
           ))}
         </div>
       )}

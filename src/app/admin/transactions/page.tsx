@@ -1,7 +1,7 @@
 'use client';
 
-import VendorLayout from '@/components/layouts/VendorLayout';
 import { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import {
@@ -46,7 +46,7 @@ type Activity = {
   id: string;
   message: string;
   time: string;
-  icon: JSX.Element;
+  icon: ReactElement;
 };
 
 function AdminTransactionsContent() {
@@ -90,7 +90,7 @@ function AdminTransactionsContent() {
       const activities: Activity[] = [];
       for (let i = 0; i < Math.min(5, sorted.length); i++) {
         const order = sorted[i];
-        let icon: JSX.Element;
+        let icon: ReactElement;
         let message = '';
         switch (order.status) {
           case 'completed':
@@ -356,9 +356,5 @@ function AdminTransactionsContent() {
 }
 
 export default function AdminTransactionsPage() {
-  return (
-    <VendorLayout>
-      <AdminTransactionsContent />
-    </VendorLayout>
-  );
+  return <AdminTransactionsContent />;
 }

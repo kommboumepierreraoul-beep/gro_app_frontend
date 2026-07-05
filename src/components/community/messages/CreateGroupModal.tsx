@@ -46,7 +46,7 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess }: CreateGroupModa
         })
       );
     } else {
-      setSelectedUsers(new Set([...selectedUsers, userId]));
+      setSelectedUsers(new Set(Array.from(selectedUsers).concat(userId)));
       setSelectedUsersData([...selectedUsersData, userData]);
     }
   };

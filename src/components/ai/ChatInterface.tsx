@@ -233,8 +233,8 @@ export function ChatInterface() {
 
   return (
     <div
-      className="flex h-full w-full overflow-hidden"
-      style={{ background: "rgba(249,250,242,0.5)" }}
+      className="flex h-full min-h-0 w-full overflow-hidden"
+      style={{ background: "rgba(246,247,240,0.86)" }}
     >
       {/* Sidebar conversations */}
       <ChatSidebar
@@ -244,22 +244,21 @@ export function ChatInterface() {
       />
 
       {/* Zone chat principale */}
-      <section className="flex-1 flex flex-col overflow-hidden bg-[#f9faf2]">
+      <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f9faf2]">
         {/* ================= HEADER ================= */}
         <div
-          className="flex fixed w-full md:w-auto items-center justify-between px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0 z-10"
+          className="z-10 flex min-h-[64px] flex-shrink-0 items-center justify-between gap-3 border-b border-[rgba(194,201,187,0.45)] px-3 py-2 sm:px-5 sm:py-3"
           style={{
             background: "rgba(249,250,242,0.95)",
             backdropFilter: "blur(12px)",
-            borderBottom: "1px solid rgba(194,201,187,0.4)",
           }}
         >
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <div
               className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0"
               style={{
-                background: "linear-gradient(135deg, #2d5a27 0%, #154212 100%)",
-                color: "#bcf0ae",
+                background: "linear-gradient(135deg, #31452d 0%, #1f2d1d 100%)",
+                color: "#e8f5df",
               }}
             >
               <Bot size={18} className="sm:w-[20px] sm:h-[20px]" />
@@ -296,7 +295,7 @@ export function ChatInterface() {
               style={iconBtnStyle}
               onMouseEnter={(e) =>
                 ((e.currentTarget as HTMLElement).style.background =
-                  "rgba(188,240,174,0.25)")
+                  "rgba(49,69,45,0.08)")
               }
               onMouseLeave={(e) =>
                 ((e.currentTarget as HTMLElement).style.background =
@@ -312,7 +311,7 @@ export function ChatInterface() {
               style={iconBtnStyle}
               onMouseEnter={(e) =>
                 ((e.currentTarget as HTMLElement).style.background =
-                  "rgba(188,240,174,0.25)")
+                  "rgba(49,69,45,0.08)")
               }
               onMouseLeave={(e) =>
                 ((e.currentTarget as HTMLElement).style.background =
@@ -335,13 +334,13 @@ export function ChatInterface() {
                     background: "rgba(249,250,242,0.98)",
                     backdropFilter: "blur(20px)",
                     border: "1px solid rgba(194,201,187,0.45)",
-                    boxShadow: "0 10px 30px rgba(21,66,18,0.1)",
+                    boxShadow: "0 18px 42px rgba(25,28,24,0.12)",
                     animation: "groSlideDown 0.15s ease-out",
                   }}
                 >
                   <button
                     onClick={handleNewConversation}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 hover:bg-[rgba(188,240,174,0.2)]"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 hover:bg-[rgba(49,69,45,0.08)]"
                     style={{
                       color: "#42493e",
                       fontFamily: "'Inter', sans-serif",
@@ -356,7 +355,7 @@ export function ChatInterface() {
                     <>
                       <button
                         onClick={handleCopyConversationId}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 hover:bg-[rgba(188,240,174,0.2)]"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 hover:bg-[rgba(49,69,45,0.08)]"
                         style={{
                           color: "#42493e",
                           fontFamily: "'Inter', sans-serif",
@@ -393,29 +392,59 @@ export function ChatInterface() {
             onClick={() => setShowMenu(true)}
             className="sm:hidden p-1.5 rounded-xl transition-all duration-150 active:bg-black/5"
             style={{ color: "#42493e" }}
+            aria-label="Options de conversation"
           >
             <MoreVertical size={20} />
           </button>
+
+          {showMenu && (
+            <>
+              <div
+                className="fixed inset-0 z-20 bg-black/10 sm:hidden"
+                onClick={() => setShowMenu(false)}
+              />
+              <div className="fixed inset-x-3 top-20 z-30 overflow-hidden rounded-2xl border border-[rgba(194,201,187,0.5)] bg-[#f9faf2] py-1 shadow-xl sm:hidden">
+                <button
+                  onClick={handleNewConversation}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-[rgba(49,69,45,0.08)]"
+                  style={{ color: "#42493e", fontFamily: "'Inter', sans-serif" }}
+                >
+                  <Plus size={16} />
+                  Nouvelle conversation
+                </button>
+                {currentConversationId && (
+                  <button
+                    onClick={handleCopyConversationId}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-[rgba(49,69,45,0.08)]"
+                    style={{ color: "#42493e", fontFamily: "'Inter', sans-serif" }}
+                  >
+                    <Copy size={16} />
+                    Copier l'ID
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* ================= MESSAGES ================= */}
         <div
-          className="flex-1 overflow-y-auto px-2 sm:px-4 py-3 sm:py-4 space-y-2 sm:space-y-3 gro-chat-scroll mt-[64px] md:mt-[72px]"
-          style={{ background: "rgba(243,244,237,0.6)" }}
+          className="gro-chat-scroll flex-1 space-y-2 overflow-y-auto px-3 py-4 sm:space-y-3 sm:px-6 sm:py-5"
+          style={{ background: "linear-gradient(180deg, rgba(246,247,240,0.7), rgba(249,250,242,0.96))" }}
         >
           {/* État vide — welcome screen */}
           {messages.length === 0 && !isStreaming && !isTyping && (
-            <div className="max-w-2xl mx-auto text-center mt-3xl">
+            <div className="mx-auto flex min-h-[calc(100dvh-22rem)] max-w-2xl flex-col justify-center py-8 text-center sm:py-12">
               {/* Icône */}
               <div
                 className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(188,240,174,0.35) 0%, rgba(244,187,146,0.15) 100%)",
+                    "linear-gradient(135deg, rgba(49,69,45,0.12) 0%, rgba(244,187,146,0.18) 100%)",
                   border: "1px solid rgba(194,201,187,0.4)",
                 }}
               >
-                <Sparkles size={32} style={{ color: "#2d5a27" }} />
+                <Sparkles size={32} style={{ color: "#31452d" }} />
               </div>
 
               <h2
@@ -439,18 +468,18 @@ export function ChatInterface() {
               </p>
 
               {/* Suggestions rapides */}
-              <div className="grid grid-cols-2 gap-3 max-w-xl mx-auto">
+              <div className="mx-auto grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
                 {quickPrompts.map((prompt) => (
                   <button
                     key={prompt.label}
                     onClick={() => handleSendMessage(prompt.label)}
-                    className="group p-4 rounded-2xl border bg-white border-[rgba(194,201,187,0.4)] font-medium text-sm text-left transition-all hover:border-[#2d5a27] hover:shadow-sm active:scale-[0.98]"
+                    className="group rounded-2xl border border-[rgba(194,201,187,0.45)] bg-white p-4 text-left text-sm font-medium shadow-sm transition-all hover:border-[#31452d] hover:bg-[#fbfcf7] active:scale-[0.98]"
                     style={{
                       color: "#42493e",
                       fontFamily: "'Inter', sans-serif",
                     }}
                   >
-                    <span className="block mb-1.5" style={{ color: "#2d5a27" }}>
+                    <span className="mb-1.5 block" style={{ color: "#31452d" }}>
                       {prompt.icon}
                     </span>
                     {prompt.label}
@@ -461,7 +490,7 @@ export function ChatInterface() {
           )}
 
           {/* Messages */}
-          <div className="max-w-3xl mx-auto space-y-3">
+          <div className="mx-auto w-full max-w-3xl space-y-3">
             {messages.map((message, index) => (
               <ChatMessage key={index} message={message} />
             ))}
@@ -478,8 +507,8 @@ export function ChatInterface() {
                   className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
                   style={{
                     background:
-                      "linear-gradient(135deg, #2d5a27 0%, #154212 100%)",
-                    color: "#bcf0ae",
+                      "linear-gradient(135deg, #31452d 0%, #1f2d1d 100%)",
+                    color: "#e8f5df",
                   }}
                 >
                   <Bot size={16} className="sm:w-[18px] sm:h-[18px]" />
@@ -495,21 +524,21 @@ export function ChatInterface() {
                     <span
                       className="w-2 h-2 rounded-full animate-bounce"
                       style={{
-                        background: "#2d5a27",
+                        background: "#31452d",
                         animationDelay: "0ms",
                       }}
                     />
                     <span
                       className="w-2 h-2 rounded-full animate-bounce"
                       style={{
-                        background: "#2d5a27",
+                        background: "#31452d",
                         animationDelay: "150ms",
                       }}
                     />
                     <span
                       className="w-2 h-2 rounded-full animate-bounce"
                       style={{
-                        background: "#2d5a27",
+                        background: "#31452d",
                         animationDelay: "300ms",
                       }}
                     />
@@ -524,9 +553,9 @@ export function ChatInterface() {
 
         {/* ================= INPUT ZONE ================= */}
         <div
-          className="flex-shrink-0 px-2 sm:px-4 py-2 sm:py-3"
+          className="flex-shrink-0 px-3 py-3 sm:px-6"
           style={{
-            background: "#f9faf2",
+            background: "rgba(249,250,242,0.96)",
             borderTop: "1px solid rgba(194,201,187,0.4)",
           }}
         >
@@ -545,11 +574,11 @@ export function ChatInterface() {
           background: transparent;
         }
         .gro-chat-scroll::-webkit-scrollbar-thumb {
-          background: rgba(45, 90, 39, 0.2);
+          background: rgba(49, 69, 45, 0.22);
           border-radius: 10px;
         }
         .gro-chat-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(45, 90, 39, 0.35);
+          background: rgba(49, 69, 45, 0.36);
         }
         @keyframes groSlideDown {
           from {

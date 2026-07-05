@@ -116,7 +116,7 @@ export default function MyProfilePage() {
       const userId = follower.follower_id || follower.id;
       const conversation =
         await messageService.createOrFindConversation(userId);
-      router.push(`/community/messages/${conversation.id}`);
+      router.push(`/messages?id=${conversation.id}`);
     } catch (error) {
       console.error(error);
     }
@@ -138,7 +138,7 @@ export default function MyProfilePage() {
         name,
       );
       setSelectedFollowers([]);
-      router.push(`/community/messages/${conversation.id}`);
+      router.push(`/messages?id=${conversation.id}`);
     } catch (error) {
       alert("Impossible de créer le groupe.");
       console.error(error);
@@ -171,7 +171,7 @@ export default function MyProfilePage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="space-y-4">
           {/* ─── PROFILE CARD ─── */}
-          <div className="rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-hidden rounded-2xl border border-[#c2c9bb]/30 bg-white shadow-sm">
             {/* Banner */}
             <div className="relative h-32 sm:h-40 bg-gradient-to-r from-primary to-tertiary">
               {(profile as any)?.banner && !bannerError ? (
@@ -196,13 +196,22 @@ export default function MyProfilePage() {
                     className="ring-4 ring-white shadow-lg"
                   />
                 </div>
-                <button
-                  onClick={() => router.push("/settings/profile")}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-950 hover:bg-green-900 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
-                >
-                  <Edit2 size={14} />
-                  Modifier
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => router.push("/messages")}
+                    className="flex h-10 items-center gap-2 rounded-xl border border-[#c2c9bb]/35 bg-[#f3f4ed] px-3 text-sm font-semibold text-[#42493e] shadow-sm transition-colors hover:bg-[#e8eadf]"
+                  >
+                    <MessageCircle size={15} />
+                    <span className="hidden sm:inline">Messages</span>
+                  </button>
+                  <button
+                    onClick={() => router.push("/settings/profile")}
+                    className="flex h-10 items-center gap-2 rounded-xl bg-[#31452d] px-4 text-sm font-semibold text-[#f3f7ee] shadow-sm transition-colors hover:bg-[#243420]"
+                  >
+                    <Edit2 size={14} />
+                    Modifier
+                  </button>
+                </div>
               </div>
 
               {/* Name + headline */}
@@ -272,19 +281,19 @@ export default function MyProfilePage() {
           </div>
 
           {/* ─── TABS + CONTENT ─── */}
-          <div className="rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-hidden rounded-2xl border border-[#c2c9bb]/30 bg-white shadow-sm">
             {/* Tabs */}
-            <div className="flex border-b border-gray-100 px-4 overflow-x-auto">
+            <div className="flex gap-1 overflow-x-auto border-b border-[#c2c9bb]/25 bg-[#f9faf2]/70 px-3">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as TabType)}
-                    className={`flex items-center gap-2 py-3 px-4 border-b-2 transition-colors whitespace-nowrap text-sm font-medium ${
+                    className={`flex items-center gap-2 border-b-2 px-3 py-3.5 text-sm font-semibold whitespace-nowrap transition-all ${
                       activeTab === tab.id
-                        ? "border-green-950 text-green-950"
-                        : "border-transparent text-gray-500 hover:text-gray-800"
+                        ? "border-[#31452d] text-[#31452d]"
+                        : "border-transparent text-[#72796e] hover:bg-[#f3f4ed] hover:text-[#191c18]"
                     }`}
                   >
                     <Icon size={16} />
@@ -347,9 +356,9 @@ export default function MyProfilePage() {
                   ) : (
                     <>
                       {/* Toolbar */}
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-4 border-b border-gray-100">
-                        <p className="text-sm text-gray-500">
-                          <span className="font-semibold text-gray-900">
+                      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#c2c9bb]/30 bg-[#f9faf2] p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-[#72796e]">
+                          <span className="font-semibold text-[#191c18]">
                             {followers.length}
                           </span>{" "}
                           abonné(s)
@@ -357,14 +366,14 @@ export default function MyProfilePage() {
                         <button
                           onClick={handleCreateGroup}
                           disabled={selectedFollowers.length < 1}
-                          className="w-full sm:w-auto px-4 py-2 bg-green-950 hover:bg-green-900 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#31452d] px-4 py-2.5 text-sm font-semibold text-[#f3f7ee] transition-colors hover:bg-[#243420] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
                         >
                           Créer un groupe ({selectedFollowers.length})
                         </button>
                       </div>
 
                       {/* Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         {followers.map((follower: any) => {
                           const userData = follower.follower || follower;
                           const userId = follower.follower_id || follower.id;
@@ -377,40 +386,57 @@ export default function MyProfilePage() {
                           return (
                             <div
                               key={follower.id}
-                              className="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
+                              className={`rounded-2xl border p-3 transition-all ${
+                                selectedFollowers.includes(userId)
+                                  ? "border-[#31452d]/30 bg-[#f3f4ed] shadow-sm"
+                                  : "border-[#c2c9bb]/30 bg-white hover:border-[#31452d]/25 hover:bg-[#fbfcf7]"
+                              }`}
                             >
-                              <div className="flex items-center gap-3 min-w-0">
+                              <div className="flex items-start gap-3">
                                 <input
                                   type="checkbox"
                                   checked={selectedFollowers.includes(userId)}
                                   onChange={() => toggleSelectFollower(userId)}
-                                  className="w-4 h-4 rounded border-gray-300 accent-green-950"
+                                  className="mt-2 h-4 w-4 rounded border-[#c2c9bb] accent-[#31452d]"
                                 />
-                                <Avatar
-                                  src={userAvatar}
-                                  firstname={userName}
-                                  size="md"
-                                />
-                                <div className="min-w-0">
-                                  <p className="text-sm font-semibold text-gray-900 truncate">
-                                    {userName} {userLast}
-                                  </p>
-                                  {userHead && (
-                                    <p className="text-xs text-gray-400 truncate">
-                                      {userHead}
+                                <button
+                                  onClick={() => router.push(`/profile/${userId}`)}
+                                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                                >
+                                  <Avatar
+                                    src={userAvatar}
+                                    firstname={userName}
+                                    size="md"
+                                  />
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold text-[#191c18]">
+                                      {userName} {userLast}
                                     </p>
-                                  )}
-                                </div>
+                                    {userHead && (
+                                      <p className="truncate text-xs text-[#72796e]">
+                                        {userHead}
+                                      </p>
+                                    )}
+                                  </div>
+                                </button>
                               </div>
-                              <button
-                                onClick={() =>
-                                  handleStartConversation(follower)
-                                }
-                                className="p-2 rounded-full text-gray-400 hover:text-green-950 hover:bg-green-50 transition-colors flex-shrink-0"
-                                title="Envoyer un message"
-                              >
-                                <MessageCircle size={18} />
-                              </button>
+                              <div className="mt-3 flex items-center gap-2 pl-7">
+                                <button
+                                  onClick={() => handleStartConversation(follower)}
+                                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#31452d] px-3 py-2 text-xs font-semibold text-[#f3f7ee] transition-colors hover:bg-[#243420]"
+                                >
+                                  <MessageCircle size={15} />
+                                  Conversation
+                                </button>
+                                <button
+                                  onClick={() => toggleSelectFollower(userId)}
+                                  className="rounded-xl border border-[#c2c9bb]/40 bg-white px-3 py-2 text-xs font-semibold text-[#42493e] transition-colors hover:bg-[#f3f4ed]"
+                                >
+                                  {selectedFollowers.includes(userId)
+                                    ? "Retirer"
+                                    : "Groupe"}
+                                </button>
+                              </div>
                             </div>
                           );
                         })}

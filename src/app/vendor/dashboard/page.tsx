@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import VendorLayout from '@/components/layouts/VendorLayout';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
@@ -105,17 +104,14 @@ export default function VendorDashboard() {
 
   if (loading) {
     return (
-      <VendorLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-slate-400">Chargement du tableau de bord...</div>
-        </div>
-      </VendorLayout>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="text-[#72796e]">Chargement du tableau de bord...</div>
+      </div>
     );
   }
 
   return (
-    <VendorLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 py-5 sm:py-6">
         {/* En-tête avec gradient */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-800 p-6 text-white shadow-lg">
           <div className="relative z-10">
@@ -274,10 +270,9 @@ export default function VendorDashboard() {
             </button>
           </div>
           <div className="absolute right-0 top-0 h-full w-40 opacity-10">
-            <span className="material-symbols-outlined text-[200px] text-white">psychiatry</span>
+            <Package className="h-full w-full text-white" />
           </div>
         </div>
       </div>
-    </VendorLayout>
   );
 }

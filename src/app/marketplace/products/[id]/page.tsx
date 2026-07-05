@@ -141,7 +141,7 @@ export default function ProductDetailPage() {
   // ✅ État de chargement
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-emerald-700 font-medium">Chargement du produit...</p>
@@ -153,7 +153,7 @@ export default function ProductDetailPage() {
   // ✅ État d'erreur
   if (error || !product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
           <div className="text-6xl mb-4">🔍</div>
           <h2 className="text-2xl font-bold text-gray-800">Produit introuvable</h2>
@@ -174,8 +174,8 @@ export default function ProductDetailPage() {
 
   // ✅ Affichage du produit
   return (
-    <div className="min-h-screen bg-neutral-50 pb-20">
-      <main className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
+    <div className="min-h-screen bg-transparent pb-8">
+      <main className="mx-auto max-w-7xl px-0 py-5 sm:py-6">
         {/* Fil d'Ariane */}
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
           <a href="/marketplace" className="hover:text-emerald-600 transition">Marketplace</a>
