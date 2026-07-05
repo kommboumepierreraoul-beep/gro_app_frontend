@@ -141,24 +141,29 @@ export default function MissionNavbar() {
         <button
           ref={buttonRef}
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="fixed bottom-24 right-4 z-50 flex items-center justify-center w-14 h-14 rounded-full shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
+          className="fixed right-0 top-[46%] z-[70] flex -translate-y-1/2 items-center gap-1 rounded-l-2xl border border-r-0 border-white/30 px-2.5 py-4 shadow-2xl backdrop-blur-md transition-all duration-200 hover:pr-3 active:scale-95"
           style={{
-            background: "linear-gradient(135deg, #154212 0%, #2d5a27 100%)",
-            boxShadow: "0 4px 20px rgba(21,66,18,0.3)",
+            background:
+              "linear-gradient(135deg, rgba(49,69,45,0.98) 0%, rgba(31,45,29,0.98) 100%)",
+            boxShadow:
+              "0 0 0 1px rgba(232,245,223,0.22), 0 12px 32px rgba(25,28,24,0.30), 0 0 28px rgba(188,240,174,0.32)",
             color: "white",
           }}
+          aria-label={isMobileMenuOpen ? "Fermer le menu missions" : "Ouvrir le menu missions"}
         >
           {isMobileMenuOpen ? (
-            // eslint-disable-next-line react/jsx-no-undef
-            <X size={24} strokeWidth={2} />
+            <X size={20} strokeWidth={2} />
           ) : (
-            <Menu size={24} strokeWidth={2} />
+            <>
+              <ChevronLeft size={24} strokeWidth={2.6} className="animate-pulse" />
+              <Briefcase size={16} strokeWidth={2} />
+            </>
           )}
         </button>
 
         {/* Overlay mobile */}
         <div
-          className={`fixed inset-0 z-40 transition-all duration-300 ${
+          className={`fixed inset-0 z-[60] transition-all duration-300 ${
             isMobileMenuOpen
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none"
@@ -173,18 +178,18 @@ export default function MissionNavbar() {
         {/* Menu mobile - Drawer depuis le bas */}
         <div
           ref={menuRef}
-          className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${
+          className={`fixed bottom-0 left-0 right-0 z-[70] rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${
             isMobileMenuOpen ? "translate-y-0" : "translate-y-full"
           }`}
           style={{
             background: "rgba(249,250,242,0.98)",
             backdropFilter: "blur(20px)",
-            maxHeight: "80vh",
-            borderTop: "1px solid rgba(194,201,187,0.2)",
+            maxHeight: "min(82vh, 680px)",
+            borderTop: "1px solid rgba(194,201,187,0.35)",
           }}
         >
           {/* Poignée "tirez-moi" */}
-          <div className="flex justify-center pt-3 pb-1">
+          <div className="flex justify-center pb-1 pt-3">
             <div
               className="w-12 h-1 rounded-full"
               style={{ background: "#c2c9bb" }}
@@ -192,9 +197,9 @@ export default function MissionNavbar() {
           </div>
 
           {/* Header du drawer */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(194,201,187,0.2)]">
+          <div className="flex items-center justify-between border-b border-[rgba(194,201,187,0.25)] px-4 py-3">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#154212] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[#31452d] flex items-center justify-center">
                 <Briefcase size={16} className="text-white" />
               </div>
               <h2 className="text-lg font-semibold text-[#191c18]">Missions</h2>
@@ -206,8 +211,8 @@ export default function MissionNavbar() {
 
           {/* Navigation - Scrollable */}
           <div
-            className="overflow-y-auto p-3"
-            style={{ maxHeight: "calc(80vh - 120px)" }}
+            className="overflow-y-auto p-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            style={{ maxHeight: "calc(min(82vh, 680px) - 86px)" }}
           >
             <div className="space-y-1">
               {links.map((item) => {
@@ -227,8 +232,8 @@ export default function MissionNavbar() {
                       group
                       ${
                         active
-                          ? "bg-[#154212] text-white shadow-md"
-                          : "hover:bg-[rgba(188,240,174,0.15)] text-[#191c18]"
+                          ? "bg-[#31452d] text-white shadow-md"
+                          : "hover:bg-[rgba(49,69,45,0.08)] text-[#191c18]"
                       }
                     `}
                   >
@@ -309,7 +314,7 @@ export default function MissionNavbar() {
           {/* Header du drawer tablette */}
           <div className="flex items-center justify-between p-4 border-b border-[rgba(194,201,187,0.2)]">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#154212] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[#31452d] flex items-center justify-center">
                 <Briefcase size={16} className="text-white" />
               </div>
               <h2 className="text-lg font-semibold text-[#191c18]">Missions</h2>
@@ -342,8 +347,8 @@ export default function MissionNavbar() {
                       group
                       ${
                         active
-                          ? "bg-[#154212] text-white shadow-md"
-                          : "hover:bg-[rgba(188,240,174,0.15)] text-[#191c18]"
+                          ? "bg-[#31452d] text-white shadow-md"
+                          : "hover:bg-[rgba(49,69,45,0.08)] text-[#191c18]"
                       }
                     `}
                   >
@@ -410,7 +415,7 @@ export default function MissionNavbar() {
           >
             {!isCollapsed && (
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-[#154212] flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-[#31452d] flex items-center justify-center">
                   <Briefcase size={14} className="text-white" />
                 </div>
                 <span className="text-sm font-semibold text-[#191c18]">
@@ -461,8 +466,8 @@ export default function MissionNavbar() {
                     mx-1.5
                     ${
                       active
-                        ? "bg-[#154212] text-white shadow-md"
-                        : "hover:bg-[rgba(188,240,174,0.15)] text-[#191c18]"
+                        ? "bg-[#31452d] text-white shadow-md"
+                        : "hover:bg-[rgba(49,69,45,0.08)] text-[#191c18]"
                     }
                   `}
                   title={isCollapsed ? item.label : undefined}

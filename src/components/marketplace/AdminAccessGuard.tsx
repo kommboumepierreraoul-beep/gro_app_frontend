@@ -15,8 +15,12 @@ export function AdminAccessGuard({ children }: { children: React.ReactNode }) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin-access"],
     queryFn: async () => {
-      const response = await api.get("/user");
-      const user = (response.data?.data ?? response.data) as CurrentUser;
+      const response = await api.get("/auth/profile");
+      const user = (
+        response.data?.user ??
+        response.data?.data ??
+        response.data
+      ) as CurrentUser;
 
       if (user?.role !== "admin" && user?.is_admin !== true) {
         throw new Error("NOT_ADMIN");

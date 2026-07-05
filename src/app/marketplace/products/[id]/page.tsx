@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { productService } from '@/services/product.service';
+import { messageService } from '@/services/community/message.service';
 import { ChevronLeft, ChevronRight, Heart, Share2, Truck, Star, MessageCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -20,6 +21,7 @@ interface Product {
   };
   shop?: {
     id: number;
+    user_id?: number;
     name: string;
     logo: string;
     banner?: string;
@@ -34,8 +36,34 @@ interface Product {
   updated_at?: string;
 }
 
+type ProductApiResponse = Product | { data?: Product | { data?: Product } };
+
+type ApiError = {
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+};
+
+const toApiError = (error: unknown): ApiError =>
+  error && typeof error === 'object' ? (error as ApiError) : {};
+
+const extractProduct = (response: ProductApiResponse): Product | null => {
+  if ("id" in response) return response;
+
+  const firstData = response.data;
+  if (!firstData) return null;
+
+  if ("id" in firstData) return firstData;
+  return firstData.data ?? null;
+};
+
 export default function ProductDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,14 +71,9 @@ export default function ProductDetailPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
 
-  useEffect(() => {
-    if (params?.id) {
-      loadProduct();
-    }
-  }, [params?.id]);
-
-  const loadProduct = async () => {
+  const loadProduct = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -62,15 +85,12 @@ export default function ProductDetailPage() {
       }
 
       // ✅ Appel API avec gestion correcte de la réponse
-      const response: any = await productService.getProduct(productId);
+      const response = (await productService.getProduct(
+        productId,
+      )) as ProductApiResponse;
       
       // ✅ Extraction correcte des données quel que soit le format
-      let productData = response?.data?.data ?? response?.data ?? response;
-
-      console.log("PRODUCT =", productData);
-      console.log("SHOP =", productData?.shop);
-      console.log("LOGO =", productData?.shop?.logo);
-      console.log("BANNER =", productData?.shop?.banner);
+      const productData = extractProduct(response);
 
       if (!productData) {
         throw new Error('Produit introuvable');
@@ -82,27 +102,35 @@ export default function ProductDetailPage() {
         setSelectedImage(productData.images[0]);
       }
 
-    } catch (err: any) {
+    } catch (err) {
+      const apiError = toApiError(err);
       console.error('Erreur de chargement:', err);
       
       // ✅ Gestion des erreurs plus précise
-      if (err.response?.status === 404) {
+      if (apiError.response?.status === 404) {
         setError('Produit non trouvé');
         toast.error('Produit non trouvé');
-      } else if (err.response?.status === 500) {
+      } else if (apiError.response?.status === 500) {
         setError('Erreur serveur, veuillez réessayer plus tard');
         toast.error('Erreur serveur');
-      } else if (err.response?.status === 401) {
+      } else if (apiError.response?.status === 401) {
         setError('Session expirée, veuillez vous reconnecter');
         toast.error('Session expirée');
       } else {
-        setError(err.message || 'Erreur lors du chargement du produit');
-        toast.error(err.message || 'Erreur de chargement');
+        setError(apiError.message || 'Erreur lors du chargement du produit');
+        toast.error(apiError.message || 'Erreur de chargement');
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (params?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadProduct();
+    }
+  }, [loadProduct, params?.id]);
 
   const nextImage = () => {
     if (product?.images?.length) {
@@ -124,7 +152,7 @@ export default function ProductDetailPage() {
     try {
       // TODO: Implémenter l'ajout au panier
       toast.success('Produit ajouté au panier');
-    } catch (error) {
+    } catch {
       toast.error('Erreur lors de l\'ajout');
     }
   };
@@ -133,8 +161,31 @@ export default function ProductDetailPage() {
     try {
       setIsWishlisted(!isWishlisted);
       toast.success(isWishlisted ? 'Retiré des favoris' : 'Ajouté aux favoris');
-    } catch (error) {
+    } catch {
       toast.error('Erreur');
+    }
+  };
+
+  const contactSeller = async () => {
+    if (!product?.shop?.user_id) {
+      toast.error("Impossible d'identifier le vendeur");
+      return;
+    }
+
+    setIsCreatingConversation(true);
+    try {
+      const conversation = await messageService.createOrFindConversation(
+        product.shop.user_id,
+      );
+      router.push(`/messages?id=${conversation.id}`);
+    } catch (error) {
+      const apiError = toApiError(error);
+      toast.error(
+        apiError.response?.data?.message ||
+          "Impossible d'ouvrir la conversation",
+      );
+    } finally {
+      setIsCreatingConversation(false);
     }
   };
 
@@ -175,15 +226,15 @@ export default function ProductDetailPage() {
   // ✅ Affichage du produit
   return (
     <div className="min-h-screen bg-transparent pb-8">
-      <main className="mx-auto max-w-7xl px-0 py-5 sm:py-6">
+      <main className="mx-auto max-w-7xl py-4 sm:py-6">
         {/* Fil d'Ariane */}
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <div className="mb-5 flex min-w-0 items-center gap-2 overflow-hidden text-sm text-gray-500 sm:mb-6">
           <a href="/marketplace" className="hover:text-emerald-600 transition">Marketplace</a>
           <span>›</span>
-          <span className="text-gray-800 font-medium">{product.name}</span>
+          <span className="truncate font-medium text-gray-800">{product.name}</span>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12">
+        <div className="grid gap-7 lg:grid-cols-2 lg:gap-12">
           {/* COLONNE GAUCHE - IMAGES */}
           <div className="space-y-4">
             <div className="relative group bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
@@ -261,7 +312,7 @@ export default function ProductDetailPage() {
 
             {/* Titre et catégorie */}
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800">{product.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl md:text-4xl">{product.name}</h1>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-sm text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                   {product.category?.name || 'Agriculture'}
@@ -270,7 +321,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Évaluation */}
-            <div className="flex items-center gap-3 border-y border-gray-100 py-4">
+            <div className="flex flex-wrap items-center gap-2 border-y border-gray-100 py-4 sm:gap-3">
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />
@@ -282,7 +333,7 @@ export default function ProductDetailPage() {
 
             {/* Prix */}
             <div className="bg-gradient-to-r from-emerald-50 to-emerald-100/30 rounded-2xl p-5">
-              <div className="text-4xl font-black text-emerald-700">
+              <div className="text-3xl font-black text-emerald-700 sm:text-4xl">
                 {Number(product.price).toLocaleString()} <span className="text-xl font-medium">FCFA</span>
               </div>
               {product.unit_price && (
@@ -292,7 +343,7 @@ export default function ProductDetailPage() {
 
             {/* Quantité et actions */}
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 <span className="font-medium text-gray-700">Quantité :</span>
                 <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
                   <button
@@ -324,7 +375,7 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
-              <div className="flex justify-between gap-3 pt-2">
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-between">
                 <button
                   onClick={toggleWishlist}
                   className={`flex-1 h-12 rounded-xl border border-gray-200 font-medium transition flex items-center justify-center gap-2 ${
@@ -357,8 +408,8 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Bloc Vendeur */}
-            <div className="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
                 <img
                   src={product.shop?.logo || 'https://via.placeholder.com/48'}
                   className="w-12 h-12 rounded-full object-cover border-2 border-emerald-200"
@@ -367,21 +418,25 @@ export default function ProductDetailPage() {
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/48';
                   }}
                 />
-                <div>
-                  <h4 className="font-bold text-gray-800">{product.shop?.name || 'Vendeur partenaire'}</h4>
+                <div className="min-w-0">
+                  <h4 className="truncate font-bold text-gray-800">{product.shop?.name || 'Vendeur partenaire'}</h4>
                   <p className="text-xs text-gray-500">Vendeur vérifié • 98% de satisfaction</p>
                 </div>
               </div>
-              <button className="px-4 py-2 rounded-full border border-emerald-600 text-emerald-600 text-sm font-medium hover:bg-emerald-50 transition flex items-center gap-2">
+              <button
+                onClick={contactSeller}
+                disabled={isCreatingConversation}
+                className="flex items-center justify-center gap-2 rounded-full border border-emerald-600 px-4 py-2 text-sm font-medium text-emerald-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 sm:justify-start"
+              >
                 <MessageCircle className="w-4 h-4" />
-                Contacter
+                {isCreatingConversation ? 'Ouverture...' : 'Contacter'}
               </button>
             </div>
           </div>
         </div>
 
         {/* DESCRIPTION DÉTAILLÉE */}
-        <div className="mt-16 bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+        <div className="mt-10 rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:mt-16 sm:p-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">📄 Description du produit</h2>
           <div className="prose prose-emerald max-w-none text-gray-600 leading-relaxed">
             {product.description}
@@ -412,9 +467,9 @@ export default function ProductDetailPage() {
         </div>
 
         {/* PRODUITS SIMILAIRES */}
-        <div className="mt-16">
+        <div className="mt-10 sm:mt-16">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">✨ Vous pourriez aussi aimer</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
             {[1, 2, 3, 4].map((item) => (
               <div
                 key={item}

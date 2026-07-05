@@ -16,7 +16,6 @@ import {
   Briefcase,
   CheckCircle,
   Edit2,
-  UserPlus,
 } from "lucide-react";
 
 import { profileService } from "@/services/community/profile.service";
@@ -24,7 +23,6 @@ import { postService } from "@/services/community/post.service";
 import { followService } from "@/services/community/follow.service";
 import { messageService } from "@/services/community/message.service";
 
-import { ProfileHeader } from "@/components/community/profile/ProfileHeader";
 import { PostCard } from "@/components/community/feed/posts/PostCard";
 import { Avatar } from "@/components/community/shared/Avatar";
 
@@ -167,8 +165,8 @@ export default function MyProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="min-h-full bg-[#f9faf2]">
+      <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         <div className="space-y-4">
           {/* ─── PROFILE CARD ─── */}
           <div className="overflow-hidden rounded-2xl border border-[#c2c9bb]/30 bg-white shadow-sm">
@@ -349,7 +347,7 @@ export default function MyProfilePage() {
                 <div>
                   {loadingFollowers ? (
                     <div className="flex justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-950 border-t-transparent" />
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#31452d] border-t-transparent" />
                     </div>
                   ) : followers.length === 0 ? (
                     <EmptyState label="Aucun abonné" />

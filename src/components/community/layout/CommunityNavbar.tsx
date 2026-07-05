@@ -11,8 +11,8 @@ import {
   Settings,
   LogOut,
   Bell,
+  Crown,
   HelpCircle,
-  ShieldCheck,
   X,
 } from "lucide-react";
 
@@ -37,7 +37,7 @@ const getAvatarUrl = (avatar?: string | null): string | undefined => {
 export function CommunityNavbar() {
   const { user } = useAuthStore();
   const { logout } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "admin" || user?.is_admin === true;
 
   const unreadNotifs = useCommunityStore((s) => s.unreadNotifs);
 
@@ -154,19 +154,26 @@ export function CommunityNavbar() {
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className="hidden sm:flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold transition-all duration-150"
-                  style={{ color: "#154212" }}
+                  title="Espace administrateur"
+                  aria-label="Ouvrir l'espace administrateur"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold shadow-sm transition-all duration-150"
+                  style={{
+                    color: "#5f4300",
+                    background:
+                      "linear-gradient(135deg, rgba(255,214,102,0.95) 0%, rgba(255,245,204,0.95) 100%)",
+                    border: "1px solid rgba(166,124,0,0.25)",
+                  }}
                   onMouseEnter={(e) =>
                     ((e.currentTarget as HTMLElement).style.background =
-                      "rgba(194,201,187,0.3)")
+                      "linear-gradient(135deg, rgba(255,198,41,1) 0%, rgba(255,235,173,1) 100%)")
                   }
                   onMouseLeave={(e) =>
                     ((e.currentTarget as HTMLElement).style.background =
-                      "transparent")
+                      "linear-gradient(135deg, rgba(255,214,102,0.95) 0%, rgba(255,245,204,0.95) 100%)")
                   }
                 >
-                  <ShieldCheck className="h-4 w-4" />
-                  Admin
+                  <Crown className="h-4 w-4 fill-current" />
+                  <span className="hidden sm:inline">Admin</span>
                 </Link>
               )}
 
@@ -296,7 +303,7 @@ export function CommunityNavbar() {
                       {[
                         {
                           href: "/admin",
-                          icon: ShieldCheck,
+                          icon: Crown,
                           label: "Espace admin",
                           adminOnly: true,
                         },

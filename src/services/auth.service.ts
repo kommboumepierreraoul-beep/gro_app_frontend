@@ -11,7 +11,8 @@ export interface User {
   email: string;
   phone?: string;
   avatar?: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "seller" | "fournisseur";
+  is_admin?: boolean;
   email_verified_at: string | null;
 }
 

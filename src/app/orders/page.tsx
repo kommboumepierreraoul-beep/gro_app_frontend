@@ -234,8 +234,8 @@ const payWithNotchPay = async () => {
 
   return (
     <>
-      <main className="mx-auto max-w-7xl px-0 py-5 pb-20">
-        <div className="relative mb-10 rounded-2xl overflow-hidden h-40 flex flex-col justify-center px-8 bg-gradient-to-r from-emerald-800 to-emerald-600 shadow-lg">
+      <main className="mx-auto max-w-7xl py-4 pb-24 sm:py-5">
+        <div className="relative mb-6 flex h-36 flex-col justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-800 to-emerald-600 px-5 shadow-lg sm:mb-10 sm:h-40 sm:px-8">
           <div className="absolute inset-0 bg-black/20" />
           <div className="relative z-10">
             <h1 className="text-2xl font-bold text-white mb-1">Mes Commandes</h1>
@@ -243,7 +243,7 @@ const payWithNotchPay = async () => {
           </div>
         </div>
 
-        <div className="mb-8 bg-white/70 rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col md:flex-row gap-4 items-center">
+        <div className="mb-8 flex flex-col gap-4 rounded-xl border border-gray-200 bg-white/70 p-3 shadow-sm sm:p-4 md:flex-row md:items-center">
           <div className="relative w-full md:flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
@@ -254,7 +254,7 @@ const payWithNotchPay = async () => {
               className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
             />
           </div>
-          <div className="flex gap-2 bg-gray-100 p-1 rounded-full flex-wrap">
+          <div className="flex w-full gap-2 overflow-x-auto rounded-2xl bg-gray-100 p-1 md:w-auto md:flex-wrap">
             {['all', 'draft', 'paid', 'preparing', 'shipping', 'delivered', 'completed', 'cancelled'].map((s) => (
               <button
                 key={s}

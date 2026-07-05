@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/purity */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import Link from "next/link";
@@ -66,6 +68,21 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+const parseImages = (images: unknown): string[] => {
+  if (Array.isArray(images)) return images.filter(Boolean).map(String);
+  if (typeof images !== "string" || images.trim() === "") return [];
+
+  try {
+    const parsed = JSON.parse(images);
+    if (Array.isArray(parsed)) return parsed.filter(Boolean).map(String);
+    if (typeof parsed === "string" && parsed.trim() !== "") return [parsed];
+  } catch {
+    return [images];
+  }
+
+  return [];
+};
+
 export default function MarketplacePage() {
   const router = useRouter();
   const { addItem } = useCart();
@@ -77,7 +94,10 @@ export default function MarketplacePage() {
   const [sortBy, setSortBy] = useState<
     "date_desc" | "price_asc" | "price_desc"
   >("date_desc");
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 1000000 });
+  const [priceRange, setPriceRange] = useState<{
+    min: number;
+    max: number | null;
+  }>({ min: 0, max: null });
   const [showPriceFilter, setShowPriceFilter] = useState(false);
 
   const debouncedSearch = useDebounce(searchTerm, 300);
@@ -120,10 +140,8 @@ export default function MarketplacePage() {
           Array.isArray(productsData) ? productsData : []
         ).map((p: any) => ({
           ...p,
-          images:
-            typeof p.images === "string"
-              ? JSON.parse(p.images)
-              : p.images || [],
+          price: Number(p.price) || 0,
+          images: parseImages(p.images),
         }));
         setProducts(parsedProducts);
         setCategories(Array.isArray(categoriesData) ? categoriesData : []);
@@ -144,8 +162,14 @@ export default function MarketplacePage() {
     .filter(
       (p) => selectedCategory === null || p.category?.id === selectedCategory,
     )
-    .filter((p) => p.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
-    .filter((p) => p.price >= priceRange.min && p.price <= priceRange.max)
+    .filter((p) =>
+      p.name.toLowerCase().includes(debouncedSearch.toLowerCase()),
+    )
+    .filter(
+      (p) =>
+        p.price >= priceRange.min &&
+        (priceRange.max === null || p.price <= priceRange.max),
+    )
     .sort((a, b) => {
       if (sortBy === "price_asc") return a.price - b.price;
       if (sortBy === "price_desc") return b.price - a.price;
@@ -202,7 +226,7 @@ export default function MarketplacePage() {
       {/* HEADER - Professionnel et responsive */}
       <header className="sticky top-16 z-30 rounded-2xl border border-[#c2c9bb]/35 bg-white/90 shadow-sm backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-3 sm:px-5 lg:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 py-3">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#154212] shadow-sm">
                 <Sprout className="text-white w-5 h-5" />
@@ -216,7 +240,7 @@ export default function MarketplacePage() {
                 </p>
               </div>
             </div>
-            <div className="relative flex-1 min-w-[200px] max-w-md lg:max-w-lg">
+            <div className="relative order-3 w-full min-w-0 sm:order-none sm:flex-1 sm:max-w-md lg:max-w-lg">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#72796e]" />
               <input
                 type="text"
@@ -226,7 +250,7 @@ export default function MarketplacePage() {
                 className="h-11 w-full rounded-xl border border-[#c2c9bb]/45 bg-[#f9faf2]/80 pl-11 pr-4 text-sm text-[#191c18] transition placeholder:text-[#72796e] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#bcf0ae]"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <Link
                 href="/orders"
                 className="rounded-xl border border-[#c2c9bb]/45 bg-white/80 p-2 transition hover:bg-[#eaf3de]"
@@ -238,7 +262,7 @@ export default function MarketplacePage() {
               </button>
               <Link
                 href="/add-product"
-                className="flex items-center gap-1 rounded-xl bg-[#154212] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#2d5a27]"
+                className="hidden items-center gap-1 rounded-xl bg-[#154212] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#2d5a27] sm:flex"
               >
                 <Plus className="w-4 h-4" />
                 Ajouter un produit
@@ -248,10 +272,10 @@ export default function MarketplacePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-0 py-5 sm:py-6">
+      <main className="mx-auto max-w-7xl py-4 sm:py-6">
         {/* FILTRES - Design épuré */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[#c2c9bb]/35 pb-4">
-          <div className="flex items-center gap-3 overflow-x-auto pb-1 hide-scrollbar">
+        <div className="mb-6 flex flex-col gap-3 border-b border-[#c2c9bb]/35 pb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3 overflow-x-auto pb-1 hide-scrollbar">
             <span className="whitespace-nowrap rounded-full bg-[#eaf3de] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#154212]">
               Catégories
             </span>
@@ -276,11 +300,11 @@ export default function MarketplacePage() {
               ))}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex w-full gap-2 sm:w-auto">
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="h-9 px-3 rounded-lg border border-emerald-100 bg-white text-xs font-medium focus:ring-2 focus:ring-emerald-400"
+              className="h-9 min-w-0 flex-1 rounded-lg border border-emerald-100 bg-white px-3 text-xs font-medium focus:ring-2 focus:ring-emerald-400 sm:flex-none"
             >
               <option value="date_desc">Plus récents</option>
               <option value="price_asc">Prix croissant</option>
@@ -288,7 +312,7 @@ export default function MarketplacePage() {
             </select>
             <button
               onClick={() => setShowPriceFilter(!showPriceFilter)}
-              className="h-9 px-3 rounded-lg border border-emerald-100 bg-white text-xs font-medium flex items-center gap-1 hover:bg-emerald-50 transition"
+              className="flex h-9 items-center gap-1 rounded-lg border border-emerald-100 bg-white px-3 text-xs font-medium transition hover:bg-emerald-50"
             >
               <Filter className="w-4 h-4" /> Prix
             </button>
@@ -297,7 +321,7 @@ export default function MarketplacePage() {
 
         {/* FILTRE PRIX (déroulant) */}
         {showPriceFilter && (
-          <div className="mb-6 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-emerald-100 flex flex-col sm:flex-row gap-4 items-center">
+          <div className="mb-6 flex flex-col gap-4 rounded-xl border border-emerald-100 bg-white/80 p-4 backdrop-blur-sm sm:flex-row sm:items-center">
             <div className="flex-1">
               <label className="block text-xs font-medium text-slate-600 mb-1">
                 Min (FCFA)
@@ -317,9 +341,12 @@ export default function MarketplacePage() {
               </label>
               <input
                 type="number"
-                value={priceRange.max}
+                value={priceRange.max ?? ""}
                 onChange={(e) =>
-                  setPriceRange({ ...priceRange, max: +e.target.value })
+                  setPriceRange({
+                    ...priceRange,
+                    max: e.target.value === "" ? null : +e.target.value,
+                  })
                 }
                 className="w-full px-3 py-2 rounded-lg border border-emerald-100 text-sm focus:ring-2 focus:ring-emerald-400"
               />
@@ -328,30 +355,31 @@ export default function MarketplacePage() {
         )}
 
         {/* SECTION HERO - Modernisée */}
-        <section className="relative overflow-hidden rounded-2xl h-72 sm:h-[380px] mb-12">
+        <section className="relative mb-10 h-[300px] overflow-hidden rounded-2xl sm:mb-12 sm:h-[380px]">
           <img
+            alt=""
             src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=90&w=2000&auto=format&fit=crop"
             className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-          <div className="relative h-full flex items-center px-6 sm:px-10">
+          <div className="relative flex h-full items-center px-5 sm:px-10">
             <div className="max-w-lg text-white">
               <div className="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur text-xs tracking-wider font-semibold mb-4">
                 SPRING COLLECTION 2026
               </div>
-              <h1 className="text-4xl sm:text-6xl font-black leading-tight">
+              <h1 className="text-3xl font-black leading-tight sm:text-6xl">
                 Harvest <br />
                 <span className="text-emerald-300">Excellence.</span>
               </h1>
               <p className="mt-4 text-white/80 text-sm sm:text-base">
                 Produits certifiés pour une agriculture moderne et rentable.
               </p>
-              <div className="flex gap-3 mt-6">
-                <button className="px-6 py-2 bg-white text-emerald-800 rounded-full font-semibold text-sm shadow-md hover:bg-emerald-50 transition">
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-emerald-800 shadow-md transition hover:bg-emerald-50 sm:px-6">
                   Explorer
                 </button>
-                <button className="px-6 py-2 border border-white/40 text-white rounded-full text-sm backdrop-blur-sm hover:bg-white/10 transition">
+                <button className="rounded-full border border-white/40 px-5 py-2 text-sm text-white backdrop-blur-sm transition hover:bg-white/10 sm:px-6">
                   En savoir plus
                 </button>
               </div>
@@ -394,7 +422,7 @@ export default function MarketplacePage() {
 
           <div
             ref={trendingRef}
-            className="flex gap-5 overflow-x-auto scroll-smooth pb-3 custom-scrollbar snap-x"
+            className="flex gap-4 overflow-x-auto scroll-smooth pb-3 custom-scrollbar snap-x sm:gap-5"
           >
             {trendingItems.length === 0 ? (
               <div className="flex items-center justify-center w-full h-48 bg-white/50 rounded-xl border border-dashed">
@@ -404,7 +432,7 @@ export default function MarketplacePage() {
               trendingItems.map((product) => (
                 <div
                   key={product.id}
-                  className="group relative flex-shrink-0 w-64 sm:w-72 bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer snap-start"
+                  className="group relative w-[82vw] max-w-72 flex-shrink-0 cursor-pointer snap-start overflow-hidden rounded-xl bg-white shadow-md transition-all hover:-translate-y-1 hover:shadow-xl sm:w-72"
                   onClick={() =>
                     router.push(`/marketplace/products/${product.id}`)
                   }
@@ -481,7 +509,7 @@ export default function MarketplacePage() {
               Voir tout <ArrowRight className="w-4 h-4" />
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProducts.map((product) => {
               const isNew =
                 new Date(product.created_at) >

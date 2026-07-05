@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   X,
   MessageCircle,
@@ -14,7 +15,9 @@ import {
 import { useMissionStore } from "@/stores/useMissionStore";
 import { useMission } from "@/hooks/missions/useMissions";
 import { useApplyToMission } from "@/hooks/missions/useMissionMutate";
+import { messageService } from "@/services/community/message.service";
 import ApplicationFormRenderer from "./ApplicationFormRenderer";
+import toast from "react-hot-toast";
 
 interface Props {
   onClose: () => void;
@@ -22,7 +25,24 @@ interface Props {
 
 type Method = "form" | "app_message" | "whatsapp" | "email";
 
+type ApiError = {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+};
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === "object") {
+    return (error as ApiError).response?.data?.message || fallback;
+  }
+
+  return fallback;
+};
+
 export default function ApplicationModal({ onClose }: Props) {
+  const router = useRouter();
   const applyModalMissionUlid = useMissionStore((s) => s.applyModalMissionUlid);
   const { data: mission } = useMission(applyModalMissionUlid ?? "");
   const applyMutation = useApplyToMission();
@@ -34,6 +54,7 @@ export default function ApplicationModal({ onClose }: Props) {
   const [motivation, setMotivation] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [success, setSuccess] = useState(false);
+  const [isOpeningConversation, setIsOpeningConversation] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -71,7 +92,31 @@ export default function ApplicationModal({ onClose }: Props) {
       : []),
   ];
 
-  const handleSubmit = () => {
+  const getMessageContent = () =>
+    `Bonjour, je suis intéressé(e) par votre mission "${mission.title}". Je serais ravi(e) d'en discuter avec vous. Bonne journée !`;
+
+  const handleSubmit = async () => {
+    if (method === "app_message") {
+      if (!mission.author?.id) return;
+
+      setIsOpeningConversation(true);
+      try {
+        const conversation = await messageService.createOrFindConversation(
+          mission.author.id,
+        );
+        await messageService.sendMessage(conversation.id, getMessageContent());
+        onClose();
+        router.push(`/messages?id=${conversation.id}`);
+      } catch (error) {
+        toast.error(
+          getApiErrorMessage(error, "Impossible d'ouvrir la conversation"),
+        );
+      } finally {
+        setIsOpeningConversation(false);
+      }
+      return;
+    }
+
     const fd = new FormData();
     fd.append("mission_ulid", mission.ulid);
     fd.append("method", method);
@@ -268,15 +313,17 @@ export default function ApplicationModal({ onClose }: Props) {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={applyMutation.isPending}
+                  disabled={applyMutation.isPending || isOpeningConversation}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#154212] text-white font-semibold text-xs tracking-widest uppercase hover:bg-[#2d5a27] shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-60"
                 >
-                  {applyMutation.isPending ? (
+                  {applyMutation.isPending || isOpeningConversation ? (
                     <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                   ) : (
                     <Send size={15} />
                   )}
-                  Envoyer ma candidature
+                  {method === "app_message"
+                    ? "Ouvrir la conversation"
+                    : "Envoyer ma candidature"}
                 </button>
               </div>
             )}

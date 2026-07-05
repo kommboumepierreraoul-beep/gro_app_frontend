@@ -1,4 +1,3 @@
-// app/community/messages/layout.tsx
 "use client";
 
 import { CommunityNavbar } from "@/components/community/layout/CommunityNavbar";
@@ -12,31 +11,25 @@ export default function UserProfileLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className="h-full w-full g flex flex-col"
-      style={{ background: "#f9faf2" }}
-    >
+    <div className="flex h-dvh w-full flex-col overflow-hidden bg-[#f9faf2]">
       <Toaster position="top-right" />
 
-      {/* Navbar */}
-      <div className="flex-shrink-0 z-50">
+      <div className="z-50 flex-shrink-0">
         <CommunityNavbar />
       </div>
 
-      {/* Corps */}
-      <div className="flex  flex-1 h-full m-auto ">
-        {/* Sidebar gauche — desktop */}
-        <aside className="hidden lg:block  left-0 w-60 z-40 ">
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        <aside className="hidden w-72 shrink-0 border-r border-[rgba(194,201,187,0.3)] lg:block">
           <LeftSidebar />
         </aside>
 
-        {/* Contenu — liste + chat */}
-        <main className="flex flex-1  min-w-5xl">{children}</main>
+        <main className="min-w-0 flex-1 overflow-y-auto pb-20 lg:pb-0">
+          {children}
+        </main>
       </div>
 
-      {/* Nav mobile */}
       <div
-        className="lg:hidden flex-shrink-0 z-50"
+        className="z-50 flex-shrink-0 lg:hidden"
         style={{
           borderTop: "1px solid rgba(194,201,187,0.35)",
           background: "rgba(249,250,242,0.95)",
