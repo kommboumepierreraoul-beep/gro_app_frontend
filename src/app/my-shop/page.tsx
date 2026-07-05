@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import api from "@/lib/axios";
 import toast from "react-hot-toast";
-import VendorLayout from "@/components/layouts/VendorLayout";
 
 interface Product {
   id: number;
@@ -163,7 +162,7 @@ function MyShopContent() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => router.push("/edit-shop")}
+              onClick={() => router.push("/create-shop/configuration")}
               className="px-4 py-1.5 bg-black/20 backdrop-blur-sm rounded-full text-white text-sm font-medium hover:bg-black/30 transition"
             >
               Modifier
@@ -345,9 +344,5 @@ function MyShopContent() {
 }
 
 export default function MaBoutique() {
-  return (
-    <VendorLayout>
-      <MyShopContent />
-    </VendorLayout>
-  );
+  return <MyShopContent />;
 }

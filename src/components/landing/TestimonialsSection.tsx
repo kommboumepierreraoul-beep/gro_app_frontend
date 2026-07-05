@@ -8,23 +8,23 @@ const testimonials = [
     name: "Jean-Pierre Martin",
     role: "Agriculteur bio",
     content:
-      "Agripulse a transformé mon exploitation. J'ai trouvé des partenaires locaux et des formations qui ont fait la différence.",
+      "Agripulse a transforme mon exploitation. J'ai trouve des partenaires locaux et des formations qui ont fait la difference.",
     avatar: "JM",
     rating: 5,
   },
   {
     name: "Marie Dubois",
-    role: "Ingénieure agronome",
+    role: "Ingenieure agronome",
     content:
-      "La plateforme est intuitive et parfaitement adaptée aux besoins de la communauté agricole. Je recommande vivement !",
+      "La plateforme est intuitive et parfaitement adaptee aux besoins de la communaute agricole. Je recommande vivement !",
     avatar: "MD",
     rating: 5,
   },
   {
-    name: "Pierre Lefèvre",
-    role: "Éleveur",
+    name: "Pierre Lefevre",
+    role: "Eleveur",
     content:
-      "Grâce à Agripulse, j'ai pu échanger avec d'autres éleveurs et améliorer mes pratiques. Une communauté exceptionnelle.",
+      "Grace a Agripulse, j'ai pu echanger avec d'autres eleveurs et ameliorer mes pratiques. Une communaute exceptionnelle.",
     avatar: "PL",
     rating: 4,
   },
@@ -32,54 +32,62 @@ const testimonials = [
 
 export function TestimonialsSection() {
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-      <div className="container mx-auto max-w-6xl">
+    <section className="bg-[#f9faf2] px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1200px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
         >
-          <p className="text-[#3b6934] text-xs tracking-widest uppercase font-semibold mb-2">
-            Témoignages
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#3b6934]">
+              Temoignages
+            </p>
+            <h2 className="text-3xl font-bold text-[#191c18] sm:text-4xl">
+              Ce qu&apos;en disent nos membres
+            </h2>
+          </div>
+          <p className="max-w-lg text-sm leading-relaxed text-[#72796e] sm:text-base">
+            Des retours courts et faciles a scanner, dans le meme style de
+            cartes que les espaces communaute.
           </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#191c18] mb-4">
-            Ce qu'en disent nos membres
-          </h2>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {testimonials.map((testimonial, index) => (
             <motion.div
-              key={index}
+              key={testimonial.name}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              transition={{ duration: 0.5, delay: index * 0.08 }}
               viewport={{ once: true }}
-              className="p-6 rounded-2xl border border-[#c2c9bb]/20 hover:border-[#bcf0ae]/40 transition-all hover:shadow-lg group"
+              className="group rounded-2xl border border-[#c2c9bb]/30 bg-white/70 p-5 backdrop-blur-sm transition-all hover:border-[#bcf0ae]/70 hover:shadow-lg hover:shadow-[#154212]/5"
             >
-              <Quote className="w-6 h-6 text-[#bcf0ae] mb-4 opacity-50" />
-              <p className="text-[#42493e] text-sm leading-relaxed mb-4">
-                "{testimonial.content}"
+              <Quote className="mb-4 h-6 w-6 text-[#154212] opacity-35" />
+              <p className="mb-5 text-sm leading-relaxed text-[#42493e]">
+                &quot;{testimonial.content}&quot;
               </p>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#154212] to-[#2d5a27] flex items-center justify-center text-white font-semibold text-xs">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#154212] to-[#2d5a27] text-xs font-semibold text-white">
                   {testimonial.avatar}
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-[#191c18]">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[#191c18]">
                     {testimonial.name}
                   </p>
-                  <p className="text-xs text-[#72796e]">{testimonial.role}</p>
+                  <p className="truncate text-xs text-[#72796e]">
+                    {testimonial.role}
+                  </p>
                 </div>
                 <div className="ml-auto flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-3 h-3 ${
+                      className={`h-3 w-3 ${
                         i < testimonial.rating
-                          ? "text-[#ff9800] fill-[#ff9800]"
+                          ? "fill-[#ff9800] text-[#ff9800]"
                           : "text-[#e7e9e1]"
                       }`}
                     />

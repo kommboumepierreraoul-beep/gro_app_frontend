@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import VendorLayout from "@/components/layouts/VendorLayout";
 import { useState, useEffect } from "react";
 import api from "@/lib/axios";
 import toast from "react-hot-toast";
@@ -22,8 +21,6 @@ import {
   TrendingUp,
   PlusCircle,
   MinusCircle,
-  ArrowDown,
-  ArrowUp,
   RefreshCw,
   FileText,
   Grid,
@@ -36,9 +33,9 @@ import {
   ChevronRight,
   X,
   Loader2,
-  WalletCards,
   ArrowDownCircle,
-  ArrowUpCircle,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 type Transaction = {
@@ -65,6 +62,7 @@ function WalletContent() {
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showBalance, setShowBalance] = useState(true);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [depositModal, setDepositModal] = useState(false);
   const [withdrawModal, setWithdrawModal] = useState(false);
   const [amount, setAmount] = useState("");
@@ -79,6 +77,31 @@ function WalletContent() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const isLight = theme === "light";
+  const walletUi = {
+    shell: isLight
+      ? "border border-[#c2c9bb]/35 bg-[#f9faf2] text-[#191c18]"
+      : "bg-slate-950 text-white",
+    card: isLight
+      ? "border border-[#c2c9bb]/40 bg-white/85"
+      : "border border-white/10 bg-white/5",
+    softCard: isLight
+      ? "border border-[#c2c9bb]/30 bg-white/75"
+      : "border border-white/10 bg-white/5",
+    title: isLight ? "text-[#191c18]" : "text-white",
+    muted: isLight ? "text-[#72796e]" : "text-slate-400",
+    accent: isLight ? "text-[#154212]" : "text-lime-400",
+    accentBg: isLight ? "bg-[#eaf3de]" : "bg-lime-500/20",
+    secondaryButton: isLight
+      ? "border border-[#c2c9bb]/45 bg-white text-[#154212] hover:bg-[#eaf3de]"
+      : "bg-white/10 text-white hover:bg-white/20",
+    tabIdle: isLight
+      ? "bg-white text-[#42493e] hover:bg-[#eaf3de]"
+      : "bg-white/5 text-slate-300 hover:bg-white/10",
+    chartGrid: isLight ? "#d9ddd2" : "#334155",
+    chartText: isLight ? "#72796e" : "#94a3b8",
+    tooltipBg: isLight ? "#ffffff" : "#1e293b",
+  };
 
   const fetchWalletData = async () => {
     try {
@@ -235,7 +258,7 @@ function WalletContent() {
 
   const getTxColor = (tx: Transaction) => {
     if (tx.type === "credit" || tx.type === "deposit") return "text-lime-400";
-    return "text-white";
+    return isLight ? "text-[#191c18]" : "text-white";
   };
 
   const getStatusLabel = (tx: Transaction) => {
@@ -256,17 +279,31 @@ function WalletContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-slate-400 animate-pulse">Chargement…</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 pb-24">
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+    <div className={`min-h-[calc(100vh-7rem)] rounded-2xl pb-8 transition-colors ${walletUi.shell}`}>
+      <div className="mx-auto max-w-7xl space-y-6 px-3 py-5 sm:px-5 sm:py-6">
+        <div className="flex justify-end">
+          <button
+            onClick={() => setTheme(isLight ? "dark" : "light")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${walletUi.secondaryButton}`}
+          >
+            {isLight ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+            {isLight ? "Mode sombre" : "Mode clair"}
+          </button>
+        </div>
+
         {/* Carte solde principale */}
-        <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 overflow-hidden">
+        <div className={`relative overflow-hidden rounded-3xl p-6 shadow-sm backdrop-blur-xl ${walletUi.card}`}>
           <div className="absolute inset-0 opacity-20 pointer-events-none">
             <svg
               className="w-full h-full"
@@ -284,11 +321,11 @@ function WalletContent() {
           <div className="relative z-10">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <p className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${walletUi.muted}`}>
                   SOLDE DISPONIBLE
                   <button
                     onClick={() => setShowBalance(!showBalance)}
-                    className="hover:text-lime-400 transition"
+                    className={`transition ${isLight ? "hover:text-[#154212]" : "hover:text-lime-400"}`}
                   >
                     {showBalance ? (
                       <Eye className="w-4 h-4" />
@@ -297,39 +334,39 @@ function WalletContent() {
                     )}
                   </button>
                 </p>
-                <h1 className="text-4xl font-bold text-white mt-2">
+                <h1 className={`mt-2 text-4xl font-bold ${walletUi.title}`}>
                   {showBalance
                     ? (wallet?.balance || 0).toLocaleString()
                     : "••••••"}
-                  <span className="text-xl font-medium text-lime-400">
+                  <span className={`text-xl font-medium ${walletUi.accent}`}>
                     {" "}
                     FCFA
                   </span>
                 </h1>
               </div>
-              <div className="bg-lime-500/20 p-2 rounded-full">
-                <Wallet className="text-lime-400 w-6 h-6" />
+              <div className={`rounded-full p-2 ${walletUi.accentBg}`}>
+                <Wallet className={`h-6 w-6 ${walletUi.accent}`} />
               </div>
             </div>
             <div className="flex flex-wrap justify-between items-center gap-4 mt-6">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-lime-400" />
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${walletUi.accentBg}`}>
+                  <TrendingUp className={`h-4 w-4 ${walletUi.accent}`} />
                 </div>
-                <span className="text-xs text-lime-400 bg-lime-400/10 px-2 py-1 rounded-full">
+                <span className={`rounded-full px-2 py-1 text-xs ${walletUi.accent} ${walletUi.accentBg}`}>
                   +12.5% ce mois
                 </span>
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => setDepositModal(true)}
-                  className="bg-lime-500 hover:bg-lime-400 text-slate-950 font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2 transition"
+                  className="flex items-center gap-2 rounded-xl bg-lime-500 px-5 py-2.5 font-semibold text-slate-950 transition hover:bg-lime-400"
                 >
                   <PlusCircle className="w-4 h-4" /> Déposer
                 </button>
                 <button
                   onClick={() => setWithdrawModal(true)}
-                  className="bg-white/10 hover:bg-white/20 text-white font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2 transition"
+                  className={`flex items-center gap-2 rounded-xl px-5 py-2.5 font-semibold transition ${walletUi.secondaryButton}`}
                 >
                   <MinusCircle className="w-4 h-4" /> Retirer
                 </button>
@@ -340,7 +377,7 @@ function WalletContent() {
 
         {/* Actions rapides */}
         <div>
-          <h2 className="text-lg font-semibold text-white mb-4">
+          <h2 className={`mb-4 text-lg font-semibold ${walletUi.title}`}>
             Actions Rapides
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-2">
@@ -376,10 +413,10 @@ function WalletContent() {
                 onClick={action.onClick}
                 className="flex flex-col items-center gap-2 min-w-[70px] group"
               >
-                <div className="w-14 h-14 rounded-full bg-white/5 backdrop-blur border border-white/10 flex items-center justify-center group-hover:bg-lime-500/20 transition">
-                  <action.icon className="text-lime-400 w-6 h-6" />
+                <div className={`flex h-14 w-14 items-center justify-center rounded-full backdrop-blur transition group-hover:bg-lime-500/20 ${walletUi.softCard}`}>
+                  <action.icon className={`h-6 w-6 ${walletUi.accent}`} />
                 </div>
-                <span className="text-xs text-slate-400 group-hover:text-white transition">
+                <span className={`text-xs transition ${isLight ? "group-hover:text-[#154212]" : "group-hover:text-white"} ${walletUi.muted}`}>
                   {action.label}
                 </span>
               </button>
@@ -388,14 +425,14 @@ function WalletContent() {
         </div>
 
         {/* Graphique d'évolution */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
+        <div className={`rounded-2xl p-5 backdrop-blur-xl ${walletUi.card}`}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className={`text-lg font-semibold ${walletUi.title}`}>
               Évolution (30j)
             </h2>
             <button
               onClick={fetchTransactions}
-              className="text-lime-400 hover:scale-105 transition"
+              className={`${walletUi.accent} transition hover:scale-105`}
             >
               <RefreshCw className="w-5 h-5" />
             </button>
@@ -413,19 +450,19 @@ function WalletContent() {
                     <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <CartesianGrid strokeDasharray="3 3" stroke={walletUi.chartGrid} />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: "#94a3b8" }}
+                  tick={{ fontSize: 11, fill: walletUi.chartText }}
                   tickFormatter={(val) => val.slice(5)}
                 />
                 <YAxis
                   tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`}
-                  tick={{ fill: "#94a3b8" }}
+                  tick={{ fill: walletUi.chartText }}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#1e293b",
+                    backgroundColor: walletUi.tooltipBg,
                     border: "none",
                     borderRadius: "12px",
                   }}
@@ -447,7 +484,7 @@ function WalletContent() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex justify-center gap-6 mt-3 text-sm text-slate-400">
+          <div className={`mt-3 flex justify-center gap-6 text-sm ${walletUi.muted}`}>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-lime-500 rounded-full"></div> Entrées
             </div>
@@ -460,8 +497,8 @@ function WalletContent() {
         {/* Historique des transactions */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-white">Activités</h2>
-            <button className="text-lime-400 text-sm font-semibold">
+            <h2 className={`text-lg font-semibold ${walletUi.title}`}>Activités</h2>
+            <button className={`text-sm font-semibold ${walletUi.accent}`}>
               Voir tout
             </button>
           </div>
@@ -481,7 +518,7 @@ function WalletContent() {
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
                   activeTab === tab.key
                     ? "bg-lime-500 text-slate-950"
-                    : "bg-white/5 text-slate-300 hover:bg-white/10"
+                    : walletUi.tabIdle
                 }`}
               >
                 {tab.label}
@@ -490,7 +527,7 @@ function WalletContent() {
           </div>
           <div className="space-y-3">
             {paginatedTransactions.length === 0 ? (
-              <div className="bg-white/5 backdrop-blur p-8 text-center text-slate-400 rounded-2xl">
+              <div className={`rounded-2xl p-8 text-center backdrop-blur ${walletUi.softCard} ${walletUi.muted}`}>
                 <Receipt className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>Aucune transaction</p>
               </div>
@@ -498,25 +535,25 @@ function WalletContent() {
               paginatedTransactions.map((tx) => (
                 <div
                   key={tx.id}
-                  className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-4 flex items-center justify-between hover:bg-white/10 transition"
+                  className={`flex items-center justify-between rounded-2xl p-4 backdrop-blur transition hover:bg-white/10 ${walletUi.softCard}`}
                 >
                   <div className="flex items-center gap-4">
                     <div
                       className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                         tx.type === "credit" || tx.type === "deposit"
                           ? "bg-lime-500/20"
-                          : "bg-white/10"
+                          : isLight ? "bg-[#e7e9e1]" : "bg-white/10"
                       }`}
                     >
                       {tx.type === "credit" || tx.type === "deposit" ? (
                         <Leaf className="w-6 h-6 text-lime-400" />
                       ) : (
-                        <CreditCard className="w-6 h-6 text-white/60" />
+                        <CreditCard className={`h-6 w-6 ${walletUi.muted}`} />
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-white">{getTxLabel(tx)}</p>
-                      <p className="text-xs text-slate-400">
+                      <p className={`font-medium ${walletUi.title}`}>{getTxLabel(tx)}</p>
+                      <p className={`text-xs ${walletUi.muted}`}>
                         {new Date(tx.created_at).toLocaleDateString("fr-FR", {
                           day: "numeric",
                           month: "short",
@@ -548,11 +585,11 @@ function WalletContent() {
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-300 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1"
+                className={`flex items-center gap-1 rounded-lg px-4 py-2 transition disabled:cursor-not-allowed disabled:opacity-40 ${walletUi.secondaryButton}`}
               >
                 <ChevronLeft className="w-4 h-4" /> Précédent
               </button>
-              <span className="px-4 py-2 text-slate-300">
+              <span className={`px-4 py-2 ${walletUi.muted}`}>
                 Page {currentPage} / {totalPages}
               </span>
               <button
@@ -560,7 +597,7 @@ function WalletContent() {
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-300 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1"
+                className={`flex items-center gap-1 rounded-lg px-4 py-2 transition disabled:cursor-not-allowed disabled:opacity-40 ${walletUi.secondaryButton}`}
               >
                 Suivant <ChevronRight className="w-4 h-4" />
               </button>
@@ -570,15 +607,15 @@ function WalletContent() {
 
         {/* Bento stats */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white/5 backdrop-blur rounded-2xl p-4">
+          <div className={`rounded-2xl p-4 backdrop-blur ${walletUi.softCard}`}>
             <BarChart3 className="text-cyan-400 w-6 h-6" />
-            <p className="text-xs text-slate-400 mt-2">Prêts en cours</p>
-            <p className="text-xl font-bold text-white">0 FCFA</p>
+            <p className={`mt-2 text-xs ${walletUi.muted}`}>Prêts en cours</p>
+            <p className={`text-xl font-bold ${walletUi.title}`}>0 FCFA</p>
           </div>
-          <div className="bg-white/5 backdrop-blur rounded-2xl p-4">
+          <div className={`rounded-2xl p-4 backdrop-blur ${walletUi.softCard}`}>
             <PiggyBank className="text-lime-400 w-6 h-6" />
-            <p className="text-xs text-slate-400 mt-2">Épargne Projet</p>
-            <p className="text-xl font-bold text-white">
+            <p className={`mt-2 text-xs ${walletUi.muted}`}>Épargne Projet</p>
+            <p className={`text-xl font-bold ${walletUi.title}`}>
               850K <span className="text-xs text-lime-400">/ 2M</span>
             </p>
           </div>
@@ -748,9 +785,5 @@ function WalletContent() {
 }
 
 export default function WalletPage() {
-  return (
-    <VendorLayout>
-      <WalletContent />
-    </VendorLayout>
-  );
+  return <WalletContent />;
 }

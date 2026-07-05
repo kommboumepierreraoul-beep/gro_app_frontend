@@ -100,7 +100,7 @@ export function ChatMessage({
           className={`px-1.5 py-0.5 rounded-md font-mono text-[0.85em] ${
             isUser
               ? "bg-white/15 text-white"
-              : "bg-[rgba(45,90,39,0.08)] text-[#2d5a27]"
+              : "bg-[rgba(49,69,45,0.08)] text-[#31452d]"
           } ${className ?? ""}`}
           style={{ fontFamily: "'JetBrains Mono', monospace" }}
           {...props}
@@ -137,7 +137,7 @@ export function ChatMessage({
     blockquote({ children }) {
       return (
         <blockquote
-          className="pl-4 border-l-4 border-[#2d5a27] my-2 italic"
+          className="pl-4 border-l-4 border-[#31452d] my-2 italic"
           style={{ color: "#72796e" }}
         >
           {children}
@@ -178,7 +178,7 @@ export function ChatMessage({
           className={`underline underline-offset-2 transition-colors ${
             isUser
               ? "text-white hover:text-white/80"
-              : "text-[#2d5a27] hover:text-[#154212]"
+              : "text-[#31452d] hover:text-[#1f2d1d]"
           }`}
         >
           {children}
@@ -236,8 +236,8 @@ export function ChatMessage({
         <div
           className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm"
           style={{
-            background: "linear-gradient(135deg, #2d5a27 0%, #154212 100%)",
-            color: "#bcf0ae",
+            background: "linear-gradient(135deg, #31452d 0%, #1f2d1d 100%)",
+            color: "#e8f5df",
           }}
         >
           <Bot size={18} className="sm:w-[20px] sm:h-[20px]" />
@@ -245,11 +245,11 @@ export function ChatMessage({
       )}
 
       <div
-        className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-4 py-3 text-sm transition-all ${
+        className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm transition-all sm:max-w-[80%] ${
           isUser
-            ? "bg-[#2d5a27] text-white rounded-tr-sm shadow-sm"
+            ? "bg-[#31452d] text-white rounded-tr-sm shadow-sm"
             : "bg-white border border-[rgba(194,201,187,0.3)] text-[#191c18] rounded-tl-sm shadow-sm"
-        } ${isStreaming ? "border-l-4 border-l-[#2d5a27]" : ""}`}
+        } ${isStreaming ? "border-l-4 border-l-[#31452d]" : ""}`}
         style={{ fontFamily: "'Inter', sans-serif" }}
       >
         {/* En-tête rôle */}
@@ -284,7 +284,7 @@ export function ChatMessage({
             <div>
               <div
                 className="flex items-center gap-1.5 text-[11px] font-bold mb-2"
-                style={{ color: "#154212" }}
+                style={{ color: "#31452d" }}
               >
                 <Sparkles size={14} />
                 <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -297,7 +297,7 @@ export function ChatMessage({
               <button
                 onClick={() => setImprovedVersion(null)}
                 className="mt-2 text-[12px] font-semibold transition-colors hover:underline"
-                style={{ color: "#2d5a27" }}
+                style={{ color: "#31452d" }}
               >
                 Voir l'original
               </button>
@@ -322,19 +322,19 @@ export function ChatMessage({
               color: isUser ? "rgba(255,255,255,0.8)" : "#42493e",
               background: isUser
                 ? "rgba(255,255,255,0.1)"
-                : "rgba(45,90,39,0.06)",
+                : "rgba(49,69,45,0.06)",
             }}
             onMouseEnter={(e) => {
               const target = e.currentTarget as HTMLElement;
               target.style.background = isUser
                 ? "rgba(255,255,255,0.2)"
-                : "rgba(45,90,39,0.12)";
+                : "rgba(49,69,45,0.12)";
             }}
             onMouseLeave={(e) => {
               const target = e.currentTarget as HTMLElement;
               target.style.background = isUser
                 ? "rgba(255,255,255,0.1)"
-                : "rgba(45,90,39,0.06)";
+                : "rgba(49,69,45,0.06)";
             }}
           >
             {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -347,20 +347,20 @@ export function ChatMessage({
               disabled={isImproving}
               style={{
                 ...iconBtnStyle,
-                color: "#154212",
-                background: "rgba(188,240,174,0.2)",
+                color: "#31452d",
+                background: "rgba(49,69,45,0.08)",
                 opacity: isImproving ? 0.5 : 1,
               }}
               onMouseEnter={(e) => {
                 const target = e.currentTarget as HTMLElement;
                 if (!isImproving) {
-                  target.style.background = "rgba(188,240,174,0.35)";
+                  target.style.background = "rgba(49,69,45,0.14)";
                 }
               }}
               onMouseLeave={(e) => {
                 const target = e.currentTarget as HTMLElement;
                 if (!isImproving) {
-                  target.style.background = "rgba(188,240,174,0.2)";
+                  target.style.background = "rgba(49,69,45,0.08)";
                 }
               }}
             >
@@ -385,7 +385,7 @@ export function ChatMessage({
                 }}
                 onMouseEnter={(e) => {
                   const target = e.currentTarget as HTMLElement;
-                  target.style.background = "rgba(45,90,39,0.06)";
+                  target.style.background = "rgba(49,69,45,0.06)";
                 }}
                 onMouseLeave={(e) => {
                   const target = e.currentTarget as HTMLElement;
@@ -403,7 +403,7 @@ export function ChatMessage({
                 }}
                 onMouseEnter={(e) => {
                   const target = e.currentTarget as HTMLElement;
-                  target.style.background = "rgba(45,90,39,0.06)";
+                  target.style.background = "rgba(49,69,45,0.06)";
                 }}
                 onMouseLeave={(e) => {
                   const target = e.currentTarget as HTMLElement;
@@ -421,7 +421,7 @@ export function ChatMessage({
                 }}
                 onMouseEnter={(e) => {
                   const target = e.currentTarget as HTMLElement;
-                  target.style.background = "rgba(45,90,39,0.06)";
+                  target.style.background = "rgba(49,69,45,0.06)";
                 }}
                 onMouseLeave={(e) => {
                   const target = e.currentTarget as HTMLElement;
@@ -472,8 +472,8 @@ export function ChatMessage({
         <div
           className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm"
           style={{
-            background: "linear-gradient(135deg, #42493e 0%, #2d5a27 100%)",
-            color: "#bcf0ae",
+            background: "linear-gradient(135deg, #42493e 0%, #31452d 100%)",
+            color: "#e8f5df",
           }}
         >
           <User size={18} className="sm:w-[20px] sm:h-[20px]" />

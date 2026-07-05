@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import VendorLayout from '@/components/layouts/VendorLayout';
 import { adminService } from '@/services/admin.service';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
@@ -118,8 +117,7 @@ export default function ManageCatalog() {
   const lowStockCount = products.filter(p => p.stock <= 5).length;
 
   return (
-    <VendorLayout>
-      <div className="-m-4 sm:-m-6 lg:-m-8 min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 sm:p-6 lg:p-8">
+      <div className="min-h-[calc(100vh-7rem)] rounded-2xl border border-[#c2c9bb]/30 bg-[#f9faf2] p-4 sm:p-6 lg:p-8">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -422,6 +420,5 @@ export default function ManageCatalog() {
           )}
         </div>
       </div>
-    </VendorLayout>
   );
 }

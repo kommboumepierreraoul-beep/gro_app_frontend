@@ -1,6 +1,5 @@
 'use client';
 
-import VendorLayout from '@/components/layouts/VendorLayout';
 import { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import api from '@/lib/axios';
@@ -235,7 +234,7 @@ const payWithNotchPay = async () => {
 
   return (
     <>
-      <main className="pt-20 pb-16 px-6 md:px-12 max-w-7xl mx-auto">
+      <main className="mx-auto max-w-7xl px-0 py-5 pb-20">
         <div className="relative mb-10 rounded-2xl overflow-hidden h-40 flex flex-col justify-center px-8 bg-gradient-to-r from-emerald-800 to-emerald-600 shadow-lg">
           <div className="absolute inset-0 bg-black/20" />
           <div className="relative z-10">
@@ -380,7 +379,7 @@ const payWithNotchPay = async () => {
                       )}
 
                       {/* Signaler un problème - visible pour paid, preparing, shipping, delivered (mais pas completed ni cancelled) */}
-                      {(order.status === 'paid' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered') && order.status !== 'refunded' && order.status !== 'replaced' && (
+                      {(order.status === 'paid' || order.status === 'preparing' || order.status === 'shipping' || order.status === 'delivered') && (
                         <Link href={`/disputes/create/${order.id}`}>
                           <button className="px-4 py-2 border border-red-200 text-red-600 text-sm rounded-full flex items-center gap-1 hover:bg-red-50 transition">
                             <AlertCircle size={16} /> Signaler un problème
@@ -485,9 +484,5 @@ const payWithNotchPay = async () => {
 }
 
 export default function OrdersPage() {
-  return (
-    <VendorLayout>
-      <OrdersContent />
-    </VendorLayout>
-  );
+  return <OrdersContent />;
 }

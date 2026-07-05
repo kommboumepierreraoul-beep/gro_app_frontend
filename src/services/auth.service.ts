@@ -91,7 +91,6 @@ async register(data: RegisterData): Promise<AuthResponse> {
             ? JSON.parse(res.data) 
             : res.data;
         
-        console.log('Token extrait:', responseData.token);
         saveToken(responseData.token);
         return responseData;
     } catch (error) {

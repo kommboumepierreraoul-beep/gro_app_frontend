@@ -67,7 +67,9 @@ export default function TrackOrderPage() {
     if (!client || !delivery) return;
 
     // Centre la carte sur le client ou le livreur
-    const center = client.lat && client.lng ? [client.lat, client.lng] : [delivery.lat, delivery.lng];
+    const center: L.LatLngTuple = client.lat && client.lng
+      ? [Number(client.lat), Number(client.lng)]
+      : [Number(delivery.lat), Number(delivery.lng)];
     if (!mapRef.current) {
       mapRef.current = L.map('map').setView(center, 13);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -79,13 +81,13 @@ export default function TrackOrderPage() {
 
     // Marqueur client
     if (clientMarkerRef.current) clientMarkerRef.current.remove();
-    clientMarkerRef.current = L.marker([client.lat, client.lng], {
+    clientMarkerRef.current = L.marker([Number(client.lat), Number(client.lng)], {
       icon: L.divIcon({ html: '<div class="bg-blue-600 p-2 rounded-full"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>' }),
     }).addTo(mapRef.current).bindPopup('Votre adresse');
 
     // Marqueur livreur
     if (deliveryMarkerRef.current) deliveryMarkerRef.current.remove();
-    deliveryMarkerRef.current = L.marker([delivery.lat, delivery.lng], {
+    deliveryMarkerRef.current = L.marker([Number(delivery.lat), Number(delivery.lng)], {
       icon: L.divIcon({ html: '<div class="bg-emerald-600 p-2 rounded-full animate-pulse"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2c-4 0-7 3-7 7 0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>' }),
     }).addTo(mapRef.current).bindPopup('Votre livreur');
 

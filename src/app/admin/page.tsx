@@ -1,10 +1,19 @@
 'use client';
 
-import VendorLayout from '@/components/layouts/VendorLayout';
 import { useEffect, useState, useCallback } from 'react';
 import { adminService, PendingProduct, ActivityLog, AnalyticsData } from '@/services/admin.service';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import {
+  Activity,
+  ArrowRight,
+  CheckCircle2,
+  Package,
+  ShieldCheck,
+  Store,
+  Users,
+  WalletCards,
+} from 'lucide-react';
 
 function AdminDashboardContent() {
   const [pendingProducts, setPendingProducts] = useState<PendingProduct[]>([]);
@@ -107,17 +116,17 @@ function AdminDashboardContent() {
         <div className="max-w-screen-2xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white/10 backdrop-blur-sm border border-white/15 p-6 rounded-xl text-white">
-              <div className="flex justify-between items-start mb-6"><span className="material-symbols-outlined text-white/60">verified_user</span></div>
+              <div className="flex justify-between items-start mb-6"><ShieldCheck className="h-5 w-5 text-white/60" /></div>
               <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Approbations en attente</p>
               <h3 className="text-3xl font-bold">{analytics?.pending_approvals || 0}</h3>
             </div>
             <div className="bg-white/10 backdrop-blur-sm border border-white/15 p-6 rounded-xl text-white">
-              <div className="flex justify-between items-start mb-6"><span className="material-symbols-outlined text-white/60">group</span></div>
+              <div className="flex justify-between items-start mb-6"><Users className="h-5 w-5 text-white/60" /></div>
               <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Utilisateurs actifs</p>
               <h3 className="text-3xl font-bold">{analytics?.active_users || 0}</h3>
             </div>
             <div className="bg-white/10 backdrop-blur-sm border border-white/15 p-6 rounded-xl text-white">
-              <div className="flex justify-between items-start mb-6"><span className="material-symbols-outlined text-white/60">payments</span></div>
+              <div className="flex justify-between items-start mb-6"><WalletCards className="h-5 w-5 text-white/60" /></div>
               <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Ventes totales</p>
               <h3 className="text-3xl font-bold">{analytics?.total_sales?.toLocaleString() || 0} €</h3>
             </div>
@@ -129,17 +138,17 @@ function AdminDashboardContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
           <Link href="/admin/users" className="glass-card premium-card p-6 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 hover:bg-surface-variant/50 transition-all group cursor-pointer" style={{ background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)' }}>
             <div className="flex items-center gap-4">
-              <div className="bg-primary/10 p-3 rounded-lg group-hover:bg-primary transition-colors"><span className="material-symbols-outlined text-primary group-hover:text-white">group</span></div>
+              <div className="bg-primary/10 p-3 rounded-lg group-hover:bg-primary transition-colors"><Users className="h-5 w-5 text-primary group-hover:text-white" /></div>
               <div><h3 className="text-md font-bold text-on-surface">Gestion des Utilisateurs</h3><p className="text-xs text-on-surface-variant">{analytics?.active_users || 0} utilisateurs actifs</p></div>
             </div>
-            <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">arrow_forward</span>
+            <ArrowRight className="h-5 w-5 text-on-surface-variant transition-colors group-hover:text-primary" />
           </Link>
           <Link href="/admin/catalog" className="glass-card premium-card p-6 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 hover:bg-surface-variant/50 transition-all group cursor-pointer" style={{ background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)' }}>
             <div className="flex items-center gap-4">
-              <div className="bg-primary/10 p-3 rounded-lg group-hover:bg-primary transition-colors"><span className="material-symbols-outlined text-primary group-hover:text-white">inventory_2</span></div>
+              <div className="bg-primary/10 p-3 rounded-lg group-hover:bg-primary transition-colors"><Package className="h-5 w-5 text-primary group-hover:text-white" /></div>
               <div><h3 className="text-md font-bold text-on-surface">Catalogue de Produits</h3><p className="text-xs text-on-surface-variant">Gestion des produits</p></div>
             </div>
-            <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">arrow_forward</span>
+            <ArrowRight className="h-5 w-5 text-on-surface-variant transition-colors group-hover:text-primary" />
           </Link>
         </div>
 
@@ -153,7 +162,7 @@ function AdminDashboardContent() {
             
             {pendingProducts.length === 0 ? (
               <div className="glass-card premium-card p-8 rounded-xl text-center">
-                <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mx-auto block mb-2">check_circle</span>
+                <CheckCircle2 className="mx-auto mb-2 h-10 w-10 text-on-surface-variant/30" />
                 <p className="text-on-surface-variant">Aucun produit en attente d'approbation</p>
               </div>
             ) : (
@@ -177,7 +186,7 @@ function AdminDashboardContent() {
                     <div className="flex-grow text-center sm:text-left">
                       <h4 className="text-md font-bold text-on-surface mb-0.5">{product.name}</h4>
                       <p className="text-on-surface-variant text-xs font-medium mb-2 flex items-center justify-center sm:justify-start gap-1">
-                        <span className="material-symbols-outlined text-[14px]">store</span>
+                        <Store className="h-3.5 w-3.5" />
                         {product.shop?.name}
                       </p>
                       <div className="flex items-center justify-center sm:justify-start gap-2">
@@ -223,7 +232,7 @@ function AdminDashboardContent() {
                 <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/40">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-xl">timeline</span>
+                      <Activity className="h-5 w-5 text-primary" />
                       <h3 className="text-sm font-semibold text-gray-800">Activités récentes</h3>
                     </div>
                     <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{activities.length}</span>
@@ -261,9 +270,5 @@ function AdminDashboardContent() {
 }
 
 export default function AdminDashboardPage() {
-  return (
-    <VendorLayout>
-      <AdminDashboardContent />
-    </VendorLayout>
-  );
+  return <AdminDashboardContent />;
 }

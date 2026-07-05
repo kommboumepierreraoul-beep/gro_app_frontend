@@ -16,13 +16,12 @@ import { useCreateMission } from "@/hooks/missions/useCreateMission";
 import { useCategories } from "@/hooks/missions/useMissions";
 import { FormField } from "@/lib/missions/types";
 
-
 // Par :
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 
 const MissionLocationPicker = dynamic(
-  () => import('../Map/MissionLocationPicker'),
-  { ssr: false }
+  () => import("../Map/MissionLocationPicker"),
+  { ssr: false },
 );
 
 interface Props {
@@ -76,7 +75,6 @@ const REMUNERATION_TYPES = [
 
 const DURATION_TYPES = [
   { value: "hours", label: "Heures" },
-  { value: "day", label: "1 journée" },
   { value: "days", label: "Jours" },
   { value: "weeks", label: "Semaines" },
   { value: "flexible", label: "Flexible" },
@@ -394,7 +392,7 @@ export default function CreateMissionModal({ onClose }: Props) {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-semibold text-[#72796e] uppercase tracking-widest">
-                    Expiration de l'offre
+                    Expiration de l'offre 
                   </label>
                   <input
                     type="date"
@@ -402,6 +400,10 @@ export default function CreateMissionModal({ onClose }: Props) {
                     onChange={(e) => set("expires_at", e.target.value)}
                     className="w-full px-4 py-3 bg-white border border-[#c2c9bb]/40 rounded-xl text-sm focus:outline-none focus:border-[#154212] text-[#191c18]"
                   />
+                  <p className="text-[10px] text-[#72796e]">
+                    L’offre peut expirer avant ou après le début de la mission
+                    selon votre besoin.
+                  </p>
                 </div>
               </div>
 

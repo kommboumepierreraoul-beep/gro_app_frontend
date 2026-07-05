@@ -1,4 +1,6 @@
-/** @type {import('next').NextConfig} */
+import createBundleAnalyzer from "@next/bundle-analyzer";
+import type { NextConfig } from "next";
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -22,10 +24,10 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
   },
   reactStrictMode: true,
-};
+} satisfies NextConfig;
 
-const withBundleAnalyzer = require("@next/bundle-analyzer")({
+const withBundleAnalyzer = createBundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
 });
 
-module.exports = withBundleAnalyzer(nextConfig);
+export default withBundleAnalyzer(nextConfig);

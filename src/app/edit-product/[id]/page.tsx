@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { ArrowLeft, ImagePlus, Package, Sparkles, Trash2, UploadCloud } from 'lucide-react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 
@@ -176,33 +177,33 @@ export default function EditProductPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-200/50 flex items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-emerald-700 text-lg">Chargement du produit...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-200/50">
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+    <div className="min-h-screen bg-transparent pb-8">
+      <header className="sticky top-16 z-30 rounded-2xl border border-[#c2c9bb]/35 bg-white/90 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between px-3 py-3 sm:px-5 lg:px-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
-              className="w-10 h-10 rounded-xl border border-emerald-200 bg-white/60 hover:bg-emerald-50 flex items-center justify-center transition"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#c2c9bb]/45 bg-white/70 transition hover:bg-[#eaf3de]"
             >
-              <span className="material-symbols-outlined text-emerald-700">arrow_back</span>
+              <ArrowLeft className="h-5 w-5 text-[#154212]" />
             </button>
             <div>
-              <p className="uppercase tracking-[3px] text-[11px] text-emerald-600 font-bold">Seller Center</p>
-              <h1 className="text-xl font-black text-gray-800">Modifier le produit</h1>
+              <p className="text-[11px] font-bold uppercase tracking-[3px] text-[#154212]">Seller Center</p>
+              <h1 className="text-xl font-black text-[#191c18]">Modifier le produit</h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="h-10 px-6 rounded-xl bg-emerald-700 text-white font-medium text-sm shadow-md hover:bg-emerald-800 disabled:opacity-60 transition"
+              className="h-10 rounded-xl bg-[#154212] px-6 text-sm font-medium text-white shadow-sm transition hover:bg-[#2d5a27] disabled:opacity-60"
             >
               {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
             </button>
@@ -210,7 +211,7 @@ export default function EditProductPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-10">
+      <main className="mx-auto max-w-7xl px-0 py-5 sm:py-6">
         <div className="mb-10 text-center md:text-left md:flex md:items-center md:justify-between gap-6">
           <div>
             <h2 className="text-3xl md:text-4xl font-black text-gray-800">Modifier un produit</h2>
@@ -218,11 +219,11 @@ export default function EditProductPage() {
           </div>
           <div className="flex items-center gap-4 mt-4 md:mt-0">
             <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-full">
-              <span className="material-symbols-outlined text-emerald-600 text-base">inventory_2</span>
+              <Package className="h-4 w-4 text-emerald-600" />
               <span className="text-sm font-medium text-emerald-800">Stock: {form.stock || 0} unités</span>
             </div>
             <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-full">
-              <span className="material-symbols-outlined text-emerald-600 text-base">photo_library</span>
+              <ImagePlus className="h-4 w-4 text-emerald-600" />
               <span className="text-sm font-medium text-emerald-800">{form.images.length} image(s)</span>
             </div>
           </div>
@@ -309,7 +310,7 @@ export default function EditProductPage() {
               <h3 className="text-lg font-black text-gray-800 mb-1">Médias</h3>
               <p className="text-sm text-gray-500 mb-6">Ajoutez ou modifiez les photos du produit (max 10MB chacune)</p>
               <div className="border-2 border-dashed border-emerald-200 rounded-2xl p-8 text-center hover:border-emerald-400 transition bg-emerald-50/30">
-                <span className="material-symbols-outlined text-5xl text-emerald-400">cloud_upload</span>
+                <UploadCloud className="mx-auto h-12 w-12 text-emerald-400" />
                 <p className="mt-2 text-sm text-gray-500">Glissez ou cliquez pour ajouter des images</p>
                 <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="mt-3 mx-auto block text-sm" />
               </div>
@@ -322,7 +323,7 @@ export default function EditProductPage() {
                         onClick={() => removeImage(idx)}
                         className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 shadow flex items-center justify-center hover:bg-red-100 transition"
                       >
-                        <span className="material-symbols-outlined text-red-500 text-sm">delete</span>
+                        <Trash2 className="h-4 w-4 text-red-500" />
                       </button>
                     </div>
                   ))}
@@ -370,7 +371,7 @@ export default function EditProductPage() {
             <div className="bg-white rounded-2xl border border-emerald-100 p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-emerald-700">auto_awesome</span>
+                  <Sparkles className="h-5 w-5 text-emerald-700" />
                 </div>
                 <h3 className="font-bold text-gray-800">Score de qualité</h3>
               </div>

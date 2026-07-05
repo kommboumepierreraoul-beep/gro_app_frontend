@@ -2,7 +2,6 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import VendorLayout from '@/components/layouts/VendorLayout';
 import DisputeChat from '@/components/DisputeChat';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
@@ -103,17 +102,13 @@ export default function SellerDisputeDetailPage() {
   };
 
   if (loading) return (
-    <VendorLayout>
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
       </div>
-    </VendorLayout>
   );
 
   if (!dispute) return (
-    <VendorLayout>
       <div className="min-h-screen flex items-center justify-center text-slate-500">Litige non trouvé</div>
-    </VendorLayout>
   );
 
   const cfg = STATUS[dispute.status] ?? STATUS.pending;
@@ -127,11 +122,10 @@ export default function SellerDisputeDetailPage() {
   const step = isResolved ? 2 : (dispute.seller_response ? 1 : 0);
 
   return (
-    <VendorLayout>
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 pb-28 lg:pb-8">
+      <div className="min-h-[calc(100vh-7rem)] rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 pb-28 lg:pb-8">
 
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100/50 px-4 md:px-6 py-4">
+        <header className="sticky top-16 z-30 rounded-t-2xl border-b border-emerald-100/50 bg-white/85 px-4 py-4 backdrop-blur-xl md:px-6">
           <div className="max-w-7xl mx-auto flex justify-between items-center gap-3">
             <div className="flex items-center gap-3 md:gap-4 min-w-0">
               <Link href="/seller/disputes" className="flex items-center gap-1.5 text-emerald-700 font-semibold hover:text-emerald-900 transition-colors group flex-shrink-0">
@@ -358,8 +352,8 @@ export default function SellerDisputeDetailPage() {
         </main>
 
         {/* Footer actions mobile */}
-        <footer className="lg:hidden fixed bottom-0 left-0 w-full z-50">
-          <div className="bg-white/95 backdrop-blur-xl border-t border-emerald-100 px-4 py-3 grid grid-cols-3 gap-2 shadow-[0_-4px_20px_rgba(6,44,34,0.08)]">
+        <footer className="px-4 pb-24 lg:hidden">
+          <div className="grid grid-cols-3 gap-2 rounded-2xl border border-emerald-100 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-xl">
             <button className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 active:scale-95 transition-all">
               <span className="text-lg">💳</span>
               <span className="text-[10px] font-bold text-center leading-tight">Rembourser</span>
@@ -375,6 +369,5 @@ export default function SellerDisputeDetailPage() {
           </div>
         </footer>
       </div>
-    </VendorLayout>
   );
 }

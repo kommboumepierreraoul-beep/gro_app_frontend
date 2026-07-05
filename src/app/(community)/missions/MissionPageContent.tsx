@@ -104,7 +104,7 @@ export function MissionsSkeleton() {
               <div className="h-4 sm:h-5 w-32 sm:w-48 bg-[#e7e9e1] rounded animate-pulse" />
               <div className="h-3 sm:h-4 w-12 sm:w-16 bg-[#e7e9e1] rounded-full animate-pulse" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
               {[1, 2, 3].map((j) => (
                 <div
                   key={j}

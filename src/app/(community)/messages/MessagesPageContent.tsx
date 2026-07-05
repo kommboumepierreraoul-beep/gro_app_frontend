@@ -50,12 +50,15 @@ function MessagesContent() {
   };
 
   return (
-    <div className="inset-0 top-16 h-[calc(100vh-4rem)] flex w-full overflow-hidden bg-[#f9faf2]">
+    <div className="flex h-[calc(100dvh-4rem)] w-full overflow-hidden bg-[#f9faf2]">
       {/* ================= LEFT ================= */}
       <section
         className={`
           flex flex-col
-          md:w-96
+          w-full
+          md:w-[340px]
+          lg:w-96
+          md:shrink-0
           border-r border-[rgba(194,201,187,0.35)]
           ${selectedConversation ? "hidden md:flex" : "flex"}
         `}
@@ -66,11 +69,11 @@ function MessagesContent() {
       >
         {/* HEADER */}
         <div
-          className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[rgba(194,201,187,0.35)] flex items-center justify-between flex-shrink-0"
+          className="flex flex-shrink-0 items-center justify-between border-b border-[rgba(194,201,187,0.35)] px-4 py-3 sm:px-5 sm:py-4"
           style={{ background: "rgba(249,250,242,0.98)" }}
         >
           <h3
-            className="text-xl sm:text-2xl font-semibold"
+            className="text-xl font-semibold sm:text-2xl"
             style={{
               color: "#154212",
               fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -105,7 +108,11 @@ function MessagesContent() {
       </section>
 
       {/* ================= RIGHT ================= */}
-      <section className="flex-1 flex flex-col min-w-0 relative">
+      <section
+        className={`relative min-w-0 flex-1 flex-col ${
+          selectedConversation ? "flex" : "hidden md:flex"
+        }`}
+      >
         {selectedConversation ? (
           <ChatWindow convId={selectedConversation} onBack={handleBackToList} />
         ) : (
@@ -136,16 +143,17 @@ function MessagesContent() {
         )}
 
         {/* FLOAT BUTTON MOBILE */}
+        {!selectedConversation && (
         <button
           onClick={() => setIsCreateDiscussionOpen(true)}
           className="
             md:hidden
-            absolute bottom-6 right-6
+            fixed bottom-24 right-5
             w-14 h-14
             flex items-center justify-center
             rounded-full shadow-lg
             hover:scale-105 transition-all duration-150
-            z-50
+            z-40
           "
           style={{
             background: "#bcf0ae",
@@ -156,6 +164,7 @@ function MessagesContent() {
         >
           <Plus size={24} strokeWidth={2.5} />
         </button>
+        )}
       </section>
 
       {/* MODAL */}

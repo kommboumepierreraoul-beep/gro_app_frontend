@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import VendorLayout from '@/components/layouts/VendorLayout';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
@@ -88,8 +87,7 @@ export default function SellerDisputesPage() {
   };
 
   return (
-    <VendorLayout>
-      <div className="-m-4 sm:-m-6 lg:-m-8 min-h-screen bg-[#e6fff4] p-4 sm:p-6 lg:p-8">
+      <div className="min-h-[calc(100vh-7rem)] space-y-6 py-5 sm:py-6">
 
         {/* Header local */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -332,6 +330,5 @@ export default function SellerDisputesPage() {
           )}
         </div>
       </div>
-    </VendorLayout>
   );
 }

@@ -43,7 +43,7 @@ export function useAuth() {
 
         // 2. Redirection selon le rôle
         if (res.user.role === "admin") {
-          router.push("/dashboard");
+          router.push("/admin");
         } else {
           router.push("/community");
         }

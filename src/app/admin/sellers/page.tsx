@@ -1,6 +1,5 @@
 'use client';
 
-import VendorLayout from '@/components/layouts/VendorLayout';
 import { useState, useEffect } from 'react';
 import {
   Filter,
@@ -422,9 +421,5 @@ function SellerOrdersContent() {
 }
 
 export default function SellerOrdersPage() {
-  return (
-    <VendorLayout>
-      <SellerOrdersContent />
-    </VendorLayout>
-  );
+  return <SellerOrdersContent />;
 }

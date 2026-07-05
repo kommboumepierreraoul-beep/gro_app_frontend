@@ -2,7 +2,6 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import VendorLayout from '@/components/layouts/VendorLayout';
 import DisputeChat from '@/components/DisputeChat';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
@@ -90,17 +89,13 @@ export default function ClientDisputeDetailPage() {
   };
 
   if (loading) return (
-    <VendorLayout>
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
       </div>
-    </VendorLayout>
   );
 
   if (!dispute) return (
-    <VendorLayout>
       <div className="min-h-screen flex items-center justify-center text-slate-500">Litige non trouvé</div>
-    </VendorLayout>
   );
 
   const cfg = STATUS[dispute.status] ?? STATUS.pending;
@@ -124,11 +119,10 @@ export default function ClientDisputeDetailPage() {
   } catch {}
 
   return (
-    <VendorLayout>
-      <div className="-m-4 sm:-m-6 lg:-m-8 min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+      <div className="min-h-[calc(100vh-7rem)] rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 pb-8">
 
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-emerald-100/50 px-4 md:px-6 py-4">
+        <header className="sticky top-16 z-30 rounded-t-2xl border-b border-emerald-100/50 bg-white/85 px-4 py-4 backdrop-blur-xl md:px-6">
           <div className="max-w-[1600px] mx-auto flex justify-between items-center gap-3">
             <div className="flex items-center gap-3 md:gap-4 min-w-0">
               <Link href="/disputes" className="flex items-center gap-1.5 text-emerald-700 font-semibold hover:text-emerald-900 transition-colors flex-shrink-0">
@@ -382,6 +376,5 @@ export default function ClientDisputeDetailPage() {
           </aside>
         </main>
       </div>
-    </VendorLayout>
   );
 }

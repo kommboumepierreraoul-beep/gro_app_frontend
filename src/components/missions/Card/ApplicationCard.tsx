@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Check,
   X,
@@ -19,6 +20,7 @@ import {
   useAddApplicationNote,
 } from "@/hooks/missions/useMissionMutate";
 import { useMissionStore } from "@/stores/useMissionStore";
+import { messageService } from "@/services/community/message.service";
 
 interface Props {
   application: MissionApplication;
@@ -51,7 +53,9 @@ export default function ApplicationCard({
   const [rejectReason, setRejectReason] = useState("");
   const [note, setNote] = useState(application.author_note ?? "");
   const [showNoteInput, setShowNoteInput] = useState(false);
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
 
+  const router = useRouter();
   const acceptApp = useAcceptApplication();
   const rejectApp = useRejectApplication();
   const addNote = useAddApplicationNote();
@@ -59,6 +63,17 @@ export default function ApplicationCard({
 
   const status = STATUS_CONFIG[application.status] ?? STATUS_CONFIG.pending;
   const { applicant, mission } = application;
+  const applicantName =
+    [applicant.firstname, applicant.lastname]
+      .filter(Boolean)
+      .join(" ")
+      .trim() ||
+    applicant.name ||
+    "Candidat";
+  const applicantInitial =
+    applicant.firstname?.charAt(0)?.toUpperCase() ||
+    applicant.lastname?.charAt(0)?.toUpperCase() ||
+    "C";
 
   const handleAccept = () => {
     acceptApp.mutate({ ulid, appId: application.id });
@@ -82,6 +97,22 @@ export default function ApplicationCard({
     );
   };
 
+  const handleMessage = async () => {
+    if (!applicant.id) return;
+
+    setIsCreatingConversation(true);
+    try {
+      const conversation = await messageService.createOrFindConversation(
+        applicant.id,
+      );
+      router.push(`/messages?id=${conversation.id}`);
+    } catch (error) {
+      console.error("Erreur lors de la création de la conversation", error);
+    } finally {
+      setIsCreatingConversation(false);
+    }
+  };
+
   return (
     <div className="bg-white border border-[#c2c9bb]/30 rounded-2xl overflow-hidden">
       {/* Header */}
@@ -89,20 +120,19 @@ export default function ApplicationCard({
         {applicant.avatar ? (
           <img
             src={applicant.avatar}
-            alt={applicant.firstname}
+            alt={applicantName}
             className="w-10 h-10 rounded-full object-cover border-2 border-[#bcf0ae]"
           />
         ) : (
           <div className="w-10 h-10 rounded-full bg-[#2d5a27] flex items-center justify-center text-white font-bold border-2 border-[#bcf0ae]">
-            {applicant.firstname}
+            {applicantInitial}
           </div>
         )}
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[#191c18] text-sm truncate">
-            {applicant.firstname}
+            {applicantName}
           </p>
           <div className="flex items-center gap-2 mt-0.5">
-            
             <span className="text-[10px] text-[#72796e]">
               via {METHOD_LABELS[application.method] ?? application.method}
             </span>
@@ -325,8 +355,13 @@ export default function ApplicationCard({
         )}
 
         {/* Contacter */}
-        <button className="flex items-center gap-1.5 text-xs font-semibold text-[#42493e] border border-[#c2c9bb]/40 px-3 py-2 rounded-lg hover:bg-white transition-colors ml-auto">
-          <MessageCircle size={13} /> Message
+        <button
+          onClick={handleMessage}
+          disabled={isCreatingConversation}
+          className="flex items-center gap-1.5 text-xs font-semibold text-[#42493e] border border-[#c2c9bb]/40 px-3 py-2 rounded-lg hover:bg-white transition-colors ml-auto disabled:opacity-60"
+        >
+          <MessageCircle size={13} />{" "}
+          {isCreatingConversation ? "Ouverture..." : "Message"}
         </button>
       </div>
     </div>

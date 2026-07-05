@@ -19,9 +19,7 @@ import {
   Package,
   ArrowRight,
   Heart,
-  Store,
   ShoppingBag,
-  User,
   Sprout,
   SlidersHorizontal,
   Filter,
@@ -193,52 +191,54 @@ export default function MarketplacePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#E8F5EC] flex items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-emerald-700">Chargement du marché...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#E8F5EC] pb-32">
+    <div className="min-h-screen bg-transparent pb-8">
       {/* HEADER - Professionnel et responsive */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-emerald-100/30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-16 z-30 rounded-2xl border border-[#c2c9bb]/35 bg-white/90 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto max-w-7xl px-3 sm:px-5 lg:px-6">
           <div className="flex flex-wrap items-center justify-between gap-4 py-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-700 to-teal-600 flex items-center justify-center shadow-md">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#154212] shadow-sm">
                 <Sprout className="text-white w-5 h-5" />
               </div>
               <div>
-                <h1 className="font-black text-xl text-slate-800">
-                  Intelligent
+                <h1 className="font-black text-xl text-[#191c18]">
+                  Marketplace
                 </h1>
-                <p className="text-xs text-emerald-600 -mt-1">Growth</p>
+                <p className="-mt-1 text-xs font-semibold text-[#154212]">
+                  Intelligent Growth
+                </p>
               </div>
             </div>
             <div className="relative flex-1 min-w-[200px] max-w-md lg:max-w-lg">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#72796e]" />
               <input
                 type="text"
                 placeholder="Rechercher un produit..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-11 pl-11 pr-4 rounded-xl border border-emerald-100/50 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition text-sm"
+                className="h-11 w-full rounded-xl border border-[#c2c9bb]/45 bg-[#f9faf2]/80 pl-11 pr-4 text-sm text-[#191c18] transition placeholder:text-[#72796e] focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#bcf0ae]"
               />
             </div>
             <div className="flex items-center gap-2">
               <Link
                 href="/orders"
-                className="p-2 rounded-xl bg-white/80 shadow-sm hover:shadow transition"
+                className="rounded-xl border border-[#c2c9bb]/45 bg-white/80 p-2 transition hover:bg-[#eaf3de]"
               >
-                <ShoppingCart className="w-5 h-5 text-slate-700" />
+                <ShoppingCart className="h-5 w-5 text-[#42493e]" />
               </Link>
-              <button className="p-2 rounded-xl bg-white/80 shadow-sm hover:shadow transition">
-                <Bell className="w-5 h-5 text-slate-700" />
+              <button className="rounded-xl border border-[#c2c9bb]/45 bg-white/80 p-2 transition hover:bg-[#eaf3de]">
+                <Bell className="h-5 w-5 text-[#42493e]" />
               </button>
               <Link
                 href="/add-product"
-                className="px-4 py-2 rounded-xl bg-emerald-700 text-white text-sm font-semibold shadow-md hover:bg-emerald-800 transition flex items-center gap-1"
+                className="flex items-center gap-1 rounded-xl bg-[#154212] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#2d5a27]"
               >
                 <Plus className="w-4 h-4" />
                 Ajouter un produit
@@ -248,11 +248,11 @@ export default function MarketplacePage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="mx-auto max-w-7xl px-0 py-5 sm:py-6">
         {/* FILTRES - Design épuré */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 mb-6 border-b border-emerald-100">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[#c2c9bb]/35 pb-4">
           <div className="flex items-center gap-3 overflow-x-auto pb-1 hide-scrollbar">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full whitespace-nowrap">
+            <span className="whitespace-nowrap rounded-full bg-[#eaf3de] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#154212]">
               Catégories
             </span>
             <div className="flex gap-2">
@@ -545,46 +545,6 @@ export default function MarketplacePage() {
           </div>
         </section>
       </main>
-
-      {/* BOTTOM NAVIGATION */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6 sm:gap-10 md:gap-14 bg-slate-800/90 backdrop-blur-md px-5 py-2 rounded-full shadow-lg border border-white/10">
-        <Link
-          href="/marketplace"
-          className="flex flex-col items-center text-emerald-400"
-        >
-          <Store className="w-5 h-5 sm:w-6 sm:h-6" />
-          <span className="text-[9px] sm:text-[10px] font-semibold mt-0.5">
-            Market
-          </span>
-        </Link>
-        <Link
-          href="/my-shop"
-          className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition"
-        >
-          <Store className="w-5 h-5 sm:w-6 sm:h-6" />
-          <span className="text-[9px] sm:text-[10px] font-semibold mt-0.5">
-            Ma boutique
-          </span>
-        </Link>
-        <Link
-          href="/orders"
-          className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition"
-        >
-          <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
-          <span className="text-[9px] sm:text-[10px] font-semibold mt-0.5">
-            Commandes
-          </span>
-        </Link>
-        <Link
-          href="/account"
-          className="flex flex-col items-center text-white/70 hover:text-emerald-300 transition"
-        >
-          <User className="w-5 h-5 sm:w-6 sm:h-6" />
-          <span className="text-[9px] sm:text-[10px] font-semibold mt-0.5">
-            Profil
-          </span>
-        </Link>
-      </div>
 
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {

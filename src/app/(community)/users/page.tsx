@@ -258,9 +258,9 @@ export default function CommunityUsersPage() {
   const handleMessage = async (userId: number) => {
     try {
       setMessagingUserId(userId);
-      // Simuler la création d'une conversation
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      router.push(`/community/messages?user=${userId}`);
+      const conversation =
+        await messageService.createOrFindConversation(userId);
+      router.push(`/messages?id=${conversation.id}`);
     } catch (error) {
       console.error("Erreur lors de la création de la discussion:", error);
     } finally {

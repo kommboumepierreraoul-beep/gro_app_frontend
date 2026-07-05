@@ -2,7 +2,6 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import VendorLayout from '@/components/layouts/VendorLayout';
 import DisputeChat from '@/components/DisputeChat';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
@@ -90,20 +89,16 @@ export default function AdminDisputeDetailPage() {
   };
 
   if (loading) return (
-    <VendorLayout>
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="relative">
           <div className="w-14 h-14 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
           <Scale size={18} className="absolute inset-0 m-auto text-emerald-600" />
         </div>
       </div>
-    </VendorLayout>
   );
 
   if (!dispute) return (
-    <VendorLayout>
       <div className="min-h-screen flex items-center justify-center text-slate-500">Litige non trouvé</div>
-    </VendorLayout>
   );
 
   const cfg = STATUS[dispute.status] ?? STATUS.pending;
@@ -130,11 +125,10 @@ export default function AdminDisputeDetailPage() {
   };
 
   return (
-    <VendorLayout>
-      <div className="-m-4 sm:-m-6 lg:-m-8 min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+      <div className="min-h-[calc(100vh-7rem)] rounded-2xl border border-[#c2c9bb]/30 bg-[#f9faf2] pb-8">
 
         {/* Header premium */}
-        <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-2xl border-b border-white/60 px-4 md:px-6 py-4 shadow-sm">
+        <header className="sticky top-16 z-30 rounded-t-2xl border-b border-white/60 bg-white/80 px-4 py-4 shadow-sm backdrop-blur-2xl md:px-6">
           <div className="max-w-6xl mx-auto flex justify-between items-center gap-3">
             <div className="flex items-center gap-3 md:gap-4 min-w-0">
               <Link href="/admin/disputes" className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-emerald-700 hover:bg-emerald-50 shadow-sm transition-all flex-shrink-0">
@@ -365,6 +359,5 @@ export default function AdminDisputeDetailPage() {
           )}
         </main>
       </div>
-    </VendorLayout>
   );
 }

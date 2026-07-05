@@ -20,7 +20,7 @@ export default function MissionsMapPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-white/50 backdrop-blur-sm flex-shrink-0">
+      <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200  backdrop-blur-sm flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center">
             <Map size={18} className="sm:w-[22px] sm:h-[22px] text-green-950" />
@@ -31,9 +31,9 @@ export default function MissionsMapPage() {
               Carte des missions
             </h1>
 
-            <p className="text-xs sm:text-sm text-gray-500">
+            <span className="text-xs sm:text-sm text-gray-500">
               Découvrez les missions disponibles autour de vous.
-            </p>
+            </span>
           </div>
         </div>
       </div>

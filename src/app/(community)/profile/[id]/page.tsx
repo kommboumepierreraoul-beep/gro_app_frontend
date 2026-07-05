@@ -126,7 +126,7 @@ export default function UserProfilePage({
     try {
       const conversation =
         await messageService.createOrFindConversation(userId);
-      router.push(`/community/messages/${conversation.id}`);
+      router.push(`/messages?id=${conversation.id}`);
     } catch (error) {
       console.error(error);
     }

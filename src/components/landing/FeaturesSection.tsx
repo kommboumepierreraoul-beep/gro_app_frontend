@@ -10,50 +10,54 @@ import {
   Calendar,
   Leaf,
   TrendingUp,
-  Shield,
-  Zap,
 } from "lucide-react";
 
 const features = [
   {
     icon: MessageCircle,
-    title: "Messagerie intégrée",
-    description: "Communiquez en temps réel avec la communauté agricole et les experts.",
+    title: "Messagerie integree",
+    description:
+      "Communiquez en temps reel avec la communaute agricole et les experts.",
     color: "#154212",
     bg: "rgba(21,66,18,0.08)",
   },
   {
     icon: Briefcase,
     title: "Missions agricoles",
-    description: "Trouvez des missions, partagez des offres et développez votre activité.",
+    description:
+      "Trouvez des missions, partagez des offres et developpez votre activite.",
     color: "#2d5a27",
     bg: "rgba(45,90,39,0.08)",
   },
   {
     icon: GraduationCap,
     title: "Formations & apprentissages",
-    description: "Accédez à des contenus éducatifs pour perfectionner vos compétences.",
+    description:
+      "Accedez a des contenus educatifs pour perfectionner vos competences.",
     color: "#805533",
     bg: "rgba(128,85,51,0.08)",
   },
   {
     icon: MapPin,
     title: "Cartographie interactive",
-    description: "Visualisez les projets agricoles et les ressources à proximité.",
+    description:
+      "Visualisez les projets agricoles et les ressources a proximite.",
     color: "#3b6934",
     bg: "rgba(59,105,52,0.08)",
   },
   {
     icon: Users,
-    title: "Communautés locales",
-    description: "Rejoignez des groupes d'entraide par région ou par activité.",
+    title: "Communautes locales",
+    description:
+      "Rejoignez des groupes d'entraide par region ou par activite.",
     color: "#854f0b",
     bg: "rgba(133,79,11,0.08)",
   },
   {
     icon: Calendar,
     title: "Agenda agricole",
-    description: "Planifiez vos activités et suivez les événements du secteur.",
+    description:
+      "Planifiez vos activites et suivez les evenements du secteur.",
     color: "#72796e",
     bg: "rgba(114,121,110,0.08)",
   },
@@ -61,59 +65,59 @@ const features = [
 
 const stats = [
   { value: "2500+", label: "Agriculteurs", icon: Leaf },
-  { value: "150+", label: "Communautés", icon: Users },
+  { value: "150+", label: "Communautes", icon: Users },
   { value: "300+", label: "Missions", icon: Briefcase },
   { value: "95%", label: "Satisfaction", icon: TrendingUp },
 ];
 
 export function FeaturesSection() {
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-      <div className="container mx-auto max-w-6xl">
-        {/* Header */}
+    <section className="bg-[#f9faf2] px-4 py-12 sm:px-6 lg:px-8 lg:py-14">
+      <div className="mx-auto max-w-[1200px]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="mb-8 flex flex-col gap-3 md:mb-10 md:flex-row md:items-end md:justify-between"
         >
-          <p className="text-[#3b6934] text-xs tracking-widest uppercase font-semibold mb-2">
-            Fonctionnalités
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#191c18] mb-4">
-            Tout ce dont vous avez besoin
-          </h2>
-          <p className="text-[#72796e] max-w-2xl mx-auto">
-            Une plateforme complète pour connecter la communauté agricole et
-            faciliter vos projets.
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#3b6934]">
+              Fonctionnalites
+            </p>
+            <h2 className="text-3xl font-bold text-[#191c18] sm:text-4xl">
+              Tout ce dont vous avez besoin
+            </h2>
+          </div>
+          <p className="max-w-xl text-sm leading-relaxed text-[#72796e] sm:text-base">
+            Une plateforme complete pour connecter la communaute agricole et
+            faciliter vos projets, avec des espaces plus clairs et faciles a
+            parcourir.
           </p>
         </motion.div>
 
-        {/* Features grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
               <motion.div
-                key={index}
+                key={feature.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
                 viewport={{ once: true }}
-                className="group p-6 rounded-2xl border border-[#c2c9bb]/20 hover:border-[#bcf0ae]/40 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-                style={{ background: "rgba(255,255,255,0.8)" }}
+                className="group rounded-2xl border border-[#c2c9bb]/30 bg-white/70 p-5 backdrop-blur-sm transition-all duration-300 hover:border-[#bcf0ae]/70 hover:shadow-lg hover:shadow-[#154212]/5"
               >
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110"
+                  className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-105"
                   style={{ background: feature.bg }}
                 >
-                  <Icon size={22} style={{ color: feature.color }} strokeWidth={1.8} />
+                  <Icon size={21} style={{ color: feature.color }} />
                 </div>
-                <h3 className="text-lg font-semibold text-[#191c18] mb-2">
+                <h3 className="mb-2 text-base font-semibold text-[#191c18]">
                   {feature.title}
                 </h3>
-                <p className="text-sm text-[#72796e] leading-relaxed">
+                <p className="text-sm leading-relaxed text-[#72796e]">
                   {feature.description}
                 </p>
               </motion.div>
@@ -121,24 +125,29 @@ export function FeaturesSection() {
           })}
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-8 border-t border-[#c2c9bb]/20">
+        <div className="mt-8 grid grid-cols-2 gap-3 rounded-2xl border border-[#c2c9bb]/30 bg-white/70 p-3 backdrop-blur-sm lg:grid-cols-4">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
+                key={stat.label}
+                initial={{ opacity: 0, scale: 0.96 }}
                 whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
+                transition={{ duration: 0.4, delay: index * 0.06 }}
                 viewport={{ once: true }}
-                className="text-center"
+                className="flex items-center gap-3 rounded-xl bg-[#f3f4ed]/70 p-3"
               >
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Icon className="w-5 h-5 text-[#154212]" strokeWidth={1.8} />
-                  <p className="text-3xl font-bold text-[#191c18]">{stat.value}</p>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#154212]/10">
+                  <Icon className="h-4 w-4 text-[#154212]" />
                 </div>
-                <p className="text-sm text-[#72796e]">{stat.label}</p>
+                <div className="min-w-0">
+                  <p className="text-xl font-bold leading-none text-[#191c18]">
+                    {stat.value}
+                  </p>
+                  <p className="mt-1 truncate text-xs text-[#72796e]">
+                    {stat.label}
+                  </p>
+                </div>
               </motion.div>
             );
           })}

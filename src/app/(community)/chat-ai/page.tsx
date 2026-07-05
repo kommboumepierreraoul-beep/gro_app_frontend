@@ -6,8 +6,8 @@ import { ChatInterface } from "@/components/ai/ChatInterface";
 
 export default function AIPage() {
   return (
-    <div className="flex-1 flex overflow-hidden bg-[#f9faf2]">
-      <div className="flex-1 flex overflow-hidden  bg-white/50 backdrop-blur-sm border border-[rgba(194,201,187,0.3)] shadow-sm">
+    <div className="flex min-h-0 flex-1 overflow-hidden bg-[#f6f7f0] px-0 pb-16 sm:px-3 sm:py-3 lg:pb-3">
+      <div className="flex min-h-0 flex-1 overflow-hidden border-[rgba(194,201,187,0.45)] bg-white/70 shadow-sm sm:rounded-2xl sm:border">
         <ChatInterface />
       </div>
     </div>

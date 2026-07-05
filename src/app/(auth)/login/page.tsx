@@ -2,18 +2,20 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { authService } from "@/services/auth.service";
 import {
   Eye,
   EyeOff,
   Leaf,
   Check,
-  ArrowRight,
   AlertCircle,
   XCircle,
   TreesIcon,
 } from "lucide-react";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,34 +61,20 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await authService.login({ email, password });
 
-      const data = await response.json();
-
-      console.log("Réponse login:", data);
-
-      if (response.ok && data.token) {
-        // Sauvegarder dans cookie
-        document.cookie = `auth_token=${data.token}; path=/; max-age=${7 * 24 * 3600}`;
-
-        // Redirection selon email vérifié et rôle
-        if (!data.user?.email_verified_at) {
-          window.location.href = "/verify-email";
-        } else {
-          window.location.href = "/community";
-        }
+      if (!data.user?.email_verified_at) {
+        router.push("/verify-email");
+      } else if (data.user.role === "admin") {
+        router.push("/admin");
       } else {
-        setErrors({ general: data.message || "Identifiants incorrects" });
+        router.push("/community");
       }
     } catch (error) {
-      setErrors({ general: "Erreur de connexion au serveur" });
+      setErrors({
+        general:
+          error instanceof Error ? error.message : "Erreur de connexion au serveur",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +84,7 @@ export default function LoginPage() {
   const handleGoogleLogin = () => {
     setIsGoogleLoading(true);
     // Rediriger vers l'API Google OAuth
-    window.location.href = "http://localhost:8000/api/auth/google/redirect";
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/redirect`;
   };
 
   const emailError = touched.email ? validateEmail(email) : errors.email;
@@ -574,3 +562,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+
