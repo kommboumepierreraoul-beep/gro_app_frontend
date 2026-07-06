@@ -109,7 +109,7 @@ export default function NotificationPreferencesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen ">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
         <div className="rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -195,11 +195,13 @@ export default function NotificationPreferencesPage() {
           />
           <StatCard
             label="Réseaux"
-            value={[
-              preferences.new_followers,
-              preferences.post_likes,
-              preferences.comments,
-            ].filter(Boolean).length}
+            value={
+              [
+                preferences.new_followers,
+                preferences.post_likes,
+                preferences.comments,
+              ].filter(Boolean).length
+            }
             total={3}
             icon={<Users className="w-4 h-4 text-amber-600" />}
             color="bg-amber-50"
@@ -411,7 +413,7 @@ function PreferenceCard({
 
 function NotificationSkeleton() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen ">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header Skeleton */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">

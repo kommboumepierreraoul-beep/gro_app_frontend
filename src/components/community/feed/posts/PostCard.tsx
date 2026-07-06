@@ -1119,7 +1119,7 @@ export function PostCard({ post }: { post: Post }) {
           <div className="flex items-center gap-3">
             <Link href={`/profile/${post.author?.id}`}>
               <Avatar
-                src={post.author?.avatar}
+                src={post.author.avatar}
                 firstname={post.author?.firstname}
                 size="md"
                 className="ring-2 ring-green-300/50 flex-shrink-0"

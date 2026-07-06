@@ -48,7 +48,7 @@ export default function MissionsAgendaPage() {
   const filledMissions = missions.filter((m) => m.status === "filled");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen ">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* ── Header ─────────────────────────────────────────────────── */}
         <div className="rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">

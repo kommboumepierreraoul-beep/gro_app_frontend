@@ -255,9 +255,16 @@ function WalletContent() {
   const fetchWalletData = async (pin: string) => {
     try {
       const res = await api.get("/wallet/balance", { params: { pin } });
+      // 👇 DEBUG TEMPORAIRE — regarde la console (F12) après avoir tapé le PIN
+      console.log(
+        "RAW API RESPONSE /wallet/balance:",
+        JSON.stringify(res.data, null, 2),
+      );
+
       const walletData = normalizeWalletData(res.data);
 
       if (!walletData) {
+        console.warn("normalizeWalletData a retourné null pour ce payload ⬆️");
         toast.error("Le solde n'a pas pu etre lu. Verifiez le backend.");
         setVisibleBalance(null);
         return false;
@@ -267,6 +274,9 @@ function WalletContent() {
       toast.success("Solde affiche");
       return true;
     } catch (error) {
+      // 👇 DEBUG TEMPORAIRE — regarde la console (F12) si ça part en erreur
+      console.error("WALLET BALANCE ERROR:", error);
+
       const status = (error as ApiError).response?.status;
       toast.error(
         status === 401 || status === 403 || status === 422
@@ -341,9 +351,7 @@ function WalletContent() {
         setPinConfirm("");
       }
     } catch (err: any) {
-      toast.error(
-        getApiErrorMessage(err, "Impossible de configurer le PIN"),
-      );
+      toast.error(getApiErrorMessage(err, "Impossible de configurer le PIN"));
     } finally {
       setLoadingAction(false);
     }
@@ -581,7 +589,9 @@ function WalletContent() {
   }
 
   return (
-    <div className={`min-h-[calc(100vh-7rem)] rounded-2xl pb-8 transition-colors ${walletUi.shell}`}>
+    <div
+      className={`min-h-[calc(100vh-7rem)] rounded-2xl pb-8 transition-colors ${walletUi.shell}`}
+    >
       <div className="mx-auto max-w-7xl space-y-6 px-3 py-5 sm:px-5 sm:py-6">
         <div className="flex justify-end">
           <button
@@ -598,7 +608,9 @@ function WalletContent() {
         </div>
 
         {/* Carte solde principale */}
-        <div className={`relative overflow-hidden rounded-3xl p-6 shadow-sm backdrop-blur-xl ${walletUi.card}`}>
+        <div
+          className={`relative overflow-hidden rounded-3xl p-6 shadow-sm backdrop-blur-xl ${walletUi.card}`}
+        >
           <div className="absolute inset-0 opacity-20 pointer-events-none">
             <svg
               className="w-full h-full"
@@ -616,7 +628,9 @@ function WalletContent() {
           <div className="relative z-10">
             <div className="flex justify-between items-start">
               <div>
-                <p className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${walletUi.muted}`}>
+                <p
+                  className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${walletUi.muted}`}
+                >
                   SOLDE DISPONIBLE
                   <button
                     onClick={requestBalanceVisibility}
@@ -631,7 +645,9 @@ function WalletContent() {
                 </p>
                 <h1 className={`mt-2 text-4xl font-bold ${walletUi.title}`}>
                   {isBalanceVisible
-                    ? Number(visibleBalance ?? wallet?.balance ?? 0).toLocaleString()
+                    ? Number(
+                        visibleBalance ?? wallet?.balance ?? 0,
+                      ).toLocaleString()
                     : "••••••"}
                   <span className={`text-xl font-medium ${walletUi.accent}`}>
                     {" "}
@@ -645,10 +661,14 @@ function WalletContent() {
             </div>
             <div className="flex flex-wrap justify-between items-center gap-4 mt-6">
               <div className="flex items-center gap-2">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${walletUi.accentBg}`}>
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full ${walletUi.accentBg}`}
+                >
                   <TrendingUp className={`h-4 w-4 ${walletUi.accent}`} />
                 </div>
-                <span className={`rounded-full px-2 py-1 text-xs ${walletUi.accent} ${walletUi.accentBg}`}>
+                <span
+                  className={`rounded-full px-2 py-1 text-xs ${walletUi.accent} ${walletUi.accentBg}`}
+                >
                   +12.5% ce mois
                 </span>
               </div>
@@ -708,10 +728,14 @@ function WalletContent() {
                 onClick={action.onClick}
                 className="flex flex-col items-center gap-2 min-w-[70px] group"
               >
-                <div className={`flex h-14 w-14 items-center justify-center rounded-full backdrop-blur transition group-hover:bg-lime-500/20 ${walletUi.softCard}`}>
+                <div
+                  className={`flex h-14 w-14 items-center justify-center rounded-full backdrop-blur transition group-hover:bg-lime-500/20 ${walletUi.softCard}`}
+                >
                   <action.icon className={`h-6 w-6 ${walletUi.accent}`} />
                 </div>
-                <span className={`text-xs transition ${isLight ? "group-hover:text-[#154212]" : "group-hover:text-white"} ${walletUi.muted}`}>
+                <span
+                  className={`text-xs transition ${isLight ? "group-hover:text-[#154212]" : "group-hover:text-white"} ${walletUi.muted}`}
+                >
                   {action.label}
                 </span>
               </button>
@@ -745,7 +769,10 @@ function WalletContent() {
                     <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={walletUi.chartGrid} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={walletUi.chartGrid}
+                />
                 <XAxis
                   dataKey="date"
                   tick={{ fontSize: 11, fill: walletUi.chartText }}
@@ -779,7 +806,9 @@ function WalletContent() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className={`mt-3 flex justify-center gap-6 text-sm ${walletUi.muted}`}>
+          <div
+            className={`mt-3 flex justify-center gap-6 text-sm ${walletUi.muted}`}
+          >
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-lime-500 rounded-full"></div> Entrées
             </div>
@@ -792,7 +821,9 @@ function WalletContent() {
         {/* Historique des transactions */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className={`text-lg font-semibold ${walletUi.title}`}>Activités</h2>
+            <h2 className={`text-lg font-semibold ${walletUi.title}`}>
+              Activités
+            </h2>
             <button className={`text-sm font-semibold ${walletUi.accent}`}>
               Voir tout
             </button>
@@ -822,7 +853,9 @@ function WalletContent() {
           </div>
           <div className="space-y-3">
             {paginatedTransactions.length === 0 ? (
-              <div className={`rounded-2xl p-8 text-center backdrop-blur ${walletUi.softCard} ${walletUi.muted}`}>
+              <div
+                className={`rounded-2xl p-8 text-center backdrop-blur ${walletUi.softCard} ${walletUi.muted}`}
+              >
                 <Receipt className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>Aucune transaction</p>
               </div>
@@ -837,7 +870,9 @@ function WalletContent() {
                       className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                         tx.type === "credit" || tx.type === "deposit"
                           ? "bg-lime-500/20"
-                          : isLight ? "bg-[#e7e9e1]" : "bg-white/10"
+                          : isLight
+                            ? "bg-[#e7e9e1]"
+                            : "bg-white/10"
                       }`}
                     >
                       {tx.type === "credit" || tx.type === "deposit" ? (
@@ -847,7 +882,9 @@ function WalletContent() {
                       )}
                     </div>
                     <div>
-                      <p className={`font-medium ${walletUi.title}`}>{getTxLabel(tx)}</p>
+                      <p className={`font-medium ${walletUi.title}`}>
+                        {getTxLabel(tx)}
+                      </p>
                       <p className={`text-xs ${walletUi.muted}`}>
                         {new Date(tx.created_at).toLocaleDateString("fr-FR", {
                           day: "numeric",
@@ -964,7 +1001,9 @@ function WalletContent() {
                 />
               )}
               <button
-                onClick={pinModal === "setup" ? handleSetupPin : handleUnlockBalance}
+                onClick={
+                  pinModal === "setup" ? handleSetupPin : handleUnlockBalance
+                }
                 disabled={loadingAction}
                 className="w-full py-3 bg-lime-500 hover:bg-lime-400 text-slate-950 font-semibold rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
@@ -1028,34 +1067,34 @@ function WalletContent() {
                 />
               </div>
               {false && (
-              <>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
-                  Numéro de téléphone
-                </label>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="6XXXXXXXX"
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
-                  Service
-                </label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
-                >
-                  <option value="notchpay">
-                    Paiement par carte / Mobile Money (NotchPay)
-                  </option>
-                </select>
-              </div>
-              </>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">
+                      Numéro de téléphone
+                    </label>
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="6XXXXXXXX"
+                      className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">
+                      Service
+                    </label>
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
+                    >
+                      <option value="notchpay">
+                        Paiement par carte / Mobile Money (NotchPay)
+                      </option>
+                    </select>
+                  </div>
+                </>
               )}
               <button
                 onClick={startDepositPinStep}
@@ -1111,12 +1150,12 @@ function WalletContent() {
                 <p className="mt-1 font-bold text-white">NotchPay</p>
               </div>
               {false && (
-              <div className="col-span-2">
-                <p className="text-xs text-slate-400">Telephone</p>
-                <p className="mt-1 font-bold text-white">
-                  {phoneNumber || "Non renseigne"}
-                </p>
-              </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-slate-400">Telephone</p>
+                  <p className="mt-1 font-bold text-white">
+                    {phoneNumber || "Non renseigne"}
+                  </p>
+                </div>
               )}
             </div>
 

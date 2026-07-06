@@ -119,7 +119,7 @@ export default function PrivacyPage() {
   const privacyLevel = Math.round((activeSettings / totalSettings) * 100);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen ">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
         <div className=" rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -326,8 +326,8 @@ export default function PrivacyPage() {
                 Vos données sont protégées
               </p>
               <p className="text-xs text-purple-600">
-                Nous respectons votre vie privée. Vos données sont sécurisées
-                et utilisées conformément à notre politique de confidentialité.
+                Nous respectons votre vie privée. Vos données sont sécurisées et
+                utilisées conformément à notre politique de confidentialité.
               </p>
             </div>
           </div>
@@ -451,7 +451,7 @@ function Phone(props: any) {
 
 function PrivacySkeleton() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen ">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header Skeleton */}
         <div className="rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
