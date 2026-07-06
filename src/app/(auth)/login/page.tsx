@@ -1,9 +1,10 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
+import { useAuthStore } from "@/stores/auth.store";
 import {
   Eye,
   EyeOff,
@@ -16,6 +17,9 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const setUser = useAuthStore((state) => state.setUser);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,6 +35,35 @@ export default function LoginPage() {
     email?: boolean;
     password?: boolean;
   }>({});
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    if (user) {
+      router.replace(user.role === "admin" ? "/admin" : "/community");
+      return;
+    }
+
+    if (!authService.isAuthenticated()) return;
+
+    let isMounted = true;
+
+    authService
+      .getProfile()
+      .then((profile) => {
+        if (!isMounted) return;
+        setUser(profile);
+        router.replace(profile.role === "admin" ? "/admin" : "/community");
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setUser(null);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isHydrated, router, setUser, user]);
 
   const validateEmail = (val: string) => {
     if (!val.trim()) return "L'adresse email est obligatoire.";
@@ -62,6 +95,7 @@ export default function LoginPage() {
 
     try {
       const data = await authService.login({ email, password });
+      setUser(data.user);
 
       if (!data.user?.email_verified_at) {
         router.push("/verify-email");

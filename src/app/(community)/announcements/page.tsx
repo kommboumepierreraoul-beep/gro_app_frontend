@@ -171,7 +171,7 @@ export default function AnnouncementsPage() {
       <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 md:mb-12">
         <div className="flex-1">
           <p className="text-[#3b6934] text-[10px] sm:text-xs tracking-widest uppercase mb-1">
-            COMMUNAUTÉ GRO
+            COMMUNAUTÉ AgriPulse
           </p>
           <h1 className="text-2xl sm:text-3xl md:text-[40px] font-bold leading-tight tracking-tight text-[#191c18]">
             Annonces
