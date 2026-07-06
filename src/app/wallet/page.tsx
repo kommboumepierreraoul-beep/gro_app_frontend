@@ -82,13 +82,21 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
 };
 
 const normalizeWalletData = (payload: unknown): WalletData | null => {
-  const data =
+  const root =
     payload &&
     typeof payload === "object" &&
     "data" in payload &&
     (payload as { data?: unknown }).data
       ? (payload as { data: unknown }).data
       : payload;
+
+  const data =
+    root &&
+    typeof root === "object" &&
+    "wallet" in root &&
+    (root as { wallet?: unknown }).wallet
+      ? (root as { wallet: unknown }).wallet
+      : root;
 
   if (!data || typeof data !== "object") return null;
 
@@ -179,7 +187,7 @@ function WalletContent() {
     null,
   );
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [showBalance, setShowBalance] = useState(false);
+  const [visibleBalance, setVisibleBalance] = useState<number | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [depositModal, setDepositModal] = useState(false);
   const [depositPinModal, setDepositPinModal] = useState(false);
@@ -201,6 +209,7 @@ function WalletContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const isLight = theme === "light";
+  const isBalanceVisible = visibleBalance !== null;
   const walletUi = {
     shell: isLight
       ? "border border-[#c2c9bb]/35 bg-[#f9faf2] text-[#191c18]"
@@ -238,6 +247,11 @@ function WalletContent() {
     }
   };
 
+  const revealBalance = (walletData: WalletData) => {
+    setWallet(walletData);
+    setVisibleBalance(walletData.balance);
+  };
+
   const fetchWalletData = async (pin: string) => {
     try {
       const res = await api.get("/wallet/balance", { params: { pin } });
@@ -245,12 +259,11 @@ function WalletContent() {
 
       if (!walletData) {
         toast.error("Le solde n'a pas pu etre lu. Verifiez le backend.");
-        setShowBalance(false);
+        setVisibleBalance(null);
         return false;
       }
 
-      setWallet(walletData);
-      setShowBalance(true);
+      revealBalance(walletData);
       toast.success("Solde affiche");
       return true;
     } catch (error) {
@@ -260,7 +273,7 @@ function WalletContent() {
           ? "PIN incorrect ou invalide"
           : getApiErrorMessage(error, "Impossible de charger le solde"),
       );
-      setShowBalance(false);
+      setVisibleBalance(null);
       return false;
     }
   };
@@ -358,9 +371,25 @@ function WalletContent() {
     }
   };
 
+  const handlePinInputChange = (value: string) => {
+    setPinInput(value);
+
+    if (pinModal === "balance" && /^\d{4}$/.test(value) && !loadingAction) {
+      setLoadingAction(true);
+      fetchWalletData(value)
+        .then((unlocked) => {
+          if (unlocked) {
+            setPinModal(null);
+            setPinInput("");
+          }
+        })
+        .finally(() => setLoadingAction(false));
+    }
+  };
+
   const requestBalanceVisibility = () => {
-    if (showBalance) {
-      setShowBalance(false);
+    if (isBalanceVisible) {
+      setVisibleBalance(null);
       return;
     }
 
@@ -376,11 +405,6 @@ function WalletContent() {
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0) {
       toast.error("Montant invalide");
-      return;
-    }
-
-    if (phoneNumber && phoneNumber.length < 9) {
-      toast.error("Numero Mobile Money invalide");
       return;
     }
 
@@ -407,12 +431,11 @@ function WalletContent() {
     }
     setLoadingAction(true);
     try {
-      const payload: any = {
+      const payload = {
         amount: amountNum,
-        method: paymentMethod,
+        method: "notchpay",
         pin: transactionPin,
       };
-      if (phoneNumber) payload.phone = phoneNumber;
 
       const res = await api.post("/wallet/deposit", payload);
 
@@ -426,7 +449,6 @@ function WalletContent() {
         setDepositModal(false);
         setDepositPinModal(false);
         setAmount("");
-        setPhoneNumber("");
         setTransactionPin("");
         window.location.href = authUrl;
       } else {
@@ -467,7 +489,6 @@ function WalletContent() {
       setPhoneNumber("");
       setTransactionPin("");
       setWithdrawChannel("mtn");
-      setShowBalance(false);
       fetchTransactions();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Erreur lors du retrait");
@@ -601,7 +622,7 @@ function WalletContent() {
                     onClick={requestBalanceVisibility}
                     className={`transition ${isLight ? "hover:text-[#154212]" : "hover:text-lime-400"}`}
                   >
-                    {showBalance ? (
+                    {isBalanceVisible ? (
                       <Eye className="w-4 h-4" />
                     ) : (
                       <EyeOff className="w-4 h-4" />
@@ -609,8 +630,8 @@ function WalletContent() {
                   </button>
                 </p>
                 <h1 className={`mt-2 text-4xl font-bold ${walletUi.title}`}>
-                  {showBalance
-                    ? (wallet?.balance || 0).toLocaleString()
+                  {isBalanceVisible
+                    ? Number(visibleBalance ?? wallet?.balance ?? 0).toLocaleString()
                     : "••••••"}
                   <span className={`text-xl font-medium ${walletUi.accent}`}>
                     {" "}
@@ -932,7 +953,7 @@ function WalletContent() {
               <PinCodeInput
                 label="PIN 4 chiffres"
                 value={pinInput}
-                onChange={setPinInput}
+                onChange={handlePinInputChange}
                 autoFocus
               />
               {pinModal === "setup" && (
@@ -989,6 +1010,7 @@ function WalletContent() {
                 </p>
                 <p className="mt-1 text-xs leading-5 text-slate-300">
                   Renseignez le montant et le moyen de paiement. Le PIN wallet
+                  {/* eslint-disable-next-line react/no-unescaped-entities */}
                   sera demandé à l'étape suivante pour confirmer l'opération.
                 </p>
               </div>
@@ -1005,6 +1027,8 @@ function WalletContent() {
                   autoFocus
                 />
               </div>
+              {false && (
+              <>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">
                   Numéro de téléphone
@@ -1031,6 +1055,8 @@ function WalletContent() {
                   </option>
                 </select>
               </div>
+              </>
+              )}
               <button
                 onClick={startDepositPinStep}
                 disabled={loadingAction}
@@ -1084,12 +1110,14 @@ function WalletContent() {
                 <p className="text-xs text-slate-400">Service</p>
                 <p className="mt-1 font-bold text-white">NotchPay</p>
               </div>
+              {false && (
               <div className="col-span-2">
                 <p className="text-xs text-slate-400">Telephone</p>
                 <p className="mt-1 font-bold text-white">
                   {phoneNumber || "Non renseigne"}
                 </p>
               </div>
+              )}
             </div>
 
             <div className="space-y-5">

@@ -27,8 +27,6 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
 
 import { Avatar } from "../shared/Avatar";
 import { useAuthStore } from "@/stores/auth.store";
@@ -36,6 +34,8 @@ import { announcementService } from "@/services/community/announcement.service";
 import type { Announcement } from "@/types/community.types";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useI18n } from "@/i18n/LanguageProvider";
+import { formatDateOnly, formatRelativeTime } from "@/lib/i18n-date";
 
 /* ─────────────────────────── category metadata ─────────────────────────── */
 
@@ -130,16 +130,14 @@ export function AnnouncementCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { locale } = useI18n();
 
   const menuRef = useRef<HTMLDivElement>(null);
   const isOwner = user?.id === announcement.author?.id;
   const meta = getCategoryMeta(announcement.category ?? "other");
   const Icon = meta.icon;
 
-  const timeAgo = formatDistanceToNow(new Date(announcement.created_at), {
-    addSuffix: true,
-    locale: fr,
-  });
+  const timeAgo = formatRelativeTime(announcement.created_at, locale);
 
   const authorName = announcement.author?.firstname && announcement.author?.lastname
     ? `${announcement.author.firstname} ${announcement.author.lastname}`
@@ -373,7 +371,7 @@ export function AnnouncementCard({
                 {announcement.expires_at && (
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {new Date(announcement.expires_at).toLocaleDateString("fr-FR")}
+                    {formatDateOnly(announcement.expires_at, locale)}
                   </span>
                 )}
               </div>
@@ -485,7 +483,7 @@ export function AnnouncementCard({
             {announcement.expires_at && (
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                {new Date(announcement.expires_at).toLocaleDateString("fr-FR")}
+                {formatDateOnly(announcement.expires_at, locale)}
               </span>
             )}
           </div>

@@ -1,6 +1,7 @@
 "use client";
-import { formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
+
+import { useI18n } from "@/i18n/LanguageProvider";
+import { formatDateTime, formatRelativeTime } from "@/lib/i18n-date";
 
 interface TimeAgoProps {
   date: string;
@@ -8,16 +9,14 @@ interface TimeAgoProps {
 }
 
 export function TimeAgo({ date, className = "" }: TimeAgoProps) {
-  const formatted = formatDistanceToNow(new Date(date), {
-    addSuffix: true,
-    locale: fr,
-  });
+  const { locale } = useI18n();
+  const formatted = formatRelativeTime(date, locale);
 
   return (
     <time
       dateTime={date}
       className={`text-xs text-gray-400 ${className}`}
-      title={date}
+      title={formatDateTime(date, locale)}
     >
       {formatted}
     </time>

@@ -27,7 +27,8 @@ import {
   getDay,
   isWeekend,
 } from "date-fns";
-import { fr } from "date-fns/locale";
+import { useI18n } from "@/i18n/LanguageProvider";
+import { getDateFnsLocale } from "@/lib/i18n-date";
 
 interface Mission {
   id: string | number;
@@ -69,8 +70,14 @@ export default function Agenda({
   isLoading,
   onMissionClick,
 }: AgendaProps) {
+  const { locale } = useI18n();
+  const dateLocale = getDateFnsLocale(locale);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const weekDays =
+    locale === "en"
+      ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+      : ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
   // Navigation
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
@@ -164,7 +171,7 @@ export default function Agenda({
                 onClick={goToToday}
                 className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                Aujourd'hui
+                {locale === "en" ? "Today" : "Aujourd'hui"}
               </button>
               <div className="flex items-center gap-1">
                 <button
@@ -182,7 +189,7 @@ export default function Agenda({
               </div>
             </div>
             <h2 className="text-lg font-semibold text-gray-900">
-              {format(currentDate, "MMMM yyyy", { locale: fr })}
+              {format(currentDate, "MMMM yyyy", { locale: dateLocale })}
             </h2>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">
@@ -195,11 +202,11 @@ export default function Agenda({
           <div className="p-4">
             {/* Jours de la semaine */}
             <div className="grid grid-cols-7 gap-1 mb-2">
-              {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day) => (
+              {weekDays.map((day, index) => (
                 <div
                   key={day}
                   className={`text-xs font-medium text-gray-500 text-center py-1 ${
-                    day === "Sam" || day === "Dim" ? "text-red-400" : ""
+                    index >= 5 ? "text-red-400" : ""
                   }`}
                 >
                   {day}
@@ -283,8 +290,10 @@ export default function Agenda({
               <CalendarIcon size={18} className="text-gray-400" />
               <h3 className="font-semibold text-gray-900">
                 {selectedDate
-                  ? format(selectedDate, "EEEE d MMMM", { locale: fr })
-                  : "Sélectionnez un jour"}
+                  ? format(selectedDate, "EEEE d MMMM", { locale: dateLocale })
+                  : locale === "en"
+                    ? "Select a day"
+                    : "Sélectionnez un jour"}
               </h3>
             </div>
             {selectedDate && (
@@ -391,7 +400,7 @@ export default function Agenda({
                       <p className="text-[10px] text-gray-400">
                         {mission.start_date &&
                           format(new Date(mission.start_date), "dd MMMM", {
-                            locale: fr,
+                            locale: dateLocale,
                           })}
                       </p>
                     </div>

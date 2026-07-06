@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/LanguageProvider";
 import {
   translateElementAttributes,
+  translateSystemString,
   translateTextNode,
 } from "@/i18n/system-translations";
 
@@ -63,11 +64,13 @@ export function SystemTranslator() {
         "placeholder",
         "title",
         "aria-label",
+        "aria-description",
         "aria-valuetext",
         "alt",
         "data-label",
         "data-title",
         "data-tooltip",
+        "data-placeholder",
         "value",
       ],
       characterData: true,
@@ -77,6 +80,46 @@ export function SystemTranslator() {
 
     return () => observer.disconnect();
   }, [locale, pathname]);
+
+  useEffect(() => {
+    const originalAlert = window.alert;
+    const originalConfirm = window.confirm;
+    const originalPrompt = window.prompt;
+
+    window.alert = (message?: unknown) => {
+      originalAlert.call(
+        window,
+        typeof message === "string"
+          ? translateSystemString(message, locale)
+          : message,
+      );
+    };
+
+    window.confirm = (message?: string) => {
+      return originalConfirm.call(
+        window,
+        typeof message === "string"
+          ? translateSystemString(message, locale)
+          : message,
+      );
+    };
+
+    window.prompt = (message?: string, defaultValue?: string) => {
+      return originalPrompt.call(
+        window,
+        typeof message === "string"
+          ? translateSystemString(message, locale)
+          : message,
+        defaultValue,
+      );
+    };
+
+    return () => {
+      window.alert = originalAlert;
+      window.confirm = originalConfirm;
+      window.prompt = originalPrompt;
+    };
+  }, [locale]);
 
   return null;
 }

@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
+import { useI18n } from '@/i18n/LanguageProvider';
+import { formatRelativeTime as formatLocalizedRelativeTime } from '@/lib/i18n-date';
 
 type Order = {
   id: string;
@@ -40,6 +42,7 @@ type Order = {
 };
 
 function SellerOrdersContent() {
+  const { locale } = useI18n();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -48,7 +51,7 @@ function SellerOrdersContent() {
 
   useEffect(() => {
     fetchSellerOrders();
-  }, []);
+  }, [locale]);
 
   const fetchSellerOrders = async () => {
     setLoading(true);
@@ -90,7 +93,7 @@ function SellerOrdersContent() {
 
         return {
           id: order.id?.toString() || order.order_number || '?',
-          time: formatRelativeTime(order.created_at),
+          time: formatLocalizedRelativeTime(order.created_at, locale),
           customer: customerName,
           customerEmail,
           customerPhone,
@@ -115,22 +118,6 @@ function SellerOrdersContent() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatRelativeTime = (dateStr: string) => {
-    if (!dateStr) return 'Date inconnue';
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "À l'instant";
-    if (diffMins < 60) return `Il y a ${diffMins} min`;
-    if (diffHours < 24) return `Il y a ${diffHours}h`;
-    if (diffDays === 1) return 'Hier';
-    return `Il y a ${diffDays} jours`;
   };
 
   const formatPrice = (amount: number) => {

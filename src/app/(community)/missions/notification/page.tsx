@@ -29,8 +29,8 @@ import {
   MissionNotification,
   MissionNotificationType,
 } from "@/lib/missions/notification.type";
-import { formatDistanceToNow, format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { useI18n } from "@/i18n/LanguageProvider";
+import { formatDateTime, formatRelativeTime } from "@/lib/i18n-date";
 
 // ─── Configuration des icônes ────────────────────────────────────────────────
 
@@ -114,25 +114,6 @@ const ICON_CONFIG: Record<
 
 // ─── Fonction timeAgo ────────────────────────────────────────────────────────
 
-function timeAgo(dateStr: string): string {
-  try {
-    return formatDistanceToNow(new Date(dateStr), {
-      addSuffix: true,
-      locale: fr,
-    });
-  } catch {
-    return "à l'instant";
-  }
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    return format(new Date(dateStr), "dd/MM/yyyy à HH:mm", { locale: fr });
-  } catch {
-    return dateStr;
-  }
-}
-
 // ─── Composant Notification Item ─────────────────────────────────────────────
 
 function NotificationItem({
@@ -149,6 +130,7 @@ function NotificationItem({
   isDeleting: boolean;
 }) {
   const router = useRouter();
+  const { locale } = useI18n();
   const isRead = !!notification.read_at;
   const config = ICON_CONFIG[notification.type as MissionNotificationType] ?? {
     icon: <Bell size={16} strokeWidth={2} />,
@@ -211,9 +193,9 @@ function NotificationItem({
             <div className="flex items-center gap-3 mt-2">
               <span
                 className="text-[10px] text-[#a8b0a0]"
-                title={formatDate(notification.created_at)}
+                title={formatDateTime(notification.created_at, locale)}
               >
-                {timeAgo(notification.created_at)}
+                {formatRelativeTime(notification.created_at, locale)}
               </span>
               <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#f3f4ed] text-[#72796e]">
                 {config.label}
