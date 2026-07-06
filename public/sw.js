@@ -1,14 +1,21 @@
 self.addEventListener('push', function(event) {
   if (!event.data) return;
 
-  const data = event.data.json();
+  let data = {};
+  try {
+    data = event.data.json();
+  } catch (error) {
+    data = { title: 'AgriPulse', body: event.data.text() };
+  }
 
   const options = {
-    body: data.body,
-    icon: data.icon || '/icon-192.png',
-    badge: data.badge || '/icon-192.png',
+    body: data.body || 'Nouvelle notification',
+    icon: data.icon || '/logo_agri_pulse.png',
+    badge: data.badge || '/logo_agri_pulse.png',
     vibrate: [100, 50, 100],
-    data: { url: data.url || '/' },
+    tag: data.tag || 'agripulse-notification',
+    renotify: true,
+    data: { url: data.url || '/notifications' },
     actions: [
       { action: 'open', title: 'Voir' },
       { action: 'close', title: 'Fermer' },
@@ -16,7 +23,7 @@ self.addEventListener('push', function(event) {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(data.title || 'AgriPulse', options)
   );
 });
 
@@ -24,7 +31,7 @@ self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   if (event.action === 'close') return;
 
-  const url = event.notification.data.url || '/';
+  const url = event.notification.data?.url || '/notifications';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
       for (const client of clientList) {

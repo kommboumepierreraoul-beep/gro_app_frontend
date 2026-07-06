@@ -1,16 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   Bell,
+  BellRing,
   Check,
   Trash2,
   Loader2,
   ArrowLeft,
   Briefcase,
-  Calendar,
   User,
   Users,
   CheckCircle,
@@ -19,11 +18,12 @@ import {
   AlertCircle,
   Star,
   Flag,
-  MessageCircle,
-  Filter,
-  X,
+  ShieldCheck,
+  Smartphone,
 } from "lucide-react";
 import { useMissionNotifications } from "@/hooks/notifications/useMissionNotifications";
+import { usePushNotification } from "@/hooks/usePushNotification";
+import { PushNotificationModal } from "@/components/marketplace/PushNotificationModal";
 import { missionNotificationService } from "@/services/mission/notification.service";
 import {
   MissionNotification,
@@ -31,7 +31,6 @@ import {
 } from "@/lib/missions/notification.type";
 import { formatDistanceToNow, format } from "date-fns";
 import { fr } from "date-fns/locale";
-import toast from "react-hot-toast";
 
 // ─── Configuration des icônes ────────────────────────────────────────────────
 
@@ -210,7 +209,10 @@ function NotificationItem({
             )}
 
             <div className="flex items-center gap-3 mt-2">
-              <span className="text-[10px] text-[#a8b0a0]">
+              <span
+                className="text-[10px] text-[#a8b0a0]"
+                title={formatDate(notification.created_at)}
+              >
                 {timeAgo(notification.created_at)}
               </span>
               <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#f3f4ed] text-[#72796e]">
@@ -284,6 +286,7 @@ function NotificationSkeleton() {
 
 export default function MissionsNotificationsPage() {
   const router = useRouter();
+  const push = usePushNotification();
   const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
   const [selectedType, setSelectedType] = useState<
     MissionNotificationType | "all"
@@ -335,6 +338,14 @@ export default function MissionsNotificationsPage() {
     }
   };
 
+  const pushStatusLabel = !push.isSupported
+    ? "Non supporte"
+    : push.subscribed
+      ? "Actif sur cet appareil"
+      : push.permission === "denied"
+        ? "Bloque par le navigateur"
+        : "A activer";
+
   return (
     <div className="min-h-screen bg-[#f9faf2]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -364,7 +375,9 @@ export default function MissionsNotificationsPage() {
             </div>
           </div>
 
-          {unreadCount > 0 && (
+          <div className="flex items-center gap-2">
+            <PushNotificationModal variant="icon" />
+            {unreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
               disabled={markAllAsReadLoading}
@@ -377,10 +390,87 @@ export default function MissionsNotificationsPage() {
               )}
               Tout lire
             </button>
-          )}
+            )}
+          </div>
         </div>
 
         {/* ─── Filtres ─── */}
+        <div className="grid gap-4 mb-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-2xl border border-[#c2c9bb]/30 bg-white p-4 sm:p-5 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
+                    push.subscribed
+                      ? "bg-[#eaf3de] text-[#154212]"
+                      : "bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  {push.subscribed ? (
+                    <ShieldCheck size={22} strokeWidth={1.9} />
+                  ) : (
+                    <BellRing size={22} strokeWidth={1.9} />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#3b6934]">
+                    Push missions
+                  </p>
+                  <h2 className="mt-1 text-lg font-black text-[#191c18]">
+                    Alertes instantanees pour vos missions
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-[#72796e]">
+                    Recevez les candidatures, acceptations, refus, rappels,
+                    mises a jour et demandes d&apos;avis meme quand cette page est
+                    fermee.
+                  </p>
+                </div>
+              </div>
+
+              <div className="shrink-0">
+                <PushNotificationModal />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#c2c9bb]/30 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f3f4ed] text-[#154212]">
+                  <Smartphone size={18} strokeWidth={1.9} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#72796e]">
+                    Appareil
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-[#191c18]">
+                    {pushStatusLabel}
+                  </p>
+                </div>
+              </div>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                  push.subscribed
+                    ? "bg-[#eaf3de] text-[#154212]"
+                    : "bg-[#f3f4ed] text-[#72796e]"
+                }`}
+              >
+                {push.permission}
+              </span>
+            </div>
+            {push.error ? (
+              <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800">
+                {push.error}
+              </p>
+            ) : (
+              <p className="mt-3 text-xs leading-5 text-[#72796e]">
+                Le push est lie a cet appareil et fonctionne pour toutes les
+                notifications importantes de l&apos;application, dont les missions.
+              </p>
+            )}
+          </div>
+        </div>
+
         <div className="bg-white rounded-2xl border border-[#c2c9bb]/20 p-4 mb-6">
           <div className="flex flex-wrap items-center gap-3">
             {/* Filtre de statut */}

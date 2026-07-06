@@ -5,6 +5,29 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import api from '@/lib/axios';
 
+function getPushErrorMessage(error: unknown) {
+  if (error && typeof error === "object") {
+    const maybeAxios = error as {
+      code?: string;
+      message?: string;
+      response?: { data?: { message?: string } };
+    };
+
+    if (maybeAxios.response?.data?.message) {
+      return maybeAxios.response.data.message;
+    }
+
+    if (
+      maybeAxios.code === "ERR_NETWORK" ||
+      maybeAxios.message?.includes("Network Error")
+    ) {
+      return "Connexion au serveur interrompue. Verifiez que le backend est lance et que le reseau est stable.";
+    }
+  }
+
+  return "Impossible d'activer les notifications push pour le moment.";
+}
+
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -95,7 +118,7 @@ export function usePushNotification() {
       return true;
     } catch (err) {
       console.error('Erreur abonnement push:', err);
-      setError("Impossible d'activer les notifications push pour le moment.");
+      setError(getPushErrorMessage(err));
       return false;
     } finally {
       setLoading(false);
@@ -119,7 +142,7 @@ export function usePushNotification() {
       return true;
     } catch (err) {
       console.error('Erreur desabonnement push:', err);
-      setError("Impossible de desactiver les notifications push pour le moment.");
+      setError(getPushErrorMessage(err));
       return false;
     } finally {
       setLoading(false);

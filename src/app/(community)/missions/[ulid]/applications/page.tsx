@@ -10,14 +10,19 @@ import ApplicationsList from "@/components/missions/Form/ApplicationsList";
 import MissionStatusBadge from "@/components/missions/MissionStatusBadge";
 import ReviewModal from "@/components/missions/Form/ReviewModal";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthStore } from "@/stores/auth.store";
+import { authService } from "@/services/auth.service";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
 export default function MissionApplicationsPage() {
   const { ulid } = useParams<{ ulid: string }>();
   const queryClient = useQueryClient();
-  const [retryCount, setRetryCount] = useState(0);
+  const [, setRetryCount] = useState(0);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const setUser = useAuthStore((s) => s.setUser);
 
   const {
     data: mission,
@@ -27,6 +32,42 @@ export default function MissionApplicationsPage() {
   const reviewModalMission = useMissionStore((s) => s.reviewModalMission);
   const { user, isLoading: isLoadingAuth, isAuthenticated } = useAuth();
 
+  useEffect(() => {
+    if (!isHydrated || user || !isAuthenticated) return;
+
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsLoadingProfile(true);
+
+    authService
+      .getProfile()
+      .then((profile) => {
+        if (!cancelled) setUser(profile);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          toast.error("Session expiree. Veuillez vous reconnecter.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingProfile(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, isHydrated, setUser, user]);
+
+  const missionAuthorId = useMemo(() => {
+    const missionWithAuthorId = mission as typeof mission & {
+      author_id?: number | string;
+    };
+
+    return Number(mission?.author?.id ?? missionWithAuthorId?.author_id);
+  }, [mission]);
+
+  const currentUserId = Number(user?.id);
+
   const handleRetry = () => {
     setRetryCount((prev) => prev + 1);
     queryClient.invalidateQueries({ queryKey: ["mission", ulid] });
@@ -35,7 +76,7 @@ export default function MissionApplicationsPage() {
   };
 
   // Attendre que l'authentification et la mission soient chargées
-  if (isLoadingAuth || isLoadingMission) {
+  if (!isHydrated || isLoadingAuth || isLoadingMission || isLoadingProfile) {
     return (
       <div className="flex items-center justify-center min-h-[60dvh]">
         <Loader2 className="animate-spin text-[#154212]" size={32} />
@@ -102,7 +143,7 @@ export default function MissionApplicationsPage() {
   }
 
   // Sécurité : seul l'auteur peut voir cette page
-  if (user.id !== mission.author.id) {
+  if (!currentUserId || !missionAuthorId || currentUserId !== missionAuthorId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60dvh] gap-3">
         <AlertTriangle size={32} className="text-[#72796e]" />

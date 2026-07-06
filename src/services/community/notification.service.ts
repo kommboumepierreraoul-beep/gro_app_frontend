@@ -15,7 +15,7 @@ class NotificationService {
   async markAsRead(notificationId: string) {
     try {
       // ✅ /community/notifications/{id}/read
-      const response = await api.put(
+      const response = await api.post(
         `/community/notifications/${notificationId}/read`,
       );
       return response.data;
@@ -28,7 +28,7 @@ class NotificationService {
   async markAllAsRead() {
     try {
       // ✅ /community/notifications/read-all
-      const response = await api.put(`/community/notifications/read-all`);
+      const response = await api.post(`/community/notifications/read-all`);
       return response.data;
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
@@ -60,8 +60,8 @@ class NotificationService {
         unread_count: r.data.unread_count ?? 0,
       };
     },
-    markRead: (id: number) => api.put(`/community/notifications/${id}/read`),
-    markAllRead: () => api.put("/community/notifications/read-all"),
+    markRead: (id: number) => api.post(`/community/notifications/${id}/read`),
+    markAllRead: () => api.post("/community/notifications/read-all"),
     remove: (id: number) => api.delete(`/community/notifications/${id}`),
   };
 }
