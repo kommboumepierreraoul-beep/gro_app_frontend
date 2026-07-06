@@ -1,23 +1,11 @@
-// lib/ai-client.ts
-
 import type {
-  SendMessageResponse,
   AIConversation,
+  ChatResponse,
   ModerationResult,
+  SendMessageResponse,
 } from "@/types/ai.types";
 
-/**
- * Client centralisé pour toutes les requêtes vers l'API IA Laravel.
- *
- * La clé DeepSeek n'est JAMAIS exposée ici.
- * Toutes les requêtes transitent par le backend Laravel.
- */
-
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
-
-// ──────────────────────────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────────────────────────
 
 async function fetchAPI<T>(
   endpoint: string,
@@ -29,7 +17,6 @@ async function fetchAPI<T>(
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
-      // Le token XSRF est géré automatiquement via les cookies avec Sanctum
       ...(options.headers ?? {}),
     },
   });
@@ -53,89 +40,18 @@ export class APIError extends Error {
   }
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Chat
-// ──────────────────────────────────────────────────────────────────
-
-/**
- * Envoie un message et attend la réponse complète.
- */
 export async function sendMessage(
   message: string,
-  sessionId: string,
+  conversationId?: string,
 ): Promise<SendMessageResponse> {
-  return fetchAPI<SendMessageResponse>("/ai/chat", {
+  return fetchAPI<ChatResponse>("/ai/chat", {
     method: "POST",
-    body: JSON.stringify({ message, session_id: sessionId }),
+    body: JSON.stringify({
+      message,
+      conversation_id: conversationId,
+      stream: false,
+    }),
   });
-}
-
-/**
- * Ouvre un flux SSE pour le streaming de réponse.
- * Retourne une fonction d'annulation (close).
- *
- * @param onChunk  Appelé pour chaque token reçu
- * @param onDone   Appelé quand le stream est terminé
- * @param onError  Appelé en cas d'erreur
- * @returns        Fonction pour fermer le stream manuellement
- */
-export function streamMessage(
-  message: string,
-  sessionId: string,
-  onChunk: (chunk: string) => void,
-  onDone: () => void,
-  onError?: (error: Error) => void,
-): () => void {
-  const params = new URLSearchParams({
-    message,
-    session_id: sessionId,
-  });
-
-  const url = `${BASE_URL}/ai/chat/stream?${params.toString()}`;
-  const es = new EventSource(url, { withCredentials: true });
-
-  es.onmessage = (event: MessageEvent<string>) => {
-    try {
-      if (event.data === "[DONE]") {
-        es.close();
-        onDone();
-        return;
-      }
-
-      const data = JSON.parse(event.data)
-      if (data.done) {
-        es.close();
-        onDone();
-        return;
-      }
-
-      if (data.content) {
-        onChunk(data.content);
-      }
-    } catch {
-      // Ignore les lignes de keep-alive mal formées
-    }
-  };
-
-  es.onerror = () => {
-    es.close();
-    onError?.(new Error("Connexion au stream interrompue"));
-    onDone();
-  };
-
-  // Retourne une fonction d'annulation
-  return () => es.close();
-}
-
-// ──────────────────────────────────────────────────────────────────
-// Conversations
-// ──────────────────────────────────────────────────────────────────
-
-export async function startConversation(): Promise<{
-  session_id: string;
-  id: number;
-}> {
-  return fetchAPI("/ai/conversations", { method: "POST" });
 }
 
 export async function listConversations(page = 1): Promise<{
@@ -146,56 +62,51 @@ export async function listConversations(page = 1): Promise<{
   return fetchAPI(`/ai/conversations?page=${page}`);
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Suggestions / Outils de rédaction
-// ──────────────────────────────────────────────────────────────────
-
-/**
- * Génère des tags pour un contenu donné.
- */
 export async function generateTags(
   content: string,
   maxTags = 5,
 ): Promise<string[]> {
-  const res = await fetchAPI<{ tags: string[] }>("/ai/tags", {
+  const res = await fetchAPI<{ tags: string[] }>("/ai/suggestions/tags", {
     method: "POST",
-    body: JSON.stringify({ content, max_tags: maxTags }),
+    body: JSON.stringify({ content, max: maxTags }),
   });
   return res.tags;
 }
 
-/**
- * Résume un fil de discussion.
- */
 export async function summarizeThread(
   messages: { author: string; content: string }[],
 ): Promise<string> {
-  const res = await fetchAPI<{ summary: string }>("/ai/summarize", {
+  const content = messages
+    .map((message) => `${message.author}: ${message.content}`)
+    .join("\n");
+
+  const res = await fetchAPI<{ summary: string }>("/ai/suggestions/summarize", {
     method: "POST",
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ content, language: "fr" }),
   });
+
   return res.summary;
 }
 
-/**
- * Améliore la rédaction d'un post.
- */
-export async function improvePost(
-  content: string,
-): Promise<{ original: string; improved: string }> {
-  return fetchAPI("/ai/improve-post", {
+export async function improvePost(content: string): Promise<{
+  original: string;
+  improved: string;
+}> {
+  const res = await fetchAPI<{ improved: string }>("/ai/suggestions/improve", {
     method: "POST",
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, language: "fr" }),
   });
+
+  return {
+    original: content,
+    improved: res.improved,
+  };
 }
 
-/**
- * Lance une modération manuelle (admin uniquement).
- */
 export async function moderateContent(
   content: string,
 ): Promise<ModerationResult> {
-  return fetchAPI("/ai/moderate", {
+  return fetchAPI("/ai/moderation/check", {
     method: "POST",
     body: JSON.stringify({ content }),
   });

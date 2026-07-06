@@ -13,16 +13,20 @@ import {
   Bell,
   Crown,
   HelpCircle,
+  Sparkles,
   X,
 } from "lucide-react";
 
 import { Avatar } from "../shared/Avatar";
+import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { Search } from "@/components/ui/Search";
+import { useI18n } from "@/i18n/LanguageProvider";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCommunityStore } from "@/stores/community.store";
 import { useAuth } from "@/hooks/useAuth";
 import { profileService } from "@/services/community/profile.service";
 import { PushNotificationModal } from "@/components/marketplace/PushNotificationModal";
+import { openFirstRunGuide } from "@/components/onboarding/FirstRunGuide";
 import api from "@/lib/axios";
 import Image from "next/image";
 // Fonction pour obtenir l'URL complète de l'avatar
@@ -39,6 +43,7 @@ const getAvatarUrl = (avatar?: string | null): string | undefined => {
 export function CommunityNavbar() {
   const { user } = useAuthStore();
   const { logout } = useAuth();
+  const { t } = useI18n();
   const isAdmin = user?.role === "admin" || user?.is_admin === true;
 
   const unreadNotifs = useCommunityStore((s) => s.unreadNotifs);
@@ -88,7 +93,7 @@ export function CommunityNavbar() {
     firstname: profile?.firstname ?? user?.firstname,
     lastname: profile?.lastname ?? user?.lastname,
     avatar: getAvatarUrl(profile?.avatar ?? user?.avatar),
-    headline: profile?.headline ?? "Membre de la communauté",
+    headline: profile?.headline ?? t("navigation.communityHeadline"),
     email: profile?.email ?? user?.email,
   };
 
@@ -154,7 +159,7 @@ export function CommunityNavbar() {
             {/* Barre de recherche desktop */}
             <div className="hidden md:block flex-1 max-w-md">
               <Search
-                placeholder="Rechercher utilisateurs ou publications..."
+                placeholder={t("community.searchPlaceholder")}
                 className="w-full"
               />
             </div>
@@ -181,7 +186,7 @@ export function CommunityNavbar() {
               {isAdmin && (
                 <Link
                   href="/admin"
-                  title="Espace administrateur"
+                  title={t("navigation.adminSpace")}
                   aria-label="Ouvrir l'espace administrateur"
                   className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold shadow-sm transition-all duration-150"
                   style={{
@@ -200,9 +205,13 @@ export function CommunityNavbar() {
                   }
                 >
                   <Crown className="h-4 w-4 fill-current" />
-                  <span className="hidden sm:inline">Admin</span>
+                  <span className="hidden sm:inline">
+                    {t("navigation.admin")}
+                  </span>
                 </Link>
               )}
+
+              <LanguageToggle compact className="hidden sm:inline-flex" />
 
               {/* Notifications */}
               <Link
@@ -233,6 +242,25 @@ export function CommunityNavbar() {
               </Link>
 
               <PushNotificationModal variant="icon" />
+
+              <button
+                type="button"
+                onClick={openFirstRunGuide}
+                title="Relancer le guide de demarrage"
+                aria-label="Relancer le guide de demarrage"
+                className="hidden sm:flex p-2 rounded-xl transition-all duration-150"
+                style={{ color: "#42493e" }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLElement).style.background =
+                    "rgba(188,240,174,0.3)")
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLElement).style.background =
+                    "transparent")
+                }
+              >
+                <Sparkles className="w-5 h-5" />
+              </button>
 
               {/* Support */}
               <Link
@@ -333,23 +361,23 @@ export function CommunityNavbar() {
                         {
                           href: "/admin",
                           icon: Crown,
-                          label: "Espace admin",
+                          label: t("navigation.adminSpace"),
                           adminOnly: true,
                         },
                         {
                           href: "/profile",
                           icon: User,
-                          label: "Mon profil",
+                          label: t("navigation.profile"),
                         },
                         {
                           href: "/settings",
                           icon: Settings,
-                          label: "Paramètres",
+                          label: t("navigation.settings"),
                         },
                         {
                           href: "/support",
                           icon: HelpCircle,
-                          label: "Aide & support",
+                          label: t("navigation.support"),
                         },
                       ]
                         .filter((item) => !item.adminOnly || isAdmin)
@@ -399,7 +427,7 @@ export function CommunityNavbar() {
                       }
                     >
                       <LogOut className="w-4 h-4" />
-                      Se déconnecter
+                      {t("auth.logout")}
                     </button>
                   </div>
                 )}
@@ -420,9 +448,10 @@ export function CommunityNavbar() {
           >
             <div className="flex items-center gap-2">
               <Search
-                placeholder="Rechercher..."
+                placeholder={t("community.mobileSearchPlaceholder")}
                 className="flex-1 bg-transparent"
               />
+              <LanguageToggle compact />
               <button
                 onClick={() => setShowMobileSearch(false)}
                 className="p-2 rounded-xl transition-all duration-150"

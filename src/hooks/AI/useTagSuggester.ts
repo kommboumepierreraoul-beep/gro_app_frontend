@@ -5,7 +5,7 @@
  * Hook pour la suggestion automatique de tags via IA.
  *
  * Correction : appelle aiService.generateTags (route /ai/suggestions/tags)
- * au lieu de l'ancien ai-client.ts qui pointait vers /ai/tags (inexistant).
+ * Utilise le service IA centralise et les routes /ai/suggestions.
  */
 
 import { useCallback, useState } from "react";

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import LoginPage from "./(auth)/login/page";
+import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 
 export default function Home() {
@@ -12,20 +13,53 @@ export default function Home() {
 
   const user = useAuthStore((state) => state.user);
   const isHydrated = useAuthStore((state) => state.isHydrated);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
+    if (!isHydrated) return;
+
+    if (user) {
+      router.replace(user.role === "admin" ? "/admin" : "/community");
+      return;
+    }
+
+    if (!authService.isAuthenticated()) {
+      return;
+    }
+
+    let isMounted = true;
+
+    authService
+      .getProfile()
+      .then((profile) => {
+        if (!isMounted) return;
+        setUser(profile);
+        router.replace(profile.role === "admin" ? "/admin" : "/community");
+      })
+      .catch(() => {
+        if (isMounted) setShowSplash(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isHydrated, router, setUser, user]);
+
+  useEffect(() => {
+    if (!isHydrated || authService.isAuthenticated() || user) return;
+
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 3000); // minimum 3 secondes
+    }, 3000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [isHydrated, user]);
 
   useEffect(() => {
     if (!showSplash && isHydrated && user) {
-      router.replace("/community");
+      router.replace(user.role === "admin" ? "/admin" : "/community");
     }
   }, [showSplash, isHydrated, user, router]);
 

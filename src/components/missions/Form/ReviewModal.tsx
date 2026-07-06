@@ -85,7 +85,7 @@ export default function ReviewModal() {
               Merci pour votre avis !
             </h3>
             <p className="text-sm text-[#72796e]">
-              Votre évaluation aide la communauté GRO.
+              Votre évaluation aide la communauté AgriPulse.
             </p>
           </div>
         ) : (

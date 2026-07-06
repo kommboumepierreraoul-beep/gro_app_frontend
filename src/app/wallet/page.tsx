@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import {
@@ -62,6 +62,116 @@ type WalletSecurity = {
   pin_set_at?: string | null;
 };
 
+type ApiError = {
+  response?: {
+    data?: {
+      message?: string;
+      error?: string;
+    };
+    status?: number;
+  };
+};
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  const apiError = error as ApiError;
+  return (
+    apiError.response?.data?.message ||
+    apiError.response?.data?.error ||
+    fallback
+  );
+};
+
+const normalizeWalletData = (payload: unknown): WalletData | null => {
+  const data =
+    payload &&
+    typeof payload === "object" &&
+    "data" in payload &&
+    (payload as { data?: unknown }).data
+      ? (payload as { data: unknown }).data
+      : payload;
+
+  if (!data || typeof data !== "object") return null;
+
+  const walletData = data as Partial<WalletData>;
+  const balance = Number(walletData.balance);
+
+  if (Number.isNaN(balance)) return null;
+
+  return {
+    balance,
+    total_credited: Number(walletData.total_credited ?? 0),
+    total_debited: Number(walletData.total_debited ?? 0),
+    currency: walletData.currency ?? "FCFA",
+  };
+};
+
+function PinCodeInput({
+  value,
+  onChange,
+  label,
+  autoFocus = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  label: string;
+  autoFocus?: boolean;
+}) {
+  const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const digits = Array.from({ length: 4 }, (_, index) => value[index] ?? "");
+
+  const updateDigit = (index: number, digit: string) => {
+    const nextDigits = [...digits];
+    nextDigits[index] = digit.replace(/\D/g, "").slice(-1);
+    const nextValue = nextDigits.join("").slice(0, 4);
+    onChange(nextValue);
+
+    if (digit && index < 3) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-center text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+        {label}
+      </label>
+      <div className="flex justify-center gap-3">
+        {digits.map((digit, index) => (
+          <input
+            key={index}
+            ref={(element) => {
+              inputsRef.current[index] = element;
+            }}
+            type="password"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={1}
+            value={digit}
+            autoFocus={autoFocus && index === 0}
+            onChange={(event) => updateDigit(index, event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Backspace" && !digits[index] && index > 0) {
+                inputsRef.current[index - 1]?.focus();
+              }
+            }}
+            onPaste={(event) => {
+              event.preventDefault();
+              const pasted = event.clipboardData
+                .getData("text")
+                .replace(/\D/g, "")
+                .slice(0, 4);
+              onChange(pasted);
+              inputsRef.current[Math.min(pasted.length, 3)]?.focus();
+            }}
+            className="h-14 w-12 rounded-2xl border border-white/10 bg-slate-950 text-center text-2xl font-black text-white shadow-inner outline-none transition focus:border-lime-400 focus:ring-4 focus:ring-lime-400/15"
+            aria-label={`PIN ${index + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function WalletContent() {
   const [loading, setLoading] = useState(true);
   const [wallet, setWallet] = useState<WalletData | null>(null);
@@ -72,6 +182,7 @@ function WalletContent() {
   const [showBalance, setShowBalance] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [depositModal, setDepositModal] = useState(false);
+  const [depositPinModal, setDepositPinModal] = useState(false);
   const [withdrawModal, setWithdrawModal] = useState(false);
   const [pinModal, setPinModal] = useState<"setup" | "balance" | null>(null);
   const [pinInput, setPinInput] = useState("");
@@ -130,10 +241,27 @@ function WalletContent() {
   const fetchWalletData = async (pin: string) => {
     try {
       const res = await api.get("/wallet/balance", { params: { pin } });
-      setWallet(res.data);
+      const walletData = normalizeWalletData(res.data);
+
+      if (!walletData) {
+        toast.error("Le solde n'a pas pu etre lu. Verifiez le backend.");
+        setShowBalance(false);
+        return false;
+      }
+
+      setWallet(walletData);
       setShowBalance(true);
-    } catch {
-      toast.error("Impossible de charger le solde");
+      toast.success("Solde affiche");
+      return true;
+    } catch (error) {
+      const status = (error as ApiError).response?.status;
+      toast.error(
+        status === 401 || status === 403 || status === 422
+          ? "PIN incorrect ou invalide"
+          : getApiErrorMessage(error, "Impossible de charger le solde"),
+      );
+      setShowBalance(false);
+      return false;
     }
   };
 
@@ -165,7 +293,19 @@ function WalletContent() {
 
   const handleSetupPin = async () => {
     if (!/^\d{4}$/.test(pinInput)) {
-      toast.error("Le PIN doit contenir 4 chiffres");
+      toast.error(
+        pinInput.length === 0
+          ? "Le PIN doit contenir 4 chiffres"
+          : `PIN incomplet : ${pinInput.length}/4 chiffre(s)`,
+      );
+      return;
+    }
+    if (!/^\d{4}$/.test(pinConfirm)) {
+      toast.error(
+        pinConfirm.length === 0
+          ? "Confirmez votre PIN"
+          : `Confirmation incomplete : ${pinConfirm.length}/4 chiffre(s)`,
+      );
       return;
     }
     if (pinInput !== pinConfirm) {
@@ -181,13 +321,15 @@ function WalletContent() {
       });
       toast.success("PIN configure");
       setWalletSecurity({ has_pin: true });
-      setPinModal(null);
-      await fetchWalletData(pinInput);
-      setPinInput("");
-      setPinConfirm("");
+      const unlocked = await fetchWalletData(pinInput);
+      if (unlocked) {
+        setPinModal(null);
+        setPinInput("");
+        setPinConfirm("");
+      }
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message || "Impossible de configurer le PIN",
+        getApiErrorMessage(err, "Impossible de configurer le PIN"),
       );
     } finally {
       setLoadingAction(false);
@@ -196,15 +338,21 @@ function WalletContent() {
 
   const handleUnlockBalance = async () => {
     if (!/^\d{4}$/.test(pinInput)) {
-      toast.error("Entrez votre PIN de 4 chiffres");
+      toast.error(
+        pinInput.length === 0
+          ? "Entrez votre PIN de 4 chiffres"
+          : `PIN incomplet : ${pinInput.length}/4 chiffre(s)`,
+      );
       return;
     }
 
     setLoadingAction(true);
     try {
-      await fetchWalletData(pinInput);
-      setPinModal(null);
-      setPinInput("");
+      const unlocked = await fetchWalletData(pinInput);
+      if (unlocked) {
+        setPinModal(null);
+        setPinInput("");
+      }
     } finally {
       setLoadingAction(false);
     }
@@ -222,6 +370,29 @@ function WalletContent() {
     }
 
     setPinModal("balance");
+  };
+
+  const startDepositPinStep = () => {
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      toast.error("Montant invalide");
+      return;
+    }
+
+    if (phoneNumber && phoneNumber.length < 9) {
+      toast.error("Numero Mobile Money invalide");
+      return;
+    }
+
+    if (!walletSecurity?.has_pin) {
+      setDepositModal(false);
+      setPinModal("setup");
+      return;
+    }
+
+    setTransactionPin("");
+    setDepositModal(false);
+    setDepositPinModal(true);
   };
 
   const handleDeposit = async () => {
@@ -253,6 +424,9 @@ function WalletContent() {
       if (authUrl) {
         toast.success("Redirection vers la page de paiement…");
         setDepositModal(false);
+        setDepositPinModal(false);
+        setAmount("");
+        setPhoneNumber("");
         setTransactionPin("");
         window.location.href = authUrl;
       } else {
@@ -755,29 +929,17 @@ function WalletContent() {
               )}
             </div>
             <div className="space-y-4">
-              <input
-                type="password"
-                inputMode="numeric"
-                maxLength={4}
+              <PinCodeInput
+                label="PIN 4 chiffres"
                 value={pinInput}
-                onChange={(e) =>
-                  setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))
-                }
-                placeholder="PIN 4 chiffres"
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-center tracking-[0.4em]"
+                onChange={setPinInput}
                 autoFocus
               />
               {pinModal === "setup" && (
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={4}
+                <PinCodeInput
+                  label="Confirmer le PIN"
                   value={pinConfirm}
-                  onChange={(e) =>
-                    setPinConfirm(e.target.value.replace(/\D/g, "").slice(0, 4))
-                  }
-                  placeholder="Confirmer"
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-center tracking-[0.4em]"
+                  onChange={setPinConfirm}
                 />
               )}
               <button
@@ -821,6 +983,15 @@ function WalletContent() {
               </button>
             </div>
             <div className="space-y-4">
+              <div className="rounded-2xl border border-lime-400/20 bg-lime-400/10 p-4">
+                <p className="text-sm font-semibold text-lime-300">
+                  1. Informations de paiement
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-300">
+                  Renseignez le montant et le moyen de paiement. Le PIN wallet
+                  sera demandé à l'étape suivante pour confirmer l'opération.
+                </p>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">
                   Montant (FCFA)
@@ -860,35 +1031,98 @@ function WalletContent() {
                   </option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
-                  PIN wallet
-                </label>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={4}
-                  value={transactionPin}
-                  onChange={(e) =>
-                    setTransactionPin(e.target.value.replace(/\D/g, "").slice(0, 4))
-                  }
-                  placeholder="4 chiffres"
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
-                />
-              </div>
               <button
-                onClick={handleDeposit}
+                onClick={startDepositPinStep}
                 disabled={loadingAction}
                 className="w-full py-3 bg-lime-500 hover:bg-lime-400 text-slate-950 font-semibold rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loadingAction ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" /> Traitement...
-                  </>
-                ) : (
-                  "Continuer vers le paiement →"
-                )}
+                Continuer vers le PIN →
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {depositPinModal && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setDepositPinModal(false)}
+        >
+          <div
+            className="bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start mb-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-lime-300">
+                  2. Confirmation securisee
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-white">
+                  Confirmer le depot
+                </h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Entrez votre PIN wallet pour autoriser la redirection vers le
+                  paiement.
+                </p>
+              </div>
+              <button
+                onClick={() => setDepositPinModal(false)}
+                className="text-slate-400 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-5 grid grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+              <div>
+                <p className="text-xs text-slate-400">Montant</p>
+                <p className="mt-1 font-bold text-white">
+                  {Number(amount || 0).toLocaleString()} FCFA
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Service</p>
+                <p className="mt-1 font-bold text-white">NotchPay</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-slate-400">Telephone</p>
+                <p className="mt-1 font-bold text-white">
+                  {phoneNumber || "Non renseigne"}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              <PinCodeInput
+                label="PIN wallet"
+                value={transactionPin}
+                onChange={setTransactionPin}
+                autoFocus
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => {
+                    setDepositPinModal(false);
+                    setDepositModal(true);
+                  }}
+                  className="rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  Modifier
+                </button>
+                <button
+                  onClick={handleDeposit}
+                  disabled={loadingAction}
+                  className="rounded-xl bg-lime-500 py-3 text-sm font-bold text-slate-950 transition hover:bg-lime-400 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loadingAction ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" /> Traitement...
+                    </>
+                  ) : (
+                    "Payer"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -957,19 +1191,10 @@ function WalletContent() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
-                  PIN wallet
-                </label>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={4}
+                <PinCodeInput
+                  label="PIN wallet"
                   value={transactionPin}
-                  onChange={(e) =>
-                    setTransactionPin(e.target.value.replace(/\D/g, "").slice(0, 4))
-                  }
-                  placeholder="4 chiffres"
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
+                  onChange={setTransactionPin}
                 />
               </div>
               <button
