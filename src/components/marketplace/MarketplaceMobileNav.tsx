@@ -5,12 +5,12 @@ import { usePathname } from "next/navigation";
 import {
   ArrowLeftRight,
   Gavel,
+  Headphones,
   Home,
   LayoutDashboard,
   PlusCircle,
   ShoppingBag,
   Store,
-  UserCircle,
   Wallet,
 } from "lucide-react";
 
@@ -25,7 +25,7 @@ const buyerItems: MobileNavItem[] = [
   { href: "/orders", label: "Achats", icon: ShoppingBag },
   { href: "/disputes", label: "Litiges", icon: Gavel },
   { href: "/wallet", label: "Wallet", icon: Wallet },
-  { href: "/account", label: "Compte", icon: UserCircle },
+  { href: "/marketplace/support", label: "Support", icon: Headphones },
 ];
 
 const sellerItems: MobileNavItem[] = [

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Gavel,
+  Headphones,
   Home,
   Package,
   PlusCircle,
@@ -24,6 +25,8 @@ const baseLinks = [
   { href: "/orders", label: "Commandes", icon: ShoppingBag },
   { href: "/disputes", label: "Mes litiges", icon: Gavel },
   { href: "/wallet", label: "Portefeuille", icon: Wallet },
+  { href: "/marketplace/support", label: "Support", icon: Headphones },
+  { href: "/marketplace/settings", label: "Parametres", icon: Settings },
   { href: "/account", label: "Compte", icon: UserCircle },
   { href: "/community", label: "Communauté", icon: Home },
 ];

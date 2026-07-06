@@ -57,14 +57,26 @@ type WalletData = {
   currency: string;
 };
 
+type WalletSecurity = {
+  has_pin: boolean;
+  pin_set_at?: string | null;
+};
+
 function WalletContent() {
   const [loading, setLoading] = useState(true);
   const [wallet, setWallet] = useState<WalletData | null>(null);
+  const [walletSecurity, setWalletSecurity] = useState<WalletSecurity | null>(
+    null,
+  );
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [showBalance, setShowBalance] = useState(true);
+  const [showBalance, setShowBalance] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [depositModal, setDepositModal] = useState(false);
   const [withdrawModal, setWithdrawModal] = useState(false);
+  const [pinModal, setPinModal] = useState<"setup" | "balance" | null>(null);
+  const [pinInput, setPinInput] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [transactionPin, setTransactionPin] = useState("");
   const [amount, setAmount] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [withdrawChannel, setWithdrawChannel] = useState("mtn");
@@ -103,10 +115,23 @@ function WalletContent() {
     tooltipBg: isLight ? "#ffffff" : "#1e293b",
   };
 
-  const fetchWalletData = async () => {
+  const fetchWalletSecurity = async () => {
     try {
-      const res = await api.get("/wallet/balance");
+      const res = await api.get("/wallet/security");
+      setWalletSecurity(res.data);
+      if (!res.data?.has_pin) {
+        setPinModal("setup");
+      }
+    } catch {
+      toast.error("Impossible de verifier la securite du wallet");
+    }
+  };
+
+  const fetchWalletData = async (pin: string) => {
+    try {
+      const res = await api.get("/wallet/balance", { params: { pin } });
       setWallet(res.data);
+      setShowBalance(true);
     } catch {
       toast.error("Impossible de charger le solde");
     }
@@ -124,14 +149,13 @@ function WalletContent() {
   };
 
   useEffect(() => {
-    fetchWalletData();
+    fetchWalletSecurity();
     fetchTransactions();
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("trxref") || urlParams.get("reference")) {
       toast.success("Paiement reçu, vérification en cours…");
       const interval = setInterval(() => {
-        fetchWalletData();
         fetchTransactions();
       }, 2000);
       setTimeout(() => clearInterval(interval), 15000);
@@ -139,15 +163,84 @@ function WalletContent() {
     }
   }, []);
 
+  const handleSetupPin = async () => {
+    if (!/^\d{4}$/.test(pinInput)) {
+      toast.error("Le PIN doit contenir 4 chiffres");
+      return;
+    }
+    if (pinInput !== pinConfirm) {
+      toast.error("Les deux PIN ne correspondent pas");
+      return;
+    }
+
+    setLoadingAction(true);
+    try {
+      await api.post("/wallet/pin", {
+        pin: pinInput,
+        pin_confirmation: pinConfirm,
+      });
+      toast.success("PIN configure");
+      setWalletSecurity({ has_pin: true });
+      setPinModal(null);
+      await fetchWalletData(pinInput);
+      setPinInput("");
+      setPinConfirm("");
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || "Impossible de configurer le PIN",
+      );
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const handleUnlockBalance = async () => {
+    if (!/^\d{4}$/.test(pinInput)) {
+      toast.error("Entrez votre PIN de 4 chiffres");
+      return;
+    }
+
+    setLoadingAction(true);
+    try {
+      await fetchWalletData(pinInput);
+      setPinModal(null);
+      setPinInput("");
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const requestBalanceVisibility = () => {
+    if (showBalance) {
+      setShowBalance(false);
+      return;
+    }
+
+    if (!walletSecurity?.has_pin) {
+      setPinModal("setup");
+      return;
+    }
+
+    setPinModal("balance");
+  };
+
   const handleDeposit = async () => {
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0) {
       toast.error("Montant invalide");
       return;
     }
+    if (!/^\d{4}$/.test(transactionPin)) {
+      toast.error("Entrez votre PIN wallet");
+      return;
+    }
     setLoadingAction(true);
     try {
-      const payload: any = { amount: amountNum, method: paymentMethod };
+      const payload: any = {
+        amount: amountNum,
+        method: paymentMethod,
+        pin: transactionPin,
+      };
       if (phoneNumber) payload.phone = phoneNumber;
 
       const res = await api.post("/wallet/deposit", payload);
@@ -160,6 +253,7 @@ function WalletContent() {
       if (authUrl) {
         toast.success("Redirection vers la page de paiement…");
         setDepositModal(false);
+        setTransactionPin("");
         window.location.href = authUrl;
       } else {
         toast.error("Impossible d'obtenir l'URL de paiement");
@@ -181,19 +275,25 @@ function WalletContent() {
       toast.error("Numéro Mobile Money invalide");
       return;
     }
+    if (!/^\d{4}$/.test(transactionPin)) {
+      toast.error("Entrez votre PIN wallet");
+      return;
+    }
     setLoadingAction(true);
     try {
       await api.post("/wallet/withdraw", {
         amount: amountNum,
         phone: phoneNumber,
         channel: withdrawChannel,
+        pin: transactionPin,
       });
       toast.success("Retrait effectué");
       setWithdrawModal(false);
       setAmount("");
       setPhoneNumber("");
+      setTransactionPin("");
       setWithdrawChannel("mtn");
-      fetchWalletData();
+      setShowBalance(false);
       fetchTransactions();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Erreur lors du retrait");
@@ -324,7 +424,7 @@ function WalletContent() {
                 <p className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${walletUi.muted}`}>
                   SOLDE DISPONIBLE
                   <button
-                    onClick={() => setShowBalance(!showBalance)}
+                    onClick={requestBalanceVisibility}
                     className={`transition ${isLight ? "hover:text-[#154212]" : "hover:text-lime-400"}`}
                   >
                     {showBalance ? (
@@ -623,6 +723,83 @@ function WalletContent() {
       </div>
 
       {/* Modal Dépôt */}
+      {pinModal && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => {
+            if (pinModal !== "setup") setPinModal(null);
+          }}
+        >
+          <div
+            className="bg-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-5">
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  {pinModal === "setup" ? "Configurer le PIN" : "PIN wallet"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  {pinModal === "setup"
+                    ? "Choisissez un code de 4 chiffres pour securiser votre wallet."
+                    : "Entrez votre PIN pour afficher le solde."}
+                </p>
+              </div>
+              {pinModal !== "setup" && (
+                <button
+                  onClick={() => setPinModal(null)}
+                  className="text-slate-400 hover:text-white transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+            <div className="space-y-4">
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                value={pinInput}
+                onChange={(e) =>
+                  setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))
+                }
+                placeholder="PIN 4 chiffres"
+                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-center tracking-[0.4em]"
+                autoFocus
+              />
+              {pinModal === "setup" && (
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={pinConfirm}
+                  onChange={(e) =>
+                    setPinConfirm(e.target.value.replace(/\D/g, "").slice(0, 4))
+                  }
+                  placeholder="Confirmer"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-center tracking-[0.4em]"
+                />
+              )}
+              <button
+                onClick={pinModal === "setup" ? handleSetupPin : handleUnlockBalance}
+                disabled={loadingAction}
+                className="w-full py-3 bg-lime-500 hover:bg-lime-400 text-slate-950 font-semibold rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loadingAction ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Verification...
+                  </>
+                ) : pinModal === "setup" ? (
+                  "Activer le PIN"
+                ) : (
+                  "Afficher le solde"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {depositModal && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
@@ -682,6 +859,22 @@ function WalletContent() {
                     Paiement par carte / Mobile Money (NotchPay)
                   </option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  PIN wallet
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={transactionPin}
+                  onChange={(e) =>
+                    setTransactionPin(e.target.value.replace(/\D/g, "").slice(0, 4))
+                  }
+                  placeholder="4 chiffres"
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
+                />
               </div>
               <button
                 onClick={handleDeposit}
@@ -762,6 +955,22 @@ function WalletContent() {
                   <option value="mtn">MTN Mobile Money</option>
                   <option value="orange">Orange Money</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  PIN wallet
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={transactionPin}
+                  onChange={(e) =>
+                    setTransactionPin(e.target.value.replace(/\D/g, "").slice(0, 4))
+                  }
+                  placeholder="4 chiffres"
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white"
+                />
               </div>
               <button
                 onClick={handleWithdraw}
