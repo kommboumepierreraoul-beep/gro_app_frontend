@@ -22,6 +22,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useCommunityStore } from "@/stores/community.store";
 import { useAuth } from "@/hooks/useAuth";
 import { profileService } from "@/services/community/profile.service";
+import { PushNotificationModal } from "@/components/marketplace/PushNotificationModal";
+import api from "@/lib/axios";
 import Image from "next/image";
 // Fonction pour obtenir l'URL complète de l'avatar
 const getAvatarUrl = (avatar?: string | null): string | undefined => {
@@ -54,6 +56,31 @@ export function CommunityNavbar() {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
+
+  const { data: appUnreadCount = 0 } = useQuery({
+    queryKey: ["app-notifications-unread-count"],
+    queryFn: async () => {
+      const { data } = await api.get("/notifications/unread-count");
+      return Number(data.unread_count ?? 0);
+    },
+    refetchInterval: 30000,
+    retry: false,
+  });
+
+  const { data: missionUnreadCount = 0 } = useQuery({
+    queryKey: ["mission-notifications-unread-count-navbar"],
+    queryFn: async () => {
+      const { data } = await api.get(
+        "/community/notifications/missions/unread-count",
+      );
+      return Number(data.count ?? data.unread_count ?? 0);
+    },
+    refetchInterval: 30000,
+    retry: false,
+  });
+
+  const totalUnreadNotifs =
+    unreadNotifs + appUnreadCount + missionUnreadCount;
 
   // Construire les données utilisateur pour l'affichage
   const displayUser = {
@@ -105,7 +132,7 @@ export function CommunityNavbar() {
                 <Image
                   src="/logo_agri_pulse.png"
                   alt="AgriPulse"
-                  sizes="4"
+                  sizes="40px"
                   fill
                   className="object-contain"
                 />
@@ -192,7 +219,7 @@ export function CommunityNavbar() {
                 }
               >
                 <Bell className="w-5 h-5" />
-                {unreadNotifs > 0 && (
+                {totalUnreadNotifs > 0 && (
                   <span
                     className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full ring-2"
                     style={
@@ -204,6 +231,8 @@ export function CommunityNavbar() {
                   />
                 )}
               </Link>
+
+              <PushNotificationModal variant="icon" />
 
               {/* Support */}
               <Link

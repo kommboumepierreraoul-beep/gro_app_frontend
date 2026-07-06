@@ -53,16 +53,20 @@ module.exports = {
         "surface-container": "#cff6e6"
       },
       borderRadius: {
-        DEFAULT: "1rem",
-        lg: "2rem",
-        xl: "3rem",
+        DEFAULT: "0.5rem",
+        md: "0.5rem",
+        lg: "0.75rem",
+        xl: "1rem",
+        "2xl": "1.125rem",
+        "3xl": "1.25rem",
         full: "9999px"
       },
       fontFamily: {
-        headline: ["Inter"],
-        display: ["Inter"],
-        body: ["Inter"],
-        label: ["Inter"]
+        sans: ["Inter", "Arial", "Helvetica", "sans-serif"],
+        headline: ["Plus Jakarta Sans", "Inter", "sans-serif"],
+        display: ["Plus Jakarta Sans", "Inter", "sans-serif"],
+        body: ["Inter", "Arial", "Helvetica", "sans-serif"],
+        label: ["Inter", "Arial", "Helvetica", "sans-serif"]
       }
     }
   },

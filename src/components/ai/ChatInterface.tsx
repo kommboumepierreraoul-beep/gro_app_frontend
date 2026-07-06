@@ -68,7 +68,7 @@ export function ChatInterface() {
       setDisplayedContent("");
       charIndexRef.current = 0;
 
-      const typeSpeed = 0.5; // ms par caractère
+      const typeSpeed = 0.01; // ms par caractère
       let timeoutId: NodeJS.Timeout;
 
       const typeChar = () => {

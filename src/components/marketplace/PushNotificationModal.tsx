@@ -5,7 +5,11 @@ import { AlertCircle, Bell, BellOff, CheckCircle2, Loader2, X } from "lucide-rea
 import { usePushNotification } from "@/hooks/usePushNotification";
 import toast from "react-hot-toast";
 
-export function PushNotificationModal() {
+export function PushNotificationModal({
+  variant = "row",
+}: {
+  variant?: "row" | "icon";
+}) {
   const [open, setOpen] = useState(false);
   const { permission, subscribed, loading, error, isSupported, subscribe, unsubscribe } =
     usePushNotification();
@@ -22,14 +26,31 @@ export function PushNotificationModal() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#42493e] transition hover:bg-[#eaf3de] hover:text-[#154212]"
-      >
-        <Bell className="h-4 w-4" />
-        <span>{subscribed ? "Notifications activees" : "Notifications push"}</span>
-      </button>
+      {variant === "icon" ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          title={subscribed ? "Notifications push activees" : "Activer les notifications push"}
+          aria-label="Gerer les notifications push"
+          className="relative flex h-10 w-10 items-center justify-center rounded-xl text-[#42493e] transition hover:bg-[#eaf3de] hover:text-[#154212]"
+        >
+          {subscribed ? <CheckCircle2 className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+          <span
+            className={`absolute right-1.5 top-1.5 h-2 w-2 rounded-full ring-2 ring-[#f9faf2] ${
+              subscribed ? "bg-[#2d5a27]" : "bg-amber-500"
+            }`}
+          />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#42493e] transition hover:bg-[#eaf3de] hover:text-[#154212]"
+        >
+          <Bell className="h-4 w-4" />
+          <span>{subscribed ? "Notifications activees" : "Notifications push"}</span>
+        </button>
+      )}
 
       {open ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/35 px-4 py-6 backdrop-blur-sm">
