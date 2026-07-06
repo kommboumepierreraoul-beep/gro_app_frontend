@@ -21,8 +21,8 @@ export default function NotificationsLayout({
         <aside className="hidden w-72 shrink-0 border-r border-[#d9ddd2]/60 lg:block">
           <LeftSidebar />
         </aside>
-        <main className="min-w-0 flex-1 overflow-y-auto px-3 py-4 pb-24 sm:px-6 sm:py-6 lg:px-8 lg:pb-8">
-          <div className="mx-auto w-full max-w-2xl">{children}</div>
+        <main className="min-w-0 flex-1 overflow-y-auto px-3 pb-24 sm:px-6 sm:py-6 lg:px-8 lg:pb-8">
+          <div className="mx-auto w-full max-w-5xl">{children}</div>
         </main>
       </div>
 

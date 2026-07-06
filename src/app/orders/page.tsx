@@ -63,6 +63,7 @@ function OrdersContent() {
   const [pendingOrderId, setPendingOrderId] = useState<number | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [walletPin, setWalletPin] = useState('');
   const [currentCartItemId, setCurrentCartItemId] = useState<number | null>(null);
   const [currentAddress, setCurrentAddress] = useState('');
   const [cartModalProduct, setCartModalProduct] = useState<CartProduct | null>(null);
@@ -142,11 +143,16 @@ function OrdersContent() {
 
   const payWithWallet = async () => {
     if (!pendingOrderId || !currentCartItemId) return;
+    if (!/^\d{4}$/.test(walletPin)) {
+      toast.error('Entrez votre PIN wallet');
+      return;
+    }
     setPaymentLoading(true);
     try {
-      await api.post(`/orders/${pendingOrderId}/pay/wallet`);
+      await api.post(`/orders/${pendingOrderId}/pay/wallet`, { pin: walletPin });
       removeItem(currentCartItemId);
       setPaymentModalOpen(false);
+      setWalletPin('');
       setPendingOrderId(null); setCurrentCartItemId(null);
       toast.success('Paiement effectué !');
       fetchOrders();
@@ -454,10 +460,19 @@ const payWithNotchPay = async () => {
             <h2 className="text-xl font-bold text-gray-800 mb-2">Mode de paiement</h2>
             <p className="text-sm text-gray-500 mb-6">Total : <span className="font-bold text-emerald-700">{(items.find(i => i.id === currentCartItemId)?.price ?? 0) * (items.find(i => i.id === currentCartItemId)?.quantity ?? 1)} FCFA</span></p>
             <div className="space-y-3">
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                value={walletPin}
+                onChange={(e) => setWalletPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                placeholder="PIN wallet pour payer"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-center tracking-[0.35em] outline-none focus:ring-2 focus:ring-emerald-600"
+              />
               <button onClick={payWithWallet} disabled={paymentLoading} className="w-full py-4 rounded-xl bg-emerald-700 text-white font-bold flex items-center justify-center gap-3 hover:bg-emerald-800 disabled:opacity-60"><CreditCard size={20} /> Payer avec mon Wallet</button>
               <button onClick={payWithMonetbil} disabled={paymentLoading} className="w-full py-4 rounded-xl border-2 border-emerald-700 text-emerald-700 font-bold flex items-center justify-center gap-3 hover:bg-emerald-50 disabled:opacity-60"><Rocket size={20} /> Payer avec Mobile Money</button>
               <button onClick={payWithNotchPay} disabled={paymentLoading} className="w-full py-4 rounded-xl border-2 border-purple-600 text-purple-600 font-bold flex items-center justify-center gap-3 hover:bg-purple-50 disabled:opacity-60"><Rocket size={20} /> Payer avec NotchPay</button>
-              <button onClick={() => { setPaymentModalOpen(false); setPendingOrderId(null); setCurrentCartItemId(null); }} className="w-full py-3 rounded-xl text-gray-500 text-sm hover:bg-gray-100">Annuler</button>
+              <button onClick={() => { setPaymentModalOpen(false); setWalletPin(''); setPendingOrderId(null); setCurrentCartItemId(null); }} className="w-full py-3 rounded-xl text-gray-500 text-sm hover:bg-gray-100">Annuler</button>
             </div>
           </div>
         </div>

@@ -38,8 +38,7 @@ export default function ProfilePage() {
       api.get('/auth/profile'),
       api.get('/orders'),
       api.get('/disputes'),
-      api.get('/wallet/balance'),
-    ]).then(([profileRes, ordersRes, disputesRes, walletRes]) => {
+    ]).then(([profileRes, ordersRes, disputesRes]) => {
       const u = profileRes.data.user;
       setUser(u);
       setFirstname(u.firstname || '');
@@ -48,8 +47,8 @@ export default function ProfilePage() {
       setEditForm({ firstname: u.firstname || '', lastname: u.lastname || '', phone: u.phone || '' });
       setOrdersCount(ordersRes.data.data?.length || 0);
       setDisputesOpen(disputesRes.data.data?.filter((d: any) => ['pending','negotiation','escalated'].includes(d.status)).length || 0);
-      setWalletBalance(walletRes.data.balance || '0');
-      setWalletCredited(walletRes.data.total_credited || '0');
+      setWalletBalance('Protege');
+      setWalletCredited('Protege');
     }).catch(() => toast.error('Impossible de charger le profil'))
       .finally(() => setLoading(false));
   }, []);
@@ -233,8 +232,8 @@ export default function ProfilePage() {
           {[
             { icon: 'shopping_cart', label: 'Achats Effectués', value: ordersCount, sub: 'Transactions', bg: '#cff6e6', color: '#006c49', link: '/orders' },
             { icon: 'balance', label: 'Litiges Ouverts', value: disputesOpen, sub: 'Incidents', bg: disputesOpen > 0 ? '#ffdad6' : '#cff6e6', color: disputesOpen > 0 ? '#ba1a1a' : '#006c49', link: '/disputes' },
-            { icon: 'account_balance_wallet', label: 'Portefeuille', value: Number(walletBalance).toLocaleString('fr-FR'), sub: 'FCFA disponible', bg: '#d5fcec', color: '#006c49', link: '/wallet' },
-            { icon: 'trending_up', label: 'Total crédité', value: Number(walletCredited).toLocaleString('fr-FR'), sub: 'FCFA reçus', bg: '#cff6e6', color: '#2c694e', link: '/wallet' },
+            { icon: 'account_balance_wallet', label: 'Portefeuille', value: walletBalance === 'Protege' ? 'Protege' : Number(walletBalance).toLocaleString('fr-FR'), sub: walletBalance === 'Protege' ? 'PIN requis' : 'FCFA disponible', bg: '#d5fcec', color: '#006c49', link: '/wallet' },
+            { icon: 'trending_up', label: 'Total crédité', value: walletCredited === 'Protege' ? 'Protege' : Number(walletCredited).toLocaleString('fr-FR'), sub: walletCredited === 'Protege' ? 'PIN requis' : 'FCFA reçus', bg: '#cff6e6', color: '#2c694e', link: '/wallet' },
           ].map((s, i) => (
             <Link href={s.link} key={i} className="no-underline">
               <div style={{ 
