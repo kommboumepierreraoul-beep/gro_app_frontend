@@ -1,11 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
 import MarketplaceAreaLayout from "@/components/marketplace/MarketplaceAreaLayout";
 
-export default function OrdersLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function OrdersLayout({ children }: { children: ReactNode }) {
   return <MarketplaceAreaLayout>{children}</MarketplaceAreaLayout>;
 }
