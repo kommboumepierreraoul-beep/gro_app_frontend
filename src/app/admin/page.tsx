@@ -133,7 +133,7 @@ function AdminDashboardContent() {
             <div className="bg-white/10 backdrop-blur-sm border border-white/15 p-6 rounded-xl text-white">
               <div className="flex justify-between items-start mb-6"><WalletCards className="h-5 w-5 text-white/60" /></div>
               <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Ventes totales</p>
-              <h3 className="text-3xl font-bold">{analytics?.total_sales?.toLocaleString() || 0} €</h3>
+              <h3 className="text-3xl font-bold">{analytics?.total_sales?.toLocaleString() || 0} XAF </h3>
             </div>
           </div>
         </div>
