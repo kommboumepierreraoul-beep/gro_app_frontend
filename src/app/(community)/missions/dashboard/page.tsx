@@ -97,7 +97,7 @@ export default function MissionsDashboardPage() {
   const isLoading = missionsLoading || applicationsLoading;
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen bg-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* ── Header ─────────────────────────────────────────────────── */}
         <div className=" rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
