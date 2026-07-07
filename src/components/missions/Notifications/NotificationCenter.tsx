@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 import { useMissionNotifications } from "@/hooks/notifications/useMissionNotifications";
 import { missionNotificationService } from "@/services/mission/notification.service";
 import { MissionNotification } from "@/lib/missions/notification.type";
-import { formatDistanceToNow, format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { useI18n } from "@/i18n/LanguageProvider";
+import { formatRelativeTime } from "@/lib/i18n-date";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,17 +18,6 @@ interface MissionNotificationCenterProps {
 
 // ─── Fonction timeAgo ────────────────────────────────────────────────────────
 
-function timeAgo(dateStr: string): string {
-  try {
-    return formatDistanceToNow(new Date(dateStr), {
-      addSuffix: true,
-      locale: fr,
-    });
-  } catch {
-    return "à l'instant";
-  }
-}
-
 // ─── Composant principal ─────────────────────────────────────────────────────
 
 export default function MissionNotificationCenter({
@@ -37,6 +26,7 @@ export default function MissionNotificationCenter({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { locale } = useI18n();
 
   const {
     notifications,
@@ -223,7 +213,7 @@ export default function MissionNotificationCenter({
                       )}
 
                       <p className="text-[10px] text-[#a8b0a0] mt-1">
-                        {timeAgo(notification.created_at)}
+                        {formatRelativeTime(notification.created_at, locale)}
                       </p>
                     </div>
 

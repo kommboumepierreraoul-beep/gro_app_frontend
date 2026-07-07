@@ -146,7 +146,7 @@ export default function MyProfilePage() {
   /* ---------------- LOADING ---------------- */
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen ">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-4">
           <div className="h-64  animate-pulse rounded-2xl shadow-sm border border-gray-100" />
           <div className="h-12  animate-pulse rounded-2xl shadow-sm border border-gray-100" />
@@ -398,7 +398,9 @@ export default function MyProfilePage() {
                                   className="mt-2 h-4 w-4 rounded border-[#c2c9bb] accent-[#31452d]"
                                 />
                                 <button
-                                  onClick={() => router.push(`/profile/${userId}`)}
+                                  onClick={() =>
+                                    router.push(`/profile/${userId}`)
+                                  }
                                   className="flex min-w-0 flex-1 items-center gap-3 text-left"
                                 >
                                   <Avatar
@@ -420,7 +422,9 @@ export default function MyProfilePage() {
                               </div>
                               <div className="mt-3 flex items-center gap-2 pl-7">
                                 <button
-                                  onClick={() => handleStartConversation(follower)}
+                                  onClick={() =>
+                                    handleStartConversation(follower)
+                                  }
                                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#31452d] px-3 py-2 text-xs font-semibold text-[#f3f7ee] transition-colors hover:bg-[#243420]"
                                 >
                                   <MessageCircle size={15} />

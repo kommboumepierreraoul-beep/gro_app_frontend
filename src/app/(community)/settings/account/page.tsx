@@ -28,8 +28,8 @@ import {
 import toast from "react-hot-toast";
 import api from "@/lib/axios";
 import { useAuthStore } from "@/stores/auth.store";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { useI18n } from "@/i18n/LanguageProvider";
+import { formatDateOnly, formatRelativeTime } from "@/lib/i18n-date";
 
 type Step = "email" | "reset";
 
@@ -49,6 +49,7 @@ interface SessionData {
 export default function AccountSecurityPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { locale } = useI18n();
 
   // ── États ──────────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>("email");
@@ -237,11 +238,8 @@ export default function AccountSecurityPage() {
       const now = new Date();
       const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
 
-      if (diff < 60) return "À l'instant";
-      if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`;
-      if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)} h`;
-      if (diff < 604800) return `Il y a ${Math.floor(diff / 86400)} j`;
-      return format(d, "d MMM yyyy", { locale: fr });
+      if (diff < 604800) return formatRelativeTime(d, locale);
+      return formatDateOnly(d, locale);
     } catch {
       return date;
     }
@@ -249,7 +247,7 @@ export default function AccountSecurityPage() {
 
   // ── Rendu ──────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen ">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
         <div className="rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
