@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCommunityStore } from "@/stores/community.store";
 
-import { Home, MessageCircle, Bell, Store, Target, Megaphone } from "lucide-react";
+import { Home, MessageCircle, Bell, Store, Target, Bot } from "lucide-react";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -30,9 +30,9 @@ export function MobileBottomNav() {
       icon: Target,
     },
     {
-      href: "/announcements",
-      label: "Annonces",
-      icon: Megaphone,
+      href: "/chat-ia",
+      label: "AgriPulse AI",
+      icon: Bot,
     },
     {
       href: "/marketplace",
