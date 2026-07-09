@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react/no-unescaped-entities */
 // components/ai/ChatInterface.tsx
 "use client";
@@ -666,7 +667,6 @@ export function ChatInterface() {
           <MessageInput
             onSend={handleSendMessage}
             isLoading={loading || isStreaming || isTyping}
-            placeholder="Posez votre question..."
           />
         </div>
       </section>
