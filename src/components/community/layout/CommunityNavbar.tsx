@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Sparkles,
   X,
+  Megaphone,
 } from "lucide-react";
 
 import { Avatar } from "../shared/Avatar";
@@ -29,14 +30,13 @@ import { PushNotificationModal } from "@/components/marketplace/PushNotification
 import { openFirstRunGuide } from "@/components/onboarding/FirstRunGuide";
 import api from "@/lib/axios";
 import Image from "next/image";
-// Fonction pour obtenir l'URL complète de l'avatar
+
 const getAvatarUrl = (avatar?: string | null): string | undefined => {
   if (!avatar) return undefined;
-
-  if (avatar?.startsWith("http")) return avatar;
+  if (avatar.startsWith("http")) return avatar;
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-  const cleanPath = avatar?.startsWith("/") ? avatar : `/${avatar}`;
+  const cleanPath = avatar.startsWith("/") ? avatar : `/${avatar}`;
   return `${apiUrl}${cleanPath}`;
 };
 
@@ -44,8 +44,8 @@ export function CommunityNavbar() {
   const { user } = useAuthStore();
   const { logout } = useAuth();
   const { t } = useI18n();
-  const isAdmin = user?.role === "admin" || user?.is_admin === true;
 
+  const isAdmin = user?.role === "admin" || user?.is_admin === true;
   const unreadNotifs = useCommunityStore((s) => s.unreadNotifs);
 
   const [showMenu, setShowMenu] = useState(false);
@@ -54,7 +54,6 @@ export function CommunityNavbar() {
 
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Récupérer le profil utilisateur
   const { data: profile } = useQuery({
     queryKey: ["myProfile"],
     queryFn: profileService.getMe,
@@ -84,10 +83,8 @@ export function CommunityNavbar() {
     retry: false,
   });
 
-  const totalUnreadNotifs =
-    unreadNotifs + appUnreadCount + missionUnreadCount;
+  const totalUnreadNotifs = unreadNotifs + appUnreadCount + missionUnreadCount;
 
-  // Construire les données utilisateur pour l'affichage
   const displayUser = {
     id: profile?.id ?? user?.id,
     firstname: profile?.firstname ?? user?.firstname,
@@ -99,7 +96,10 @@ export function CommunityNavbar() {
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
+
+    handleScroll();
     window.addEventListener("scroll", handleScroll);
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -109,14 +109,28 @@ export function CommunityNavbar() {
         setShowMenu(false);
       }
     };
+
     document.addEventListener("mousedown", handler);
+
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const iconButtonStyle = {
+    color: "#42493e",
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.background = "rgba(188,240,174,0.3)";
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.background = "transparent";
+  };
 
   return (
     <>
       <nav
-        className="fixed top-0 right-0 z-50 left-0 transition-all duration-300 "
+        className="fixed top-0 right-0 left-0 z-50 transition-all duration-300"
         style={{
           background: scrolled
             ? "rgba(249,250,242,0.96)"
@@ -127,13 +141,13 @@ export function CommunityNavbar() {
         }}
       >
         <div className="px-4 sm:px-6">
-          <div className="flex items-center justify-between h-16 gap-4">
+          <div className="flex h-16 items-center justify-between gap-4">
             {/* Logo */}
             <Link
               href="/community"
-              className="flex items-center gap-2.5 group flex-shrink-0"
+              className="group flex flex-shrink-0 items-center gap-2.5"
             >
-              <div className="w-10 h-10 relative">
+              <div className="relative h-10 w-10">
                 <Image
                   src="/logo_agri_pulse.png"
                   alt="AgriPulse"
@@ -142,8 +156,9 @@ export function CommunityNavbar() {
                   className="object-contain"
                 />
               </div>
+
               <span
-                className="font-bold text-lg hidden sm:inline"
+                className="hidden text-lg font-bold sm:inline"
                 style={{
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
                   background:
@@ -156,8 +171,8 @@ export function CommunityNavbar() {
               </span>
             </Link>
 
-            {/* Barre de recherche desktop */}
-            <div className="hidden md:block flex-1 max-w-md">
+            {/* Recherche desktop */}
+            <div className="hidden max-w-md flex-1 md:block">
               <Search
                 placeholder={t("community.searchPlaceholder")}
                 className="w-full"
@@ -168,20 +183,29 @@ export function CommunityNavbar() {
             <div className="flex items-center gap-1">
               {/* Recherche mobile */}
               <button
+                type="button"
                 onClick={() => setShowMobileSearch(!showMobileSearch)}
-                className="md:hidden p-2 rounded-xl transition-all duration-150"
-                style={{ color: "#42493e" }}
-                onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLElement).style.background =
-                    "rgba(188,240,174,0.3)")
-                }
-                onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLElement).style.background =
-                    "transparent")
-                }
+                className="rounded-xl p-2 transition-all duration-150 md:hidden"
+                style={iconButtonStyle}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                aria-label="Rechercher"
               >
-                <SearchIcon className="w-5 h-5" />
+                <SearchIcon className="h-5 w-5" />
               </button>
+
+              {/* Annonces mobile + desktop */}
+              <Link
+                href="/annonces"
+                title="Annonces"
+                aria-label="Voir les annonces"
+                className="flex rounded-xl p-2 transition-all duration-150"
+                style={iconButtonStyle}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              >
+                <Megaphone className="h-5 w-5" />
+              </Link>
 
               {isAdmin && (
                 <Link
@@ -196,11 +220,11 @@ export function CommunityNavbar() {
                     border: "1px solid rgba(166,124,0,0.25)",
                   }}
                   onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLElement).style.background =
+                    (e.currentTarget.style.background =
                       "linear-gradient(135deg, rgba(255,198,41,1) 0%, rgba(255,235,173,1) 100%)")
                   }
                   onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLElement).style.background =
+                    (e.currentTarget.style.background =
                       "linear-gradient(135deg, rgba(255,214,102,0.95) 0%, rgba(255,245,204,0.95) 100%)")
                   }
                 >
@@ -216,21 +240,17 @@ export function CommunityNavbar() {
               {/* Notifications */}
               <Link
                 href="/notifications"
-                className="relative p-2 rounded-xl transition-all duration-150"
-                style={{ color: "#42493e" }}
-                onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLElement).style.background =
-                    "rgba(188,240,174,0.3)")
-                }
-                onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLElement).style.background =
-                    "transparent")
-                }
+                className="relative rounded-xl p-2 transition-all duration-150"
+                style={iconButtonStyle}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                aria-label="Notifications"
               >
-                <Bell className="w-5 h-5" />
+                <Bell className="h-5 w-5" />
+
                 {totalUnreadNotifs > 0 && (
                   <span
-                    className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full ring-2"
+                    className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full ring-2"
                     style={
                       {
                         background: "#ba1a1a",
@@ -246,53 +266,40 @@ export function CommunityNavbar() {
               <button
                 type="button"
                 onClick={openFirstRunGuide}
-                title="Relancer le guide de demarrage"
-                aria-label="Relancer le guide de demarrage"
-                className="hidden sm:flex p-2 rounded-xl transition-all duration-150"
-                style={{ color: "#42493e" }}
-                onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLElement).style.background =
-                    "rgba(188,240,174,0.3)")
-                }
-                onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLElement).style.background =
-                    "transparent")
-                }
+                title="Relancer le guide de démarrage"
+                aria-label="Relancer le guide de démarrage"
+                className="hidden rounded-xl p-2 transition-all duration-150 sm:flex"
+                style={iconButtonStyle}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
               >
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="h-5 w-5" />
               </button>
 
-              {/* Support */}
+              {/* Support desktop */}
               <Link
                 href="/support"
-                className="hidden sm:flex p-2 rounded-xl transition-all duration-150"
-                style={{ color: "#42493e" }}
-                onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLElement).style.background =
-                    "rgba(188,240,174,0.3)")
-                }
-                onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLElement).style.background =
-                    "transparent")
-                }
+                className="hidden rounded-xl p-2 transition-all duration-150 sm:flex"
+                style={iconButtonStyle}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                aria-label="Support"
               >
-                <HelpCircle className="w-5 h-5" />
+                <HelpCircle className="h-5 w-5" />
               </Link>
 
               {/* Menu utilisateur */}
               <div className="relative" ref={menuRef}>
                 <button
+                  type="button"
                   onClick={() => setShowMenu(!showMenu)}
-                  className="flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-xl transition-all duration-150"
-                  style={{ color: "#42493e" }}
+                  className="flex items-center gap-2 rounded-xl py-1.5 pl-1 pr-2 transition-all duration-150"
+                  style={iconButtonStyle}
                   onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLElement).style.background =
-                      "rgba(194,201,187,0.3)")
+                    (e.currentTarget.style.background = "rgba(194,201,187,0.3)")
                   }
-                  onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLElement).style.background =
-                      "transparent")
-                  }
+                  onMouseLeave={handleMouseLeave}
+                  aria-label="Menu utilisateur"
                 >
                   <Avatar
                     src={displayUser.avatar}
@@ -300,18 +307,18 @@ export function CommunityNavbar() {
                     size="sm"
                     ring={false}
                   />
+
                   <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
                       showMenu ? "rotate-180" : ""
                     }`}
                     style={{ color: "#72796e" }}
                   />
                 </button>
 
-                {/* Dropdown */}
                 {showMenu && (
                   <div
-                    className="absolute right-0 top-full mt-2 w-64 rounded-2xl overflow-hidden z-50 animate-slideDown"
+                    className="animate-slideDown absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl"
                     style={{
                       background: "rgba(249,250,242,0.98)",
                       backdropFilter: "blur(20px)",
@@ -319,7 +326,6 @@ export function CommunityNavbar() {
                       boxShadow: "0 16px 40px rgba(21,66,18,0.12)",
                     }}
                   >
-                    {/* Header */}
                     <div
                       className="px-4 py-3.5"
                       style={{
@@ -335,9 +341,10 @@ export function CommunityNavbar() {
                           size="md"
                           ring={true}
                         />
+
                         <div className="min-w-0">
                           <p
-                            className="text-sm font-semibold truncate"
+                            className="truncate text-sm font-semibold"
                             style={{
                               color: "#191c18",
                               fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -345,8 +352,9 @@ export function CommunityNavbar() {
                           >
                             {displayUser.firstname} {displayUser.lastname}
                           </p>
+
                           <p
-                            className="text-xs truncate"
+                            className="truncate text-xs"
                             style={{ color: "#72796e" }}
                           >
                             {displayUser.email}
@@ -355,7 +363,6 @@ export function CommunityNavbar() {
                       </div>
                     </div>
 
-                    {/* Liens */}
                     <div className="py-1.5">
                       {[
                         {
@@ -379,6 +386,11 @@ export function CommunityNavbar() {
                           icon: HelpCircle,
                           label: t("navigation.support"),
                         },
+                        {
+                          href: "/annonces",
+                          icon: Megaphone,
+                          label: "Annonces",
+                        },
                       ]
                         .filter((item) => !item.adminOnly || isAdmin)
                         .map(({ href, icon: Icon, label }) => (
@@ -389,16 +401,13 @@ export function CommunityNavbar() {
                             className="flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150"
                             style={{ color: "#42493e" }}
                             onMouseEnter={(e) =>
-                              ((e.currentTarget as HTMLElement).style.background =
+                              (e.currentTarget.style.background =
                                 "rgba(188,240,174,0.2)")
                             }
-                            onMouseLeave={(e) =>
-                              ((e.currentTarget as HTMLElement).style.background =
-                                "transparent")
-                            }
+                            onMouseLeave={handleMouseLeave}
                           >
                             <Icon
-                              className="w-4 h-4"
+                              className="h-4 w-4"
                               style={{ color: "#72796e" }}
                             />
                             {label}
@@ -406,27 +415,24 @@ export function CommunityNavbar() {
                         ))}
                     </div>
 
-                    {/* Déconnexion */}
                     <button
+                      type="button"
                       onClick={() => {
                         setShowMenu(false);
                         logout();
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-all duration-150"
+                      className="flex w-full items-center gap-3 px-4 py-3 text-sm transition-all duration-150"
                       style={{
                         color: "#ba1a1a",
                         borderTop: "1px solid rgba(194,201,187,0.35)",
                       }}
                       onMouseEnter={(e) =>
-                        ((e.currentTarget as HTMLElement).style.background =
+                        (e.currentTarget.style.background =
                           "rgba(186,26,26,0.06)")
                       }
-                      onMouseLeave={(e) =>
-                        ((e.currentTarget as HTMLElement).style.background =
-                          "transparent")
-                      }
+                      onMouseLeave={handleMouseLeave}
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="h-4 w-4" />
                       {t("auth.logout")}
                     </button>
                   </div>
@@ -439,9 +445,9 @@ export function CommunityNavbar() {
         {/* Recherche mobile overlay */}
         {showMobileSearch && (
           <div
-            className="md:hidden absolute top-full left-0 right-0 border-b p-3 z-50 animate-slideDown"
+            className="animate-slideDown absolute left-0 right-0 top-full z-50 border-b p-3 md:hidden"
             style={{
-              background: "transparent",
+              background: "rgba(249,250,242,0.96)",
               backdropFilter: "blur(16px)",
               borderColor: "rgba(194,201,187,0.4)",
             }}
@@ -451,20 +457,23 @@ export function CommunityNavbar() {
                 placeholder={t("community.mobileSearchPlaceholder")}
                 className="flex-1 bg-transparent"
               />
+
               <LanguageToggle compact />
+
               <button
+                type="button"
                 onClick={() => setShowMobileSearch(false)}
-                className="p-2 rounded-xl transition-all duration-150"
+                className="rounded-xl p-2 transition-all duration-150"
                 style={{ color: "#72796e" }}
+                aria-label="Fermer la recherche"
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>
         )}
       </nav>
 
-      {/* Spacer navbar */}
       <div className="h-16" />
     </>
   );
