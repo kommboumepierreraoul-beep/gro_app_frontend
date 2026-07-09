@@ -20,7 +20,8 @@ import {
   Wand2,
   Tag,
   FileText,
-  RefreshCw,
+  Menu,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -31,6 +32,7 @@ export function ChatInterface() {
   >(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // États pour l'effet d'écriture
@@ -68,7 +70,7 @@ export function ChatInterface() {
       setDisplayedContent("");
       charIndexRef.current = 0;
 
-      const typeSpeed = 0.01; // ms par caractère
+      const typeSpeed = 0.01;
       let timeoutId: NodeJS.Timeout;
 
       const typeChar = () => {
@@ -79,10 +81,8 @@ export function ChatInterface() {
           timeoutId = setTimeout(typeChar, typeSpeed);
           scrollToBottom();
         } else {
-          // Fin de l'écriture
           setIsTyping(false);
           setPendingMessage(null);
-          // Ajouter le message complet à la liste
           setMessages((prev) => [
             ...prev,
             {
@@ -109,6 +109,7 @@ export function ChatInterface() {
     const conv = await loadConversation(id);
     setMessages(conv.messages ?? []);
     setCurrentConversationId(id);
+    setShowSidebar(false);
   };
 
   const handleSendMessage = async (content: string, useStreaming = true) => {
@@ -120,7 +121,6 @@ export function ChatInterface() {
     };
     setMessages((prev) => [...prev, userMessage]);
 
-    // Nettoyer tout typing en cours
     if (typingIntervalRef.current) {
       clearInterval(typingIntervalRef.current);
       typingIntervalRef.current = null;
@@ -139,7 +139,6 @@ export function ChatInterface() {
           () => scrollToBottom(),
         );
         if (result) {
-          // Utiliser l'effet d'écriture pour le message reçu
           setPendingMessage(result.content);
           if (result.conversationId) {
             setCurrentConversationId(result.conversationId);
@@ -155,7 +154,6 @@ export function ChatInterface() {
           conversation_id: currentConversationId ?? undefined,
           stream: false,
         });
-        // Utiliser l'effet d'écriture
         setPendingMessage(response.message.content);
         setCurrentConversationId(response.conversation_id);
       } catch {
@@ -165,13 +163,13 @@ export function ChatInterface() {
   };
 
   const handleNewConversation = () => {
-    // Nettoyer le typing
     setIsTyping(false);
     setPendingMessage(null);
     setDisplayedContent("");
     setMessages([]);
     setCurrentConversationId(null);
     setShowMenu(false);
+    setShowSidebar(false);
   };
 
   const handleCopyConversationId = () => {
@@ -184,12 +182,25 @@ export function ChatInterface() {
 
   const quickPrompts = [
     {
-      label: "Analyser un post de la communauté",
+      label: "Analyser un post",
       icon: <FileText size={16} />,
+      description: "de la communauté",
     },
-    { label: "Générer des tags pour mon article", icon: <Tag size={16} /> },
-    { label: "Résumer une discussion", icon: <MessageSquare size={16} /> },
-    { label: "Améliorer mon texte", icon: <Wand2 size={16} /> },
+    {
+      label: "Générer des tags",
+      icon: <Tag size={16} />,
+      description: "pour mon article",
+    },
+    {
+      label: "Résumer une discussion",
+      icon: <MessageSquare size={16} />,
+      description: "en quelques mots",
+    },
+    {
+      label: "Améliorer mon texte",
+      icon: <Wand2 size={16} />,
+      description: "correction et style",
+    },
   ];
 
   const iconBtnStyle: React.CSSProperties = {
@@ -206,7 +217,6 @@ export function ChatInterface() {
     transition: "all 0.15s",
   };
 
-  // Fonction pour afficher le message en cours d'écriture ou streaming
   const getCurrentAssistantMessage = () => {
     if (isTyping && displayedContent) {
       return {
@@ -233,27 +243,55 @@ export function ChatInterface() {
 
   return (
     <div
-      className="flex h-full min-h-0 w-full overflow-hidden"
+      className="flex h-full min-h-0 w-full overflow-hidden relative"
       style={{ background: "rgba(246,247,240,0.86)" }}
     >
+      {/* Overlay tiroir mobile - plus visible sur mobile */}
+      {showSidebar && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden animate-fade-in"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
       {/* Sidebar conversations */}
-      <ChatSidebar
-        currentConversationId={currentConversationId}
-        onNewConversation={handleNewConversation}
-        onSelectConversation={handleSelectConversation}
-      />
+      <div
+        className={`
+          fixed inset-y-0 left-0 z-50 w-[85vw] max-w-sm transform transition-transform duration-300 ease-in-out
+          md:static md:z-auto md:translate-x-0 md:w-72 md:max-w-none md:shadow-none
+          ${showSidebar ? "translate-x-0" : "-translate-x-full"}
+          shadow-2xl md:shadow-none
+        `}
+      >
+        <ChatSidebar
+          currentConversationId={currentConversationId}
+          onNewConversation={handleNewConversation}
+          onSelectConversation={handleSelectConversation}
+          onClose={() => setShowSidebar(false)}
+        />
+      </div>
 
       {/* Zone chat principale */}
       <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f9faf2]">
         {/* ================= HEADER ================= */}
         <div
-          className="z-10 flex min-h-[64px] flex-shrink-0 items-center justify-between gap-3 border-b border-[rgba(194,201,187,0.45)] px-3 py-2 sm:px-5 sm:py-3"
+          className="z-10 flex min-h-[56px] sm:min-h-[64px] flex-shrink-0 items-center justify-between gap-2 px-2 py-2 sm:px-5 sm:py-3 border-b border-[rgba(194,201,187,0.45)]"
           style={{
             background: "rgba(249,250,242,0.95)",
             backdropFilter: "blur(12px)",
           }}
         >
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            {/* Bouton menu mobile - plus visible */}
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="md:hidden flex-shrink-0 p-2 rounded-xl hover:bg-black/5 active:bg-black/10 transition-all duration-150"
+              style={{ color: "#42493e" }}
+              aria-label="Voir les conversations"
+            >
+              <Menu size={20} />
+            </button>
+
             <div
               className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0"
               style={{
@@ -275,7 +313,7 @@ export function ChatInterface() {
                 AgriPulse IA
               </p>
               <p
-                className="text-xs truncate"
+                className="text-xs truncate hidden sm:block"
                 style={{
                   color: "#72796e",
                   fontFamily: "'Inter', sans-serif",
@@ -288,7 +326,7 @@ export function ChatInterface() {
             </div>
           </div>
 
-          {/* Actions desktop */}
+          {/* Actions - version desktop */}
           <div className="hidden sm:flex items-center gap-1 relative">
             <button
               onClick={handleNewConversation}
@@ -321,7 +359,6 @@ export function ChatInterface() {
               <MoreVertical size={17} />
             </button>
 
-            {/* Dropdown menu desktop */}
             {showMenu && (
               <>
                 <div
@@ -329,13 +366,12 @@ export function ChatInterface() {
                   onClick={() => setShowMenu(false)}
                 />
                 <div
-                  className="absolute right-0 top-full mt-2 w-52 rounded-2xl py-1 z-20 overflow-hidden"
+                  className="absolute right-0 top-full mt-2 w-52 rounded-2xl py-1 z-20 overflow-hidden animate-slide-down"
                   style={{
                     background: "rgba(249,250,242,0.98)",
                     backdropFilter: "blur(20px)",
                     border: "1px solid rgba(194,201,187,0.45)",
                     boxShadow: "0 18px 42px rgba(25,28,24,0.12)",
-                    animation: "groSlideDown 0.15s ease-out",
                   }}
                 >
                   <button
@@ -387,68 +423,135 @@ export function ChatInterface() {
             )}
           </div>
 
-          {/* Bouton menu mobile */}
-          <button
-            onClick={() => setShowMenu(true)}
-            className="sm:hidden p-1.5 rounded-xl transition-all duration-150 active:bg-black/5"
-            style={{ color: "#42493e" }}
-            aria-label="Options de conversation"
-          >
-            <MoreVertical size={20} />
-          </button>
+          {/* Menu mobile - version améliorée */}
+          <div className="sm:hidden flex items-center gap-1">
+            <button
+              onClick={handleNewConversation}
+              className="p-2 rounded-xl hover:bg-black/5 active:bg-black/10 transition-all duration-150"
+              style={{ color: "#42493e" }}
+              aria-label="Nouvelle conversation"
+            >
+              <Plus size={20} />
+            </button>
 
-          {showMenu && (
-            <>
-              <div
-                className="fixed inset-0 z-20 bg-black/10 sm:hidden"
-                onClick={() => setShowMenu(false)}
-              />
-              <div className="fixed inset-x-3 top-20 z-30 overflow-hidden rounded-2xl border border-[rgba(194,201,187,0.5)] bg-[#f9faf2] py-1 shadow-xl sm:hidden">
-                <button
-                  onClick={handleNewConversation}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-[rgba(49,69,45,0.08)]"
-                  style={{ color: "#42493e", fontFamily: "'Inter', sans-serif" }}
+            <button
+              onClick={() => setShowMenu(true)}
+              className="p-2 rounded-xl hover:bg-black/5 active:bg-black/10 transition-all duration-150"
+              style={{ color: "#42493e" }}
+              aria-label="Options"
+            >
+              <MoreVertical size={20} />
+            </button>
+
+            {showMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-20 bg-black/30 animate-fade-in"
+                  onClick={() => setShowMenu(false)}
+                />
+                <div
+                  className="fixed bottom-0 left-0 right-0 z-30 rounded-t-3xl overflow-hidden border-t border-[rgba(194,201,187,0.5)] bg-[#f9faf2] py-2 px-2 animate-slide-up"
+                  style={{
+                    boxShadow: "0 -10px 40px rgba(25,28,24,0.15)",
+                    paddingBottom:
+                      "calc(0.75rem + env(safe-area-inset-bottom))",
+                  }}
                 >
-                  <Plus size={16} />
-                  Nouvelle conversation
-                </button>
-                {currentConversationId && (
+                  <div className="w-12 h-1 bg-[rgba(194,201,187,0.6)] rounded-full mx-auto mb-3" />
+
                   <button
-                    onClick={handleCopyConversationId}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-[rgba(49,69,45,0.08)]"
-                    style={{ color: "#42493e", fontFamily: "'Inter', sans-serif" }}
+                    onClick={handleNewConversation}
+                    className="flex w-full items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-colors hover:bg-[rgba(49,69,45,0.08)] active:bg-[rgba(49,69,45,0.12)]"
+                    style={{
+                      color: "#42493e",
+                      fontFamily: "'Inter', sans-serif",
+                    }}
                   >
-                    <Copy size={16} />
-                    Copier l'ID
+                    <span className="p-1.5 rounded-lg bg-[rgba(49,69,45,0.08)]">
+                      <Plus size={18} style={{ color: "#31452d" }} />
+                    </span>
+                    Nouvelle conversation
                   </button>
-                )}
-              </div>
-            </>
-          )}
+
+                  {currentConversationId && (
+                    <>
+                      <button
+                        onClick={handleCopyConversationId}
+                        className="flex w-full items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-colors hover:bg-[rgba(49,69,45,0.08)] active:bg-[rgba(49,69,45,0.12)]"
+                        style={{
+                          color: "#42493e",
+                          fontFamily: "'Inter', sans-serif",
+                        }}
+                      >
+                        <span className="p-1.5 rounded-lg bg-[rgba(49,69,45,0.08)]">
+                          <Copy size={18} style={{ color: "#31452d" }} />
+                        </span>
+                        Copier l'ID de conversation
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          toast.success("Conversation supprimée");
+                        }}
+                        className="flex w-full items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-colors hover:bg-[rgba(186,26,26,0.06)] active:bg-[rgba(186,26,26,0.12)]"
+                        style={{
+                          color: "#ba1a1a",
+                          fontFamily: "'Inter', sans-serif",
+                        }}
+                      >
+                        <span className="p-1.5 rounded-lg bg-[rgba(186,26,26,0.06)]">
+                          <Trash2 size={18} />
+                        </span>
+                        Supprimer cette conversation
+                      </button>
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => setShowMenu(false)}
+                    className="flex w-full items-center justify-center gap-3 px-4 py-3 mt-1 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 active:bg-black/10"
+                    style={{
+                      color: "#72796e",
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    Fermer
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* ================= MESSAGES ================= */}
         <div
-          className="gro-chat-scroll flex-1 space-y-2 overflow-y-auto px-3 py-4 sm:space-y-3 sm:px-6 sm:py-5"
-          style={{ background: "linear-gradient(180deg, rgba(246,247,240,0.7), rgba(249,250,242,0.96))" }}
+          className="gro-chat-scroll flex-1 space-y-2 overflow-y-auto px-2 py-3 sm:space-y-3 sm:px-6 sm:py-5"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(246,247,240,0.7), rgba(249,250,242,0.96))",
+          }}
         >
           {/* État vide — welcome screen */}
           {messages.length === 0 && !isStreaming && !isTyping && (
-            <div className="mx-auto flex min-h-[calc(100dvh-22rem)] max-w-2xl flex-col justify-center py-8 text-center sm:py-12">
-              {/* Icône */}
+            <div className="mx-auto flex min-h-[50vh] max-w-2xl flex-col justify-center py-6 text-center sm:min-h-[60vh] sm:py-12 px-3">
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
                 style={{
                   background:
                     "linear-gradient(135deg, rgba(49,69,45,0.12) 0%, rgba(244,187,146,0.18) 100%)",
                   border: "1px solid rgba(194,201,187,0.4)",
                 }}
               >
-                <Sparkles size={32} style={{ color: "#31452d" }} />
+                <Sparkles
+                  size={28}
+                  className="sm:w-8 sm:h-8"
+                  style={{ color: "#31452d" }}
+                />
               </div>
 
               <h2
-                className="text-xl sm:text-2xl font-semibold mb-2"
+                className="text-lg sm:text-2xl font-semibold mb-1 sm:mb-2 px-2"
                 style={{
                   color: "#191c18",
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -457,32 +560,43 @@ export function ChatInterface() {
                 Assistant IA Communauté
               </h2>
               <p
-                className="text-sm mb-6"
+                className="text-xs sm:text-sm mb-4 sm:mb-6 px-4"
                 style={{
                   color: "#72796e",
                   fontFamily: "'Inter', sans-serif",
                 }}
               >
-                Générez des tags, résumez des discussions, améliorez vos posts —
-                en quelques secondes.
+                Générez des tags, résumez des discussions, améliorez vos posts
               </p>
 
-              {/* Suggestions rapides */}
-              <div className="mx-auto grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
+              {/* Quick prompts - version mobile améliorée */}
+              <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-2 px-1 sm:gap-3 sm:grid-cols-2 sm:px-0">
                 {quickPrompts.map((prompt) => (
                   <button
                     key={prompt.label}
-                    onClick={() => handleSendMessage(prompt.label)}
-                    className="group rounded-2xl border border-[rgba(194,201,187,0.45)] bg-white p-4 text-left text-sm font-medium shadow-sm transition-all hover:border-[#31452d] hover:bg-[#fbfcf7] active:scale-[0.98]"
+                    onClick={() =>
+                      handleSendMessage(`${prompt.label} ${prompt.description}`)
+                    }
+                    className="group rounded-2xl border border-[rgba(194,201,187,0.45)] bg-white p-3 sm:p-4 text-left transition-all hover:border-[#31452d] hover:bg-[#fbfcf7] active:scale-[0.97] shadow-sm"
                     style={{
-                      color: "#42493e",
                       fontFamily: "'Inter', sans-serif",
                     }}
                   >
-                    <span className="mb-1.5 block" style={{ color: "#31452d" }}>
+                    <span className="block mb-1" style={{ color: "#31452d" }}>
                       {prompt.icon}
                     </span>
-                    {prompt.label}
+                    <p
+                      className="text-xs sm:text-sm font-medium"
+                      style={{ color: "#42493e" }}
+                    >
+                      {prompt.label}
+                    </p>
+                    <p
+                      className="text-[10px] sm:text-xs mt-0.5 opacity-60"
+                      style={{ color: "#72796e" }}
+                    >
+                      {prompt.description}
+                    </p>
                   </button>
                 ))}
               </div>
@@ -490,31 +604,29 @@ export function ChatInterface() {
           )}
 
           {/* Messages */}
-          <div className="mx-auto w-full max-w-3xl space-y-3">
+          <div className="mx-auto w-full max-w-3xl space-y-2 sm:space-y-3 px-1 sm:px-0">
             {messages.map((message, index) => (
               <ChatMessage key={index} message={message} />
             ))}
 
-            {/* Message en cours d'écriture (effet machine à écrire) */}
             {currentAssistantMessage && (
               <ChatMessage message={currentAssistantMessage} />
             )}
 
-            {/* Loading direct */}
             {loading && !isStreaming && !isTyping && (
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 <div
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
+                  className="w-7 h-7 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0"
                   style={{
                     background:
                       "linear-gradient(135deg, #31452d 0%, #1f2d1d 100%)",
                     color: "#e8f5df",
                   }}
                 >
-                  <Bot size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  <Bot size={14} className="sm:w-[18px] sm:h-[18px]" />
                 </div>
                 <div
-                  className="px-4 py-3 rounded-2xl rounded-tl-sm border"
+                  className="px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl rounded-tl-sm border"
                   style={{
                     background: "white",
                     borderColor: "rgba(194,201,187,0.3)",
@@ -522,25 +634,16 @@ export function ChatInterface() {
                 >
                   <div className="flex gap-1.5 items-center">
                     <span
-                      className="w-2 h-2 rounded-full animate-bounce"
-                      style={{
-                        background: "#31452d",
-                        animationDelay: "0ms",
-                      }}
+                      className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full animate-bounce"
+                      style={{ background: "#31452d", animationDelay: "0ms" }}
                     />
                     <span
-                      className="w-2 h-2 rounded-full animate-bounce"
-                      style={{
-                        background: "#31452d",
-                        animationDelay: "150ms",
-                      }}
+                      className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full animate-bounce"
+                      style={{ background: "#31452d", animationDelay: "150ms" }}
                     />
                     <span
-                      className="w-2 h-2 rounded-full animate-bounce"
-                      style={{
-                        background: "#31452d",
-                        animationDelay: "300ms",
-                      }}
+                      className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full animate-bounce"
+                      style={{ background: "#31452d", animationDelay: "300ms" }}
                     />
                   </div>
                 </div>
@@ -553,34 +656,37 @@ export function ChatInterface() {
 
         {/* ================= INPUT ZONE ================= */}
         <div
-          className="flex-shrink-0 px-3 py-3 sm:px-6"
+          className="flex-shrink-0 px-2 py-2 sm:px-6 sm:py-3"
           style={{
             background: "rgba(249,250,242,0.96)",
             borderTop: "1px solid rgba(194,201,187,0.4)",
+            paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom))",
           }}
         >
           <MessageInput
             onSend={handleSendMessage}
             isLoading={loading || isStreaming || isTyping}
+            placeholder="Posez votre question..."
           />
         </div>
       </section>
 
       <style jsx global>{`
         .gro-chat-scroll::-webkit-scrollbar {
-          width: 4px;
+          width: 3px;
         }
         .gro-chat-scroll::-webkit-scrollbar-track {
           background: transparent;
         }
         .gro-chat-scroll::-webkit-scrollbar-thumb {
-          background: rgba(49, 69, 45, 0.22);
+          background: rgba(49, 69, 45, 0.2);
           border-radius: 10px;
         }
         .gro-chat-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(49, 69, 45, 0.36);
+          background: rgba(49, 69, 45, 0.35);
         }
-        @keyframes groSlideDown {
+
+        @keyframes slide-down {
           from {
             opacity: 0;
             transform: translateY(-8px);
@@ -590,7 +696,8 @@ export function ChatInterface() {
             transform: translateY(0);
           }
         }
-        @keyframes slideUp {
+
+        @keyframes slide-up {
           from {
             opacity: 0;
             transform: translateY(20px);
@@ -600,8 +707,32 @@ export function ChatInterface() {
             transform: translateY(0);
           }
         }
+
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        .animate-slide-down {
+          animation: slide-down 0.15s ease-out;
+        }
         .animate-slide-up {
-          animation: slideUp 0.2s ease-out;
+          animation: slide-up 0.2s ease-out;
+        }
+        .animate-fade-in {
+          animation: fade-in 0.2s ease-out;
+        }
+
+        /* Améliorations du scroll sur mobile */
+        @media (max-width: 640px) {
+          .gro-chat-scroll {
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+          }
         }
       `}</style>
     </div>
