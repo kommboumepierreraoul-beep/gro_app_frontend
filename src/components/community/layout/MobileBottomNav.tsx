@@ -4,7 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCommunityStore } from "@/stores/community.store";
 
-import { Home, MessageCircle, Bell, Store, Target, Bot } from "lucide-react";
+import { Home, MessageCircle, Target, Bot, Store } from "lucide-react";
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  badge?: number;
+}
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -12,7 +19,7 @@ export function MobileBottomNav() {
   const unreadNotifs = useCommunityStore((s) => s.unreadNotifs);
   const unreadMessages = useCommunityStore((s) => s.unreadMessages);
 
-  const links = [
+  const links: NavItem[] = [
     {
       href: "/community",
       label: "Accueil",
@@ -30,8 +37,8 @@ export function MobileBottomNav() {
       icon: Target,
     },
     {
-      href: "/chat-ia",
-      label: "AgriPulse AI",
+      href: "/chat-ai",
+      label: "AgriPulse IA",
       icon: Bot,
     },
     {
@@ -54,6 +61,7 @@ export function MobileBottomNav() {
       <div className="flex items-center justify-around px-2 py-2">
         {links.map(({ href, label, icon: Icon, badge }) => {
           const active = pathname === href;
+          const showBadge = typeof badge === "number" && badge > 0;
 
           return (
             <Link
@@ -84,7 +92,7 @@ export function MobileBottomNav() {
                 />
 
                 {/* Badge */}
-                {badge! > 0 && (
+                {showBadge && (
                   <span
                     className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-bold flex items-center justify-center border-2"
                     style={{
