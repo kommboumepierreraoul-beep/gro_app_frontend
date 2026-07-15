@@ -26,7 +26,7 @@ const baseLinks = [
   { href: "/disputes", label: "Mes litiges", icon: Gavel },
   { href: "/wallet", label: "Portefeuille", icon: Wallet },
   { href: "/marketplace/support", label: "Support", icon: Headphones },
-  { href: "/marketplace/settings", label: "Parametres", icon: Settings },
+  { href: "/marketplace/settings", label: "Paramètres", icon: Settings },
   { href: "/account", label: "Compte", icon: UserCircle },
   { href: "/community", label: "Communauté", icon: Home },
 ];
@@ -67,7 +67,32 @@ function getRoleView(pathname: string, rawRole?: string): RoleView {
 
 export function MarketplaceLeftSidebar() {
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const { user, isHydrated } = useAuthStore();
+
+  if (!isHydrated) {
+    return (
+      <aside className="fixed left-0 top-16 z-40 hidden h-[calc(100vh-4rem)] w-64 flex-col border-r border-[#c2c9bb]/40 bg-[#f9faf2]/95 shadow-[4px_0_24px_rgba(21,66,18,0.04)] backdrop-blur-xl lg:flex">
+        <div className="border-b border-[#c2c9bb]/35 px-4 py-5">
+          <div className="h-3 w-24 animate-pulse rounded bg-[#e7e9e1]" />
+          <div className="mt-3 h-6 w-40 animate-pulse rounded bg-[#dce2d8]" />
+          <div className="mt-3 h-3 w-full animate-pulse rounded bg-[#e7e9e1]" />
+          <div className="mt-2 h-3 w-3/4 animate-pulse rounded bg-[#e7e9e1]" />
+        </div>
+        <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+            <div
+              key={item}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5"
+            >
+              <div className="h-4 w-4 animate-pulse rounded bg-[#dce2d8]" />
+              <div className="h-4 flex-1 animate-pulse rounded bg-[#e7e9e1]" />
+            </div>
+          ))}
+        </nav>
+      </aside>
+    );
+  }
+
   const roleView = getRoleView(pathname, String(user?.role ?? "user"));
 
   const links = [
@@ -107,7 +132,7 @@ export function MarketplaceLeftSidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+              className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
                 active
                   ? "bg-[#154212] text-white shadow-sm"
                   : "text-[#42493e] hover:bg-[#eaf3de] hover:text-[#154212]"

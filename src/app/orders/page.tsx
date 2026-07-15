@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +8,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import {
   Calendar, CreditCard, FileText, Rocket, XCircle,
-  CheckCircle, Truck, Package, Search, Filter, Plus, Minus, AlertCircle,
+  CheckCircle, Truck, Package, Search, Plus, Minus, AlertCircle,
 } from 'lucide-react';
 
 const statusConfig: Record<string, { label: string; icon: any; className: string }> = {
@@ -31,6 +32,7 @@ interface Order {
   address?: string;
   uniqueKey: string;
   clientConfirmed?: boolean;
+  paymentMethod?: string;
 }
 
 interface ApiOrder {
@@ -41,6 +43,7 @@ interface ApiOrder {
   created_at: string;
   shipping_address?: string;
   client_confirmed_delivery?: boolean;
+  payment_method?: string;
   items?: { product?: { name: string } }[];
 }
 
@@ -50,6 +53,65 @@ interface CartProduct {
   price: number;
   image?: string;
   quantity: number;
+}
+
+function OrdersPageSkeleton() {
+  return (
+    <main className="mx-auto max-w-7xl py-4 pb-24 sm:py-5">
+      <div className="mb-6 h-36 animate-pulse rounded-2xl bg-[#dce2d8] sm:mb-10 sm:h-40" />
+      <div className="mb-8 rounded-xl border border-gray-200 bg-white/70 p-3 shadow-sm sm:p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="h-11 flex-1 animate-pulse rounded-full bg-gray-100" />
+          <div className="flex gap-2 overflow-hidden rounded-2xl bg-gray-100 p-1">
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className="h-8 w-24 animate-pulse rounded-full bg-white/80" />
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <div className="space-y-5 lg:col-span-8">
+          {[1, 2, 3, 4].map((item) => (
+            <div key={item} className="rounded-xl border-l-4 border-l-[#dce2d8] bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap justify-between gap-3">
+                <div className="space-y-2">
+                  <div className="h-5 w-28 animate-pulse rounded-full bg-emerald-50" />
+                  <div className="h-6 w-52 animate-pulse rounded bg-gray-100" />
+                </div>
+                <div className="h-7 w-36 animate-pulse rounded-full bg-gray-100" />
+              </div>
+              <div className="mt-5 flex flex-wrap gap-4">
+                <div className="h-4 w-28 animate-pulse rounded bg-gray-100" />
+                <div className="h-4 w-32 animate-pulse rounded bg-gray-100" />
+              </div>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <div className="h-10 flex-1 animate-pulse rounded-full bg-gray-100" />
+                <div className="h-10 w-32 animate-pulse rounded-full bg-[#dce2d8]" />
+                <div className="h-10 w-28 animate-pulse rounded-full bg-gray-100" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <aside className="space-y-6 lg:col-span-4">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="mb-5 h-5 w-36 animate-pulse rounded bg-gray-100" />
+            <div className="space-y-5">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="flex gap-3">
+                  <div className="h-7 w-7 animate-pulse rounded-full bg-emerald-50" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-gray-100" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-gray-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="h-28 animate-pulse rounded-xl bg-emerald-900/70 shadow-md" />
+        </aside>
+      </div>
+    </main>
+  );
 }
 
 function OrdersContent() {
@@ -63,6 +125,7 @@ function OrdersContent() {
   const [pendingOrderId, setPendingOrderId] = useState<number | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [walletPin, setWalletPin] = useState('');
   const [currentCartItemId, setCurrentCartItemId] = useState<number | null>(null);
   const [currentAddress, setCurrentAddress] = useState('');
@@ -71,14 +134,20 @@ function OrdersContent() {
 
   const fetchOrders = async () => {
     try {
+      setOrdersLoading(true);
       const res = await api.get('/orders');
       setApiOrders(res.data.data ?? []);
     } catch (err) {
       console.error('Erreur chargement commandes:', err);
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => fetchOrders(), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -113,6 +182,7 @@ function OrdersContent() {
     address: o.shipping_address,
     uniqueKey: `db-${o.id}`,
     clientConfirmed: o.client_confirmed_delivery,
+    paymentMethod: o.payment_method,
   }));
 
   const orders = [...cartOrders, ...dbOrders];
@@ -127,10 +197,15 @@ function OrdersContent() {
     if (!address) { toast.error('Veuillez entrer une adresse de livraison'); return; }
     const item = items.find(i => i.id === cartItemId);
     if (!item) return;
+    setPendingOrderId(null);
+    setCurrentCartItemId(cartItemId);
+    setCurrentAddress(address);
+    setPaymentModalOpen(true);
+    return;
     try {
       const res = await api.post('/orders', {
         shipping_address: address,
-        items: [{ product_id: item.id, quantity: item.quantity, price: item.price }],
+        items: [{ product_id: item!.id, quantity: item!.quantity, price: item!.price }],
       });
       setPendingOrderId(res.data.data.id);
       setCurrentCartItemId(cartItemId);
@@ -141,15 +216,31 @@ function OrdersContent() {
     }
   };
 
+  const createOrder = async (paymentMethod: 'wallet' | 'notchpay' | 'cash_on_delivery') => {
+    if (!currentCartItemId) throw new Error('Aucun article selectionne');
+    const item = items.find(i => i.id === currentCartItemId);
+    if (!item) throw new Error('Article introuvable');
+
+    const res = await api.post('/orders', {
+      shipping_address: currentAddress,
+      payment_method: paymentMethod,
+      items: [{ product_id: item.id, quantity: item.quantity }],
+    });
+
+    setPendingOrderId(res.data.data.id);
+    return res.data.data as { id: number };
+  };
+
   const payWithWallet = async () => {
-    if (!pendingOrderId || !currentCartItemId) return;
+    if (!currentCartItemId) return;
     if (!/^\d{4}$/.test(walletPin)) {
       toast.error('Entrez votre PIN wallet');
       return;
     }
     setPaymentLoading(true);
     try {
-      await api.post(`/orders/${pendingOrderId}/pay/wallet`, { pin: walletPin });
+      const order = pendingOrderId ? { id: pendingOrderId } : await createOrder('wallet');
+      await api.post(`/orders/${order.id}/pay/wallet`, { pin: walletPin });
       removeItem(currentCartItemId);
       setPaymentModalOpen(false);
       setWalletPin('');
@@ -161,34 +252,41 @@ function OrdersContent() {
     } finally { setPaymentLoading(false); }
   };
 
-const payWithMonetbil = async () => {
-  if (!pendingOrderId || !currentCartItemId) return;
-  setPaymentLoading(true);
-  try {
-    const res = await api.post(`/orders/${pendingOrderId}/pay/monetbil`);
-    window.location.href = res.data.authorization_url;
-  } catch (err: any) {
-    toast.error(err?.response?.data?.message || "Erreur Mobile Money");
-    setPaymentLoading(false);
-  }
-};
-
 const payWithNotchPay = async () => {
-  if (!pendingOrderId || !currentCartItemId) return;
+  if (!currentCartItemId) return;
   setPaymentLoading(true);
   try {
-    const res = await api.post(`/orders/${pendingOrderId}/pay/notchpay`);
-    const item = items.find(i => i.id === currentCartItemId);
+    const order = pendingOrderId ? { id: pendingOrderId } : await createOrder('notchpay');
+    const res = await api.post(`/orders/${order.id}/pay/notchpay`);
     localStorage.setItem("pending_cart_item", JSON.stringify({
       cartItemId: currentCartItemId,
       address: currentAddress,
-      orderId: pendingOrderId,
+      orderId: order.id,
       reference: res.data.reference,
       orderNumber: res.data.order_number,
     }));
     window.location.href = res.data.authorization_url;
   } catch (err: any) {
     toast.error(err?.response?.data?.message || "Erreur NotchPay");
+    setPaymentLoading(false);
+  }
+};
+
+const payOnDelivery = async () => {
+  if (!currentCartItemId) return;
+  setPaymentLoading(true);
+  try {
+    await createOrder('cash_on_delivery');
+    removeItem(currentCartItemId);
+    setPaymentModalOpen(false);
+    setPendingOrderId(null);
+    setCurrentCartItemId(null);
+    setCurrentAddress('');
+    toast.success('Commande confirmee. Paiement a la livraison.');
+    fetchOrders();
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || 'Erreur creation commande');
+  } finally {
     setPaymentLoading(false);
   }
 };
@@ -240,6 +338,9 @@ const payWithNotchPay = async () => {
 
   return (
     <>
+      {ordersLoading ? (
+        <OrdersPageSkeleton />
+      ) : (
       <main className="mx-auto max-w-7xl py-4 pb-24 sm:py-5">
         <div className="relative mb-6 flex h-36 flex-col justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-800 to-emerald-600 px-5 shadow-lg sm:mb-10 sm:h-40 sm:px-8">
           <div className="absolute inset-0 bg-black/20" />
@@ -261,7 +362,7 @@ const payWithNotchPay = async () => {
             />
           </div>
           <div className="flex w-full gap-2 overflow-x-auto rounded-2xl bg-gray-100 p-1 md:w-auto md:flex-wrap">
-            {['all', 'draft', 'paid', 'preparing', 'shipping', 'delivered', 'completed', 'cancelled'].map((s) => (
+            {['all', 'draft', 'pending', 'paid', 'preparing', 'shipping', 'delivered', 'completed', 'cancelled'].map((s) => (
               <button
                 key={s}
                 onClick={() => setFilter(s)}
@@ -276,7 +377,9 @@ const payWithNotchPay = async () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-5">
             {filteredOrders.map((order) => {
-              const st = statusConfig[order.status] || { label: order.status, icon: AlertCircle, className: 'bg-gray-100 text-gray-700' };
+              const st = order.status === 'pending' && order.paymentMethod === 'cash_on_delivery'
+                ? { label: 'Paiement a la livraison', icon: Truck, className: 'bg-emerald-100 text-emerald-800' }
+                : statusConfig[order.status] || { label: order.status, icon: AlertCircle, className: 'bg-gray-100 text-gray-700' };
               const StatusIcon = st.icon;
               const cartItem = items.find(i => i.id === order.id);
               return (
@@ -337,7 +440,7 @@ const payWithNotchPay = async () => {
                         </>
                       )}
 
-                      {order.status === 'paid' && (
+                      {(order.status === 'pending' || order.status === 'paid') && (
                         <button onClick={() => handleCancelOrder(order.id)} className="px-5 py-2 border border-red-300 text-red-700 text-sm rounded-full hover:bg-red-50">
                           Annuler
                         </button>
@@ -439,6 +542,7 @@ const payWithNotchPay = async () => {
           </aside>
         </div>
       </main>
+      )}
 
       {/* Modals */}
       {cartModalProduct && (
@@ -470,7 +574,7 @@ const payWithNotchPay = async () => {
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-center tracking-[0.35em] outline-none focus:ring-2 focus:ring-emerald-600"
               />
               <button onClick={payWithWallet} disabled={paymentLoading} className="w-full py-4 rounded-xl bg-emerald-700 text-white font-bold flex items-center justify-center gap-3 hover:bg-emerald-800 disabled:opacity-60"><CreditCard size={20} /> Payer avec mon Wallet</button>
-              <button onClick={payWithMonetbil} disabled={paymentLoading} className="w-full py-4 rounded-xl border-2 border-emerald-700 text-emerald-700 font-bold flex items-center justify-center gap-3 hover:bg-emerald-50 disabled:opacity-60"><Rocket size={20} /> Payer avec Mobile Money</button>
+              <button onClick={payOnDelivery} disabled={paymentLoading} className="w-full py-4 rounded-xl border-2 border-emerald-700 text-emerald-700 font-bold flex items-center justify-center gap-3 hover:bg-emerald-50 disabled:opacity-60"><Truck size={20} /> Payer a la livraison</button>
               <button onClick={payWithNotchPay} disabled={paymentLoading} className="w-full py-4 rounded-xl border-2 border-purple-600 text-purple-600 font-bold flex items-center justify-center gap-3 hover:bg-purple-50 disabled:opacity-60"><Rocket size={20} /> Payer avec NotchPay</button>
               <button onClick={() => { setPaymentModalOpen(false); setWalletPin(''); setPendingOrderId(null); setCurrentCartItemId(null); }} className="w-full py-3 rounded-xl text-gray-500 text-sm hover:bg-gray-100">Annuler</button>
             </div>

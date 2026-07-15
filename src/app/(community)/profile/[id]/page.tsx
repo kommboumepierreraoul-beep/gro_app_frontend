@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, use } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   FileText,
@@ -29,8 +29,8 @@ import {
 
 import { profileService } from "@/services/community/profile.service";
 import { postService } from "@/services/community/post.service";
-import { followService } from "@/services/community/follow.service";
 import { messageService } from "@/services/community/message.service";
+import { useFollow } from "@/hooks/community/useFollow";
 
 import { PostCard } from "@/components/community/feed/posts/PostCard";
 import { Avatar } from "@/components/community/shared/Avatar";
@@ -45,7 +45,6 @@ export default function UserProfilePage({
   const { id } = use(params);
   const userId = Number(id);
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<TabType>("publications");
   const [bannerError, setBannerError] = useState(false);
@@ -61,24 +60,11 @@ export default function UserProfilePage({
     enabled: !!userId,
   });
 
-  /* ---------------- FOLLOW STATE ---------------- */
-  const { data: followData } = useQuery({
-    queryKey: ["followStatus", userId],
-    queryFn: () => followService.getFollowing(userId),
-    enabled: !!userId,
-  });
-  const isFollowing = followData?.is_following ?? false;
-
-  const followMutation = useMutation({
-    mutationFn: () =>
-      isFollowing
-        ? followService.unfollowUser(userId)
-        : followService.followUser(userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["followStatus", userId] });
-      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
-    },
-  });
+  const {
+    toggle: followMutation,
+    isLoading: followLoading,
+    isFollowing,
+  } = useFollow(userId, Boolean(profile?.is_following));
 
   /* ---------------- POSTS ---------------- */
   const { data: postsData } = useQuery({
@@ -264,14 +250,14 @@ export default function UserProfilePage({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => followMutation.mutate()}
-                    disabled={followMutation.isPending}
+                    disabled={followLoading}
                     className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm active:scale-95 ${
                       isFollowing
                         ? "bg-[#f3f4ed] hover:bg-[#e7e9e1] text-[#42493e] border border-[#c2c9bb]/30"
                         : "bg-[#154212] hover:bg-[#2d5a27] text-[#bcf0ae] shadow-md hover:shadow-lg"
                     }`}
                   >
-                    {followMutation.isPending ? (
+                    {followLoading ? (
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     ) : isFollowing ? (
                       <UserCheck size={14} strokeWidth={2} />

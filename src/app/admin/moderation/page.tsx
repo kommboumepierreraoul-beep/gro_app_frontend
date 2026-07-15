@@ -1,18 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useModeration } from "@/hooks/moderation/useModeration";
-import { Card } from "@/components/ui/Card";
 import { ModerationBadge } from "@/components/moderation/ModerationBadge";
-import { ModerationScores } from "@/components/moderation/ModerationScores";
 import Link from "next/link";
 import {
   Clock,
   CheckCircle,
   AlertCircle,
   XCircle,
-  TrendingUp,
-  TrendingDown,
   Users,
   MessageSquare,
   FileText,
@@ -24,20 +20,38 @@ import {
   BarChart3,
 } from "lucide-react";
 
+type ModerationStatsPayload = {
+  overall?: {
+    total_pending?: number;
+    total_review?: number;
+    total_approved?: number;
+    total_rejected?: number;
+  };
+  audit?: {
+    ai_decisions?: number;
+    moderator_decisions?: number;
+    system_decisions?: number;
+  };
+  posts?: Record<string, number>;
+  comments?: Record<string, number>;
+  messages?: Record<string, number>;
+};
+
 export default function ModerationDashboard() {
   const { getStats, loading, error } = useModeration();
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<ModerationStatsPayload | null>(null);
 
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     const data = await getStats();
     if (data) {
       setStats(data);
     }
-  };
+  }, [getStats]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(loadStats, 0);
+    return () => window.clearTimeout(timeout);
+  }, [loadStats]);
 
   if (loading) {
     return (
@@ -45,7 +59,7 @@ export default function ModerationDashboard() {
         <div className="flex flex-col items-center gap-3">
           <div
             className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: "#2d5a27", borderTopColor: "transparent" }}
+            style={{ borderColor: "#154212", borderTopColor: "transparent" }}
           />
           <p
             className="text-sm"
@@ -85,16 +99,16 @@ export default function ModerationDashboard() {
             onClick={loadStats}
             className="mt-2 px-4 py-2 rounded-xl text-sm font-medium transition-all"
             style={{
-              color: "#2d5a27",
-              background: "rgba(45,90,39,0.08)",
+              color: "#154212",
+              background: "rgba(21,66,18,0.08)",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.background =
-                "rgba(45,90,39,0.15)";
+                "rgba(21,66,18,0.15)";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.background =
-                "rgba(45,90,39,0.08)";
+                "rgba(21,66,18,0.08)";
             }}
           >
             Réessayer
@@ -148,8 +162,8 @@ export default function ModerationDashboard() {
       label: "Décisions IA",
       value: stats.audit?.ai_decisions || 0,
       icon: Zap,
-      color: "#2d5a27",
-      bg: "rgba(45,90,39,0.08)",
+      color: "#154212",
+      bg: "rgba(21,66,18,0.08)",
     },
     {
       label: "Décisions Modérateurs",
@@ -222,7 +236,7 @@ export default function ModerationDashboard() {
               fontFamily: "'Inter', sans-serif",
             }}
           >
-            Vue d'ensemble de l'activité de modération
+            Vue d&apos;ensemble de l&apos;activite de moderation
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -230,17 +244,17 @@ export default function ModerationDashboard() {
             onClick={loadStats}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all"
             style={{
-              color: "#2d5a27",
-              background: "rgba(45,90,39,0.08)",
+              color: "#154212",
+              background: "rgba(21,66,18,0.08)",
               fontFamily: "'Inter', sans-serif",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.background =
-                "rgba(45,90,39,0.15)";
+                "rgba(21,66,18,0.15)";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.background =
-                "rgba(45,90,39,0.08)";
+                "rgba(21,66,18,0.08)";
             }}
           >
             <Activity size={16} />
@@ -376,7 +390,7 @@ export default function ModerationDashboard() {
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <type.icon size={18} style={{ color: "#2d5a27" }} />
+                <type.icon size={18} style={{ color: "#154212" }} />
                 <span
                   className="font-medium"
                   style={{
@@ -449,7 +463,7 @@ export default function ModerationDashboard() {
           }}
         >
           <div className="flex items-center gap-2 mb-3">
-            <BarChart3 size={18} style={{ color: "#2d5a27" }} />
+            <BarChart3 size={18} style={{ color: "#154212" }} />
             <h3
               className="font-semibold"
               style={{
@@ -464,25 +478,25 @@ export default function ModerationDashboard() {
             <div className="flex justify-between text-sm">
               <span style={{ color: "#42493e" }}>Toxicité</span>
               <span style={{ color: "#191c18" }}>
-                {(stats.posts?.avg_toxicity * 100 || 0).toFixed(1)}%
+                {((stats.posts?.avg_toxicity ?? 0) * 100).toFixed(1)}%
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span style={{ color: "#42493e" }}>Spam</span>
               <span style={{ color: "#191c18" }}>
-                {(stats.posts?.avg_spam * 100 || 0).toFixed(1)}%
+                {((stats.posts?.avg_spam ?? 0) * 100).toFixed(1)}%
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span style={{ color: "#42493e" }}>Haine</span>
               <span style={{ color: "#191c18" }}>
-                {(stats.posts?.avg_hate * 100 || 0).toFixed(1)}%
+                {((stats.posts?.avg_hate ?? 0) * 100).toFixed(1)}%
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span style={{ color: "#42493e" }}>Violence</span>
               <span style={{ color: "#191c18" }}>
-                {(stats.posts?.avg_violence * 100 || 0).toFixed(1)}%
+                {((stats.posts?.avg_violence ?? 0) * 100).toFixed(1)}%
               </span>
             </div>
           </div>
@@ -496,7 +510,7 @@ export default function ModerationDashboard() {
           }}
         >
           <div className="flex items-center gap-2 mb-3">
-            <BarChart3 size={18} style={{ color: "#2d5a27" }} />
+            <BarChart3 size={18} style={{ color: "#154212" }} />
             <h3
               className="font-semibold"
               style={{
@@ -511,25 +525,25 @@ export default function ModerationDashboard() {
             <div className="flex justify-between text-sm">
               <span style={{ color: "#42493e" }}>Toxicité</span>
               <span style={{ color: "#191c18" }}>
-                {(stats.comments?.avg_toxicity * 100 || 0).toFixed(1)}%
+                {((stats.comments?.avg_toxicity ?? 0) * 100).toFixed(1)}%
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span style={{ color: "#42493e" }}>Spam</span>
               <span style={{ color: "#191c18" }}>
-                {(stats.comments?.avg_spam * 100 || 0).toFixed(1)}%
+                {((stats.comments?.avg_spam ?? 0) * 100).toFixed(1)}%
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span style={{ color: "#42493e" }}>Haine</span>
               <span style={{ color: "#191c18" }}>
-                {(stats.comments?.avg_hate * 100 || 0).toFixed(1)}%
+                {((stats.comments?.avg_hate ?? 0) * 100).toFixed(1)}%
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span style={{ color: "#42493e" }}>Violence</span>
               <span style={{ color: "#191c18" }}>
-                {(stats.comments?.avg_violence * 100 || 0).toFixed(1)}%
+                {((stats.comments?.avg_violence ?? 0) * 100).toFixed(1)}%
               </span>
             </div>
           </div>

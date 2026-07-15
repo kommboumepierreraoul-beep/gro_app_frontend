@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+
 import api from "@/lib/axios";
 
 function parseShopResponse(data: unknown) {
@@ -12,6 +13,27 @@ function parseShopResponse(data: unknown) {
   }
 
   return data;
+}
+
+function SellerGuardSkeleton() {
+  return (
+    <div className="min-h-[60vh] rounded-2xl border border-[#c2c9bb]/35 bg-white/75 p-5">
+      <div className="mb-5 h-8 w-56 animate-pulse rounded bg-[#dce2d8]" />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {[1, 2, 3, 4, 5, 6].map((item) => (
+          <div
+            key={item}
+            className="rounded-2xl border border-[#c2c9bb]/30 bg-white p-4"
+          >
+            <div className="h-32 animate-pulse rounded-xl bg-[#e7e9e1]" />
+            <div className="mt-4 h-5 w-3/4 animate-pulse rounded bg-[#dce2d8]" />
+            <div className="mt-3 h-3 w-full animate-pulse rounded bg-[#e7e9e1]" />
+            <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-[#e7e9e1]" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function SellerShopGuard({ children }: { children: React.ReactNode }) {
@@ -43,13 +65,7 @@ export function SellerShopGuard({ children }: { children: React.ReactNode }) {
   }, [isError, router]);
 
   if (isLoading || isError || !data) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-sm font-semibold text-[#72796e]">
-          Vérification de votre boutique...
-        </div>
-      </div>
-    );
+    return <SellerGuardSkeleton />;
   }
 
   return <>{children}</>;

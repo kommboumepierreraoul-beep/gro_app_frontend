@@ -15,12 +15,15 @@ import {
   Users,
   Megaphone,
   Clock,
-  TrendingUp,
+  MapPin,
+  Sparkles,
 } from "lucide-react";
 import { followService } from "@/services/community/follow.service";
+import { missionService } from "@/services/mission/mission.service";
 import { Avatar } from "../shared/Avatar";
 import { useFollow } from "@/hooks/community/useFollow";
 import { CommunityUser } from "@/types/community.types";
+import { Mission } from "@/lib/missions/types";
 import {
   useLatestAnnouncements,
   useLikeAnnouncement,
@@ -99,12 +102,27 @@ export function RightSidebar() {
     error: announcementsError,
   } = useLatestAnnouncements(3);
 
+  const { data: missionsData, isLoading: missionsLoading } = useQuery({
+    queryKey: ["sidebar-missions"],
+    queryFn: () =>
+      missionService.list({
+        status: "published",
+        sort: "recent",
+        per_page: 3,
+      }),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const missions = missionsData?.data ?? [];
+
   // Skeleton initial
   if (
     suggestionsLoading &&
     announcementsLoading &&
+    missionsLoading &&
     !suggestions &&
-    !announcements.length
+    !announcements.length &&
+    !missions.length
   ) {
     return (
       <aside
@@ -151,7 +169,7 @@ export function RightSidebar() {
             ))}
           </div>
           <Link
-            href="/community/users"
+            href="/users"
             className="flex items-center justify-center gap-1 mt-3 text-xs font-semibold transition-colors duration-150 hover:underline"
             style={{ color: "#2d5a27" }}
           >
@@ -161,7 +179,7 @@ export function RightSidebar() {
         </div>
       )}
 
-      {/* ── Annonces récentes ───────────────────────────────────────── */}
+      {/* ── Annonces recentes ───────────────────────────────────────── */}
       {announcements.length > 0 && !announcementsError && (
         <div className="p-4" style={cardStyle}>
           <div className="flex items-center gap-2 mb-3">
@@ -173,33 +191,127 @@ export function RightSidebar() {
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
               }}
             >
-              Annonces récentes
+              Annonces recentes
             </h3>
           </div>
-          <div className="space-y-0.5">
-            {announcements.map((announcement: any, index: number) => (
-              <AnnouncementCard
-                key={announcement.id}
-                announcement={announcement}
-                isLast={index === announcements.length - 1}
-              />
-            ))}
+          <div className="space-y-1">
+            {announcements.slice(0, 3).map((announcement) => {
+              const config =
+                categoryConfig[announcement.category as keyof typeof categoryConfig] ||
+                categoryConfig.other;
+
+              return (
+                <Link
+                  key={announcement.id}
+                  href="/community/announcements"
+                  className="block rounded-xl px-1.5 py-2 transition-colors duration-150 hover:bg-[rgba(188,240,174,0.14)]"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                      style={{ background: config.bg, color: config.color }}
+                    >
+                      {config.icon}
+                      {config.label}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-[#72796e]">
+                      <Heart className="w-3 h-3" />
+                      {announcement.likes_count ?? 0}
+                    </span>
+                  </div>
+                  <p
+                    className="mt-1 line-clamp-2 text-xs font-semibold"
+                    style={{ color: "#191c18", fontFamily: "'Inter', sans-serif" }}
+                  >
+                    {announcement.title}
+                  </p>
+                  {announcement.expires_at && (
+                    <span className="mt-1 inline-flex items-center gap-1 text-[10px] text-[#72796e]">
+                      <Clock className="w-3 h-3" />
+                      {new Date(announcement.expires_at).toLocaleDateString("fr-FR")}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
           </div>
           <Link
-            href="/announcements"
+            href="/community/announcements"
             className="flex items-center justify-center gap-1 mt-3 text-xs font-semibold transition-colors duration-150 hover:underline"
             style={{ color: "#2d5a27" }}
           >
-            <span>Voir toutes les annonces</span>
+            <span>Voir les annonces</span>
             <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
       )}
 
-      {/* ── Tendances ───────────────────────────────────────────────── */}
+      {/* ── Missions recentes ───────────────────────────────────────── */}
+      {missions.length > 0 && (
+        <div className="p-4" style={cardStyle}>
+          <div className="flex items-center gap-2 mb-3">
+            <Briefcase className="w-4 h-4" style={{ color: "#2d5a27" }} />
+            <h3
+              className="text-sm font-bold"
+              style={{
+                color: "#191c18",
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+              }}
+            >
+              Missions du systeme
+            </h3>
+          </div>
+          <div className="space-y-1">
+            {missions.map((mission: Mission) => (
+              <Link
+                key={mission.ulid}
+                href={`/missions/${mission.ulid}`}
+                className="block rounded-xl px-1.5 py-2 transition-colors duration-150 hover:bg-[rgba(188,240,174,0.14)]"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p
+                    className="text-xs font-semibold line-clamp-2"
+                    style={{ color: "#191c18", fontFamily: "'Inter', sans-serif" }}
+                  >
+                    {mission.title}
+                  </p>
+                  {mission.category?.name && (
+                    <span
+                      className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                      style={{ background: "rgba(45,90,39,0.1)", color: "#2d5a27" }}
+                    >
+                      {mission.category.name}
+                    </span>
+                  )}
+                </div>
+                <div
+                  className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px]"
+                  style={{ color: "#72796e" }}
+                >
+                  {mission.location_label && (
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="w-2.5 h-2.5" />
+                      {mission.location_label}
+                    </span>
+                  )}
+                  <span>{mission.remuneration_label}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <Link
+            href="/missions"
+            className="flex items-center justify-center gap-1 mt-3 text-xs font-semibold transition-colors duration-150 hover:underline"
+            style={{ color: "#2d5a27" }}
+          >
+            <span>Voir toutes les missions</span>
+            <ChevronRight className="w-3 h-3" />
+          </Link>
+        </div>
+      )}
       <div className="p-4" style={cardStyle}>
         <div className="flex items-center gap-2 mb-3">
-          <TrendingUp className="w-4 h-4" style={{ color: "#2d5a27" }} />
+          <Sparkles className="w-4 h-4" style={{ color: "#2d5a27" }} />
           <h3
             className="text-sm font-bold"
             style={{

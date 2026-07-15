@@ -1,3 +1,6 @@
+/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/app/create-shop/page.tsx
 'use client';
 
@@ -5,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, BadgeCheck, CheckCircle2, Globe2, Info, Package } from 'lucide-react';
 import api from '@/lib/axios';
+import { CreateShopIntro, CreateShopSkeleton } from '@/components/marketplace/CreateShopDesign';
 
 export default function CreateShopHomePage() {
   const router = useRouter();
@@ -27,7 +31,11 @@ export default function CreateShopHomePage() {
         }
       }
     };
-    checkShop();
+    const timer = window.setTimeout(() => {
+      checkShop();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [router]);
 
   const handleStart = () => {
@@ -35,11 +43,11 @@ export default function CreateShopHomePage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-[#006c49]">Chargement...</div>
-      </div>
-    );
+    return <CreateShopSkeleton />;
+  }
+
+  if (!loading) {
+    return <CreateShopIntro onBack={() => router.back()} onStart={handleStart} />;
   }
 
   return (

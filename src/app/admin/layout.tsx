@@ -9,6 +9,7 @@ import {
   Boxes,
   Gavel,
   Home,
+  LayoutGrid,
   Landmark,
   LayoutDashboard,
   ShieldCheck,
@@ -30,6 +31,12 @@ const adminNavItems: AdminNavItem[] = [
     label: "Dashboard",
     description: "Vue generale",
     icon: LayoutDashboard,
+  },
+  {
+    href: "/admin/system",
+    label: "Console CRUD",
+    description: "Administration complete",
+    icon: LayoutGrid,
   },
   {
     href: "/admin/users",
@@ -154,7 +161,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <AdminAccessGuard>
-      <div className="flex h-dvh overflow-hidden bg-[#f6f7f0] text-[#191c18]">
+      <div className="admin-root flex h-dvh overflow-hidden bg-[#f6f7f0] text-[#191c18]">
         <Toaster position="top-right" />
 
         <aside className="hidden w-72 shrink-0 border-r border-[#c2c9bb]/45 bg-[#f9faf2]/95 shadow-[4px_0_24px_rgba(25,28,24,0.04)] backdrop-blur-xl lg:flex lg:flex-col">

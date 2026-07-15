@@ -17,6 +17,10 @@ export interface CommunityUser {
   posts_count: number;
   is_following: boolean;
   is_me: boolean;
+  is_premium?: boolean;
+  is_verified?: boolean;
+  rating?: number;
+  status?: "online" | "offline" | "away" | string;
   email_verified_at: string | null;
   created_at: string;
 }

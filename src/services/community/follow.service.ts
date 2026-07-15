@@ -2,8 +2,17 @@
 // services/community/follow.service.ts
 
 import api from "@/lib/axios";
+import { CommunityUser, Paginated } from "@/types/community.types";
 
 class FollowService {
+  async getUsers(params?: {
+    search?: string;
+    per_page?: number;
+  }): Promise<Paginated<CommunityUser>> {
+    const response = await api.get("/community/users", { params });
+    return response.data.data;
+  }
+
   // Get user followers
   async getFollowers(userId: number | string | undefined) {
     // ✅ Vérification du userId

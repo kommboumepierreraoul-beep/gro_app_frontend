@@ -2,155 +2,172 @@
 
 import { motion } from "framer-motion";
 import {
-  MessageCircle,
-  Briefcase,
-  GraduationCap,
-  MapPin,
-  Users,
-  Calendar,
-  Leaf,
-  TrendingUp,
+  Bot,
+  BriefcaseBusiness,
+  CreditCard,
+  LayoutDashboard,
+  MapPinned,
+  MessageSquareText,
+  PackageSearch,
+  ShieldCheck,
+  ShoppingBag,
+  Store,
+  UsersRound,
+  WalletCards,
 } from "lucide-react";
 
 const features = [
   {
-    icon: MessageCircle,
-    title: "Messagerie integree",
+    icon: UsersRound,
+    title: "Communauté agricole",
     description:
-      "Communiquez en temps reel avec la communaute agricole et les experts.",
-    color: "#154212",
-    bg: "rgba(21,66,18,0.08)",
+      "Posts, commentaires, profils, annonces et notifications pour échanger vite avec les producteurs, experts et partenaires.",
+    color: "text-[#154212]",
+    bg: "bg-[#eaf3de]",
   },
   {
-    icon: Briefcase,
+    icon: ShoppingBag,
+    title: "Marketplace e-commerce",
+    description:
+      "Catalogue, filtres, panier, détails produits, commandes et suivi vendeur dans une interface pensée mobile.",
+    color: "text-amber-700",
+    bg: "bg-amber-100",
+  },
+  {
+    icon: Store,
+    title: "Espace vendeur",
+    description:
+      "Création de boutique, ajout produit, ventes, litiges, tableau de bord et accès conditionné aux boutiques validées.",
+    color: "text-blue-700",
+    bg: "bg-blue-100",
+  },
+  {
+    icon: BriefcaseBusiness,
     title: "Missions agricoles",
     description:
-      "Trouvez des missions, partagez des offres et developpez votre activite.",
-    color: "#2d5a27",
-    bg: "rgba(45,90,39,0.08)",
+      "Publication, candidatures, agenda, carte, notifications push et workflow complet pour organiser les besoins terrain.",
+    color: "text-[#805533]",
+    bg: "bg-orange-100",
   },
   {
-    icon: GraduationCap,
-    title: "Formations & apprentissages",
+    icon: WalletCards,
+    title: "Wallet sécurisé",
     description:
-      "Accedez a des contenus educatifs pour perfectionner vos competences.",
-    color: "#805533",
-    bg: "rgba(128,85,51,0.08)",
+      "Solde masqué, PIN 4 cases, dépôt, paiement, historique et confirmation avant les actions sensibles.",
+    color: "text-emerald-700",
+    bg: "bg-emerald-100",
   },
   {
-    icon: MapPin,
-    title: "Cartographie interactive",
+    icon: Bot,
+    title: "Espace IA",
     description:
-      "Visualisez les projets agricoles et les ressources a proximite.",
-    color: "#3b6934",
-    bg: "rgba(59,105,52,0.08)",
+      "Assistant intégré pour accompagner les utilisateurs, structurer les recherches et accélérer les décisions.",
+    color: "text-violet-700",
+    bg: "bg-violet-100",
   },
   {
-    icon: Users,
-    title: "Communautes locales",
+    icon: MessageSquareText,
+    title: "Messagerie responsive",
     description:
-      "Rejoignez des groupes d'entraide par region ou par activite.",
-    color: "#854f0b",
-    bg: "rgba(133,79,11,0.08)",
+      "Conversations, profils, boutons de création, bulles lisibles et expérience adaptée aux petits écrans.",
+    color: "text-sky-700",
+    bg: "bg-sky-100",
   },
   {
-    icon: Calendar,
-    title: "Agenda agricole",
+    icon: ShieldCheck,
+    title: "Administration & modération",
     description:
-      "Planifiez vos activites et suivez les evenements du secteur.",
-    color: "#72796e",
-    bg: "rgba(114,121,110,0.08)",
+      "Catalogue, utilisateurs, vendeurs, transactions, litiges, audit et files de modération de contenu.",
+    color: "text-slate-700",
+    bg: "bg-slate-100",
+  },
+  {
+    icon: CreditCard,
+    title: "Paiements et litiges",
+    description:
+      "Flux achat, confirmation, remboursement, disputes acheteur/vendeur/admin et suivi des commandes.",
+    color: "text-rose-700",
+    bg: "bg-rose-100",
   },
 ];
 
-const stats = [
-  { value: "2500+", label: "Agriculteurs", icon: Leaf },
-  { value: "150+", label: "Communautes", icon: Users },
-  { value: "300+", label: "Missions", icon: Briefcase },
-  { value: "95%", label: "Satisfaction", icon: TrendingUp },
+const pillars = [
+  { icon: LayoutDashboard, label: "Un tableau de bord pour chaque rôle" },
+  { icon: PackageSearch, label: "Produits, commandes et boutiques reliés" },
+  { icon: MapPinned, label: "Missions terrain, agenda et carte" },
+  { icon: ShieldCheck, label: "Contrôle, modération et sécurité intégrés" },
 ];
 
 export function FeaturesSection() {
   return (
-    <section className="bg-[#f9faf2] px-4 py-12 sm:px-6 lg:px-8 lg:py-14">
-      <div className="mx-auto max-w-[1200px]">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          viewport={{ once: true }}
-          className="mb-8 flex flex-col gap-3 md:mb-10 md:flex-row md:items-end md:justify-between"
-        >
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#3b6934]">
-              Fonctionnalites
+    <section id="features" className="bg-white px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1240px]">
+        <div className="grid gap-8 lg:grid-cols-[0.7fr_1.3fr]">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="lg:sticky lg:top-28 lg:self-start"
+          >
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#3b6934]">
+              Fonctionnalités
             </p>
-            <h2 className="text-3xl font-bold text-[#191c18] sm:text-4xl">
-              Tout ce dont vous avez besoin
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-[#191c18] sm:text-5xl">
+              Toute la chaîne agricole dans un seul produit.
             </h2>
-          </div>
-          <p className="max-w-xl text-sm leading-relaxed text-[#72796e] sm:text-base">
-            Une plateforme complete pour connecter la communaute agricole et
-            faciliter vos projets, avec des espaces plus clairs et faciles a
-            parcourir.
-          </p>
-        </motion.div>
+            <p className="mt-4 text-base leading-8 text-[#72796e]">
+              La landing reflète l’application réelle : une plateforme complète,
+              multi-rôles, opérationnelle et prête pour la croissance.
+            </p>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                viewport={{ once: true }}
-                className="group rounded-2xl border border-[#c2c9bb]/30 bg-white/70 p-5 backdrop-blur-sm transition-all duration-300 hover:border-[#bcf0ae]/70 hover:shadow-lg hover:shadow-[#154212]/5"
-              >
-                <div
-                  className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-105"
-                  style={{ background: feature.bg }}
+            <div className="mt-6 grid gap-2">
+              {pillars.map((pillar) => {
+                const Icon = pillar.icon;
+                return (
+                  <div
+                    key={pillar.label}
+                    className="flex items-center gap-3 rounded-2xl border border-[#c2c9bb]/35 bg-[#f8faf4] p-3"
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#154212] shadow-sm">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="text-sm font-bold text-[#42493e]">
+                      {pillar.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <motion.article
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, delay: index * 0.035 }}
+                  viewport={{ once: true }}
+                  className="group rounded-2xl border border-[#c2c9bb]/35 bg-[#fbfcf8] p-5 shadow-sm transition hover:-translate-y-1 hover:border-[#154212]/20 hover:bg-white hover:shadow-xl hover:shadow-[#154212]/8"
                 >
-                  <Icon size={21} style={{ color: feature.color }} />
-                </div>
-                <h3 className="mb-2 text-base font-semibold text-[#191c18]">
-                  {feature.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-[#72796e]">
-                  {feature.description}
-                </p>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        <div className="mt-8 grid grid-cols-2 gap-3 rounded-2xl border border-[#c2c9bb]/30 bg-white/70 p-3 backdrop-blur-sm lg:grid-cols-4">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, scale: 0.96 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: index * 0.06 }}
-                viewport={{ once: true }}
-                className="flex items-center gap-3 rounded-xl bg-[#f3f4ed]/70 p-3"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#154212]/10">
-                  <Icon className="h-4 w-4 text-[#154212]" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xl font-bold leading-none text-[#191c18]">
-                    {stat.value}
+                  <div
+                    className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${feature.bg}`}
+                  >
+                    <Icon className={`h-6 w-6 ${feature.color}`} />
+                  </div>
+                  <h3 className="text-base font-black text-[#191c18]">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-[#72796e]">
+                    {feature.description}
                   </p>
-                  <p className="mt-1 truncate text-xs text-[#72796e]">
-                    {stat.label}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })}
+                </motion.article>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>

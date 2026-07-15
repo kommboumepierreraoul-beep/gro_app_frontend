@@ -88,8 +88,15 @@ export function useMessages(conversationId: number) {
   }, [conversationId]);
 
   const sendMessage = useMutation({
-    mutationFn: ({ content, media }: { content: string; media?: File }) =>
-      messageService.sendMessage(conversationId, content, media),
+    mutationFn: ({
+      content,
+      media,
+      replyToId,
+    }: {
+      content: string;
+      media?: File;
+      replyToId?: number | string;
+    }) => messageService.sendMessage(conversationId, content, media, replyToId),
     onSuccess: (newMessage) => {
       // Mise à jour optimiste
       queryClient.setQueryData(["messages", conversationId], (oldData: any) => {

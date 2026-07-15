@@ -1,24 +1,31 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { followService } from "@/services/community/follow.service";
 import toast from "react-hot-toast";
+import { useEffect, useState } from "react";
 
 export function useFollow(targetUserId: string | number, isInitiallyFollowing: boolean) {
   const queryClient = useQueryClient();
+  const [isFollowing, setIsFollowing] = useState(isInitiallyFollowing);
+
+  useEffect(() => {
+    setIsFollowing(isInitiallyFollowing);
+  }, [isInitiallyFollowing]);
 
   const toggle = useMutation({
     mutationFn: async () => {
-      return isInitiallyFollowing
+      return isFollowing
         ? followService.unfollowUser(String(targetUserId))
         : followService.followUser(String(targetUserId));
     },
 
-    onSuccess: (_, __, context: any) => {
-      toast.success(
-        isInitiallyFollowing
-          ? "Abonnement retiré"
-          : "Abonnement ajouté"
-      );
+    onSuccess: (data) => {
+      const nextState = data?.is_following ?? !isFollowing;
+      setIsFollowing(nextState);
+      toast.success(nextState ? "Abonnement ajoute" : "Abonnement retire");
+
+      queryClient.invalidateQueries({
+        queryKey: ["community-users"],
+      });
 
       queryClient.invalidateQueries({
         queryKey: ["profile", targetUserId],
@@ -37,10 +44,10 @@ export function useFollow(targetUserId: string | number, isInitiallyFollowing: b
   return {
     toggle,
     isLoading: toggle.isPending,
+    isFollowing,
   };
 }
 
-// 🔥 Ajouter ce hook pour récupérer les followers
 export function useFollowers(userId?: number) {
   return useQuery({
     queryKey: ["followers", userId],

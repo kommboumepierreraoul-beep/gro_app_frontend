@@ -65,7 +65,7 @@ function moderationOf(item: any) {
 function statusStyle(status: ModerationStatus | string) {
   switch (status) {
     case "approved":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "bg-[#eaf3de] text-[#154212] border-[#c2c9bb]/45";
     case "rejected":
       return "bg-red-50 text-red-700 border-red-200";
     case "review":
@@ -168,7 +168,7 @@ export default function AdminModerationQueuePage() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <Icon className="h-5 w-5 text-[#2d5a27]" />
+              <Icon className="h-5 w-5 text-[#154212]" />
               <h1 className="text-2xl font-black text-[#191c18]">Moderation - {title}</h1>
             </div>
             <p className="mt-1 text-sm text-[#72796e]">{meta.description}</p>
@@ -178,7 +178,7 @@ export default function AdminModerationQueuePage() {
           <button
             type="button"
             onClick={loadQueue}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#154212] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#2d5a27]"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#154212] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#154212]"
           >
             <RefreshCw className="h-4 w-4" />
             Actualiser
@@ -190,7 +190,7 @@ export default function AdminModerationQueuePage() {
         <UnsupportedQueue title={title} description={meta.description} />
       ) : loading ? (
         <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-[#c2c9bb]/30 bg-white/75">
-          <Loader2 className="h-7 w-7 animate-spin text-[#2d5a27]" />
+          <Loader2 className="h-7 w-7 animate-spin text-[#154212]" />
         </div>
       ) : items.length === 0 ? (
         <div className="rounded-2xl border border-[#c2c9bb]/30 bg-white/75 p-10 text-center">
@@ -317,7 +317,7 @@ function UnsupportedQueue({ title, description }: { title: string; description: 
       <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[#72796e]">{description}</p>
       <Link
         href="/admin/moderation"
-        className="mt-5 inline-flex items-center justify-center rounded-xl bg-[#154212] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#2d5a27]"
+        className="mt-5 inline-flex items-center justify-center rounded-xl bg-[#154212] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#154212]"
       >
         Retour moderation
       </Link>
