@@ -33,6 +33,7 @@ interface Shop {
   name: string;
   logo: string | null;
   banner: string | null;
+  status?: string;
   rating?: number;
   reviews_count?: number;
 }
@@ -79,7 +80,7 @@ function MyShopContent() {
       }
     };
     fetchData();
-  }, []);
+  }, [router]);
 
   const filtered = products.filter(
     (p) =>
@@ -119,6 +120,29 @@ function MyShopContent() {
         </button>
       </div>
     );
+
+  if (shop && shop.status !== "active") {
+    const rejected = shop.status === "rejected";
+    return (
+      <div className="rounded-2xl border border-[#c2c9bb]/45 bg-white p-8 text-center shadow-sm">
+        <Store className="mx-auto h-12 w-12 text-[#154212]" />
+        <h1 className="mt-4 text-2xl font-black text-[#191c18]">
+          {rejected ? "Boutique a corriger" : "Validation admin en attente"}
+        </h1>
+        <p className="mx-auto mt-3 max-w-xl text-sm font-semibold leading-6 text-[#5a6256]">
+          {rejected
+            ? "Votre demande de boutique n'a pas ete approuvee. Consultez votre notification ou votre email pour connaitre les corrections demandees."
+            : "Votre boutique a ete creee, mais elle doit etre validee par un administrateur avant l'ouverture de l'espace vendeur."}
+        </p>
+        <button
+          onClick={() => router.push(rejected ? "/create-shop" : "/marketplace")}
+          className="mt-5 rounded-xl bg-[#154212] px-5 py-3 text-sm font-black text-white"
+        >
+          {rejected ? "Corriger la demande" : "Retour marketplace"}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

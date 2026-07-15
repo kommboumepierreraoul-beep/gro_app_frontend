@@ -384,38 +384,46 @@ function CommentItem({
         )}
 
         {/* Réponses */}
+        {/* Reponses */}
         {showReplies &&
           comment.replies?.map((reply) => (
-            <div
-              key={reply.id}
-              className="flex gap-3 mt-3 ml-4 pl-2"
-              style={{ borderLeft: "2px solid rgba(194,201,187,0.4)" }}
-            >
+            <div key={reply.id} className="flex gap-2.5 mt-3 ml-7">
               <Avatar
                 src={reply.author.avatar}
                 firstname={reply.author.firstname}
                 size="xs"
-                className="flex-shrink-0"
+                className="flex-shrink-0 mt-0.5"
               />
               <div className="flex-1 min-w-0">
                 <div
                   className="rounded-2xl rounded-tl-md px-3 py-2"
                   style={{
-                    background: "rgba(249,250,242,0.6)",
-                    border: "1px solid rgba(194,201,187,0.3)",
+                    background: "rgba(249,250,242,0.72)",
+                    border: "1px solid rgba(194,201,187,0.22)",
                   }}
                 >
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p
+                      className="text-xs font-semibold"
+                      style={{
+                        color: "#191c18",
+                        fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      }}
+                    >
+                      {reply.author.firstname} {reply.author.lastname}
+                    </p>
+                    <span className="text-[11px]" style={{ color: "#9aa196" }}>
+                      repond a
+                    </span>
+                    <span
+                      className="text-[11px] font-semibold"
+                      style={{ color: "#2d5a27" }}
+                    >
+                      @{comment.author.firstname}
+                    </span>
+                  </div>
                   <p
-                    className="text-xs font-semibold"
-                    style={{
-                      color: "#191c18",
-                      fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    }}
-                  >
-                    {reply.author.firstname} {reply.author.lastname}
-                  </p>
-                  <p
-                    className="text-xs mt-0.5 break-words"
+                    className="text-sm mt-1 break-words leading-relaxed"
                     style={{
                       color: "#42493e",
                       fontFamily: "'Inter', sans-serif",
@@ -424,11 +432,18 @@ function CommentItem({
                     {reply.content}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 mt-1 ml-1">
+                <div className="flex items-center gap-4 mt-1.5 ml-1">
                   <TimeAgo
                     date={reply.created_at}
                     className="text-xs text-#c2c9bb"
                   />
+                  <button
+                    className="text-xs font-semibold transition-colors"
+                    style={{ color: "#72796e", fontFamily: "'Inter', sans-serif" }}
+                    onClick={onReply}
+                  >
+                    Repondre
+                  </button>
                   {currentUserId === reply.author.id && (
                     <button
                       className="text-xs font-semibold transition-colors"

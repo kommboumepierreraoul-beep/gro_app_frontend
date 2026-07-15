@@ -105,7 +105,7 @@ export default function AdminModerationAuditPage() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <FileClock className="h-5 w-5 text-[#2d5a27]" />
+              <FileClock className="h-5 w-5 text-[#154212]" />
               <h1 className="text-2xl font-black text-[#191c18]">Audit moderation</h1>
             </div>
             <p className="mt-1 text-sm text-[#72796e]">
@@ -126,7 +126,7 @@ export default function AdminModerationAuditPage() {
             type="button"
             onClick={exportAudit}
             disabled={exporting}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#154212] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#2d5a27] disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#154212] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#154212] disabled:opacity-60"
           >
             {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Exporter
@@ -136,7 +136,7 @@ export default function AdminModerationAuditPage() {
 
       {loading ? (
         <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-[#c2c9bb]/30 bg-white/75">
-          <Loader2 className="h-7 w-7 animate-spin text-[#2d5a27]" />
+          <Loader2 className="h-7 w-7 animate-spin text-[#154212]" />
         </div>
       ) : logs.length === 0 ? (
         <div className="rounded-2xl border border-[#c2c9bb]/30 bg-white/75 p-10 text-center">

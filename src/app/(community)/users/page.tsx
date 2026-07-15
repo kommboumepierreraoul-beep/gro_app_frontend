@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -36,8 +37,9 @@ import {
 } from "lucide-react";
 
 import { Avatar } from "@/components/community/shared/Avatar";
-import { useAuthStore } from "@/stores/auth.store";
 import { messageService } from "@/services/community/message.service";
+import { followService } from "@/services/community/follow.service";
+import { useFollow } from "@/hooks/community/useFollow";
 
 // Types
 interface UserProfile {
@@ -56,6 +58,9 @@ interface UserProfile {
   rating?: number;
   is_verified?: boolean;
   is_premium?: boolean;
+  status?: string;
+  role?: string;
+  is_me?: boolean;
   created_at: string;
 }
 
@@ -189,17 +194,26 @@ const MOCK_USERS: UserProfile[] = [
 
 export default function CommunityUsersPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [loading, setLoading] = useState(false);
   const [messagingUserId, setMessagingUserId] = useState<number | null>(null);
+  const { data: usersData, isLoading: loading } = useQuery({
+    queryKey: ["community-users", searchQuery],
+    queryFn: () =>
+      followService.getUsers({
+        search: searchQuery || undefined,
+        per_page: 60,
+      }),
+    staleTime: 60 * 1000,
+  });
+
+  const users = (usersData?.data ?? []) as UserProfile[];
 
   // Filtrer et trier les utilisateurs
   const filteredUsers = useMemo(() => {
-    let result = [...MOCK_USERS];
+    let result = [...users];
 
     // Filtre par recherche
     if (searchQuery) {
@@ -245,14 +259,14 @@ export default function CommunityUsersPage() {
     }
 
     return result;
-  }, [searchQuery, selectedRole, sortBy]);
+  }, [searchQuery, selectedRole, sortBy, users]);
 
   // Statistiques
   const stats = {
-    total: MOCK_USERS.length,
-    online: Math.round(MOCK_USERS.length * 0.4),
-    premium: MOCK_USERS.filter((u) => u.is_premium).length,
-    verified: MOCK_USERS.filter((u) => u.is_verified).length,
+    total: usersData?.total ?? users.length,
+    online: users.filter((u) => u.status === "online").length,
+    premium: users.filter((u) => u.is_premium).length,
+    verified: users.filter((u) => u.is_verified).length,
   };
 
   const handleMessage = async (userId: number) => {
@@ -266,11 +280,6 @@ export default function CommunityUsersPage() {
     } finally {
       setMessagingUserId(null);
     }
-  };
-
-  const handleFollow = (userId: number) => {
-    // Logique de follow
-    console.log("Follow user:", userId);
   };
 
   return (
@@ -460,7 +469,6 @@ export default function CommunityUsersPage() {
                 user={userProfile}
                 viewMode={viewMode}
                 onMessage={handleMessage}
-                onFollow={handleFollow}
                 isMessaging={messagingUserId === userProfile.id}
               />
             ))}
@@ -486,21 +494,18 @@ function UserCard({
   user,
   viewMode,
   onMessage,
-  onFollow,
   isMessaging,
 }: {
   user: UserProfile;
   viewMode: "grid" | "list";
   onMessage: (id: number) => void;
-  onFollow: (id: number) => void;
   isMessaging: boolean;
 }) {
   const router = useRouter();
-  const isFollowing = user.is_following;
-
-  const getInitials = () => {
-    return `${user.firstname.charAt(0)}${user.lastname.charAt(0)}`;
-  };
+  const { toggle, isLoading, isFollowing } = useFollow(
+    user.id,
+    Boolean(user.is_following),
+  );
 
   const handleCardClick = () => {
     router.push(`/profile/${user.id}`);
@@ -565,15 +570,16 @@ function UserCard({
 
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
-              onClick={() => onFollow(user.id)}
+              onClick={() => toggle.mutate()}
+              disabled={isLoading || user.is_me}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
                 isFollowing
                   ? "bg-[#f3f4ed] text-[#42493e] hover:bg-[#e2e3dc]"
                   : "bg-[#154212] text-white hover:bg-[#1d5a18]"
-              }`}
+              } disabled:opacity-50`}
             >
               {isFollowing ? <UserCheck size={14} /> : <UserPlus size={14} />}
-              {isFollowing ? "Suivi" : "Suivre"}
+              {isLoading ? "..." : isFollowing ? "Suivi" : "Suivre"}
             </button>
             <button
               onClick={() => onMessage(user.id)}
@@ -648,15 +654,16 @@ function UserCard({
 
       <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#c2c9bb]/20">
         <button
-          onClick={() => onFollow(user.id)}
+          onClick={() => toggle.mutate()}
+          disabled={isLoading || user.is_me}
           className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
             isFollowing
               ? "bg-[#f3f4ed] text-[#42493e] hover:bg-[#e2e3dc]"
               : "bg-[#154212] text-white hover:bg-[#1d5a18]"
-          }`}
+          } disabled:opacity-50`}
         >
           {isFollowing ? <UserCheck size={14} /> : <UserPlus size={14} />}
-          {isFollowing ? "Suivi" : "Suivre"}
+          {isLoading ? "..." : isFollowing ? "Suivi" : "Suivre"}
         </button>
         <button
           onClick={() => onMessage(user.id)}

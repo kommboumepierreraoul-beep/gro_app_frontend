@@ -1,10 +1,17 @@
+/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable jsx-a11y/alt-text */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/app/create-shop/configuration/page.tsx
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
+import type * as React from 'react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
+import { ConfigureShopDesign, CreateShopSkeleton } from '@/components/marketplace/CreateShopDesign';
 import { 
   ArrowLeft, Store, Palette, Image, MapPin, Phone, Globe, 
   User, ShieldCheck, Loader2, Sparkles, Heart, Upload, X, AlertCircle, Building2, Navigation
@@ -34,8 +41,24 @@ export default function ConfigureShopPage() {
   useEffect(() => {
     const checkShop = async () => {
       try {
-        await api.get('/my-shop/profile');
-        router.push('/my-shop'); // ← Redirection vers la page de succès
+        const response = await api.get('/my-shop/profile');
+        const shop = response.data?.data ?? response.data;
+        if (shop?.status === 'rejected') {
+          setForm({
+            name: shop.name || '',
+            slug: shop.slug || '',
+            description: shop.description || '',
+            address: shop.address || '',
+            city: shop.city || '',
+            phone: shop.phone || '',
+          });
+          setLogoPreview(shop.logo || null);
+          setBannerPreview(shop.banner || null);
+          setLoading(false);
+          setTimeout(() => setAnimate(true), 100);
+          return;
+        }
+        router.push(shop?.status === 'active' ? '/my-shop' : '/shop-created');
       } catch (error: any) {
         if (error.response?.status === 404) {
           setLoading(false);
@@ -46,7 +69,11 @@ export default function ConfigureShopPage() {
         }
       }
     };
-    checkShop();
+    const timer = window.setTimeout(() => {
+      checkShop();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -104,14 +131,11 @@ export default function ConfigureShopPage() {
       await api.post('/marketplace/shops', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      // Stocker les infos dans sessionStorage
-sessionStorage.setItem('newShopName', form.name);
-sessionStorage.setItem('newShopLogo', logoPreview || '');
-sessionStorage.setItem('newShopBanner', bannerPreview || '');
-router.push('/shop-created');
-
-      toast.success('Boutique créée avec succès !');
-       router.push('/shop-created'); // ← Redirection vers la page de succès
+      sessionStorage.setItem('newShopName', form.name);
+      sessionStorage.setItem('newShopLogo', logoPreview || '');
+      sessionStorage.setItem('newShopBanner', bannerPreview || '');
+      toast.success('Demande de boutique envoyée pour validation.');
+      router.push('/shop-created');
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Erreur lors de la création de la boutique.';
       setError(msg);
@@ -126,6 +150,32 @@ router.push('/shop-created');
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-[#006c49]">Vérification...</div>
       </div>
+    );
+  }
+
+  if (!loading) {
+    return (
+      <ConfigureShopDesign
+        form={form}
+        error={error}
+        isSubmitting={isSubmitting}
+        logoPreview={logoPreview}
+        bannerPreview={bannerPreview}
+        onBack={() => router.back()}
+        onSubmit={handleSubmit}
+        onInputChange={handleInputChange}
+        onGenerateSlug={generateSlug}
+        onLogoChange={handleLogoChange}
+        onBannerChange={handleBannerChange}
+        onClearLogo={() => {
+          setLogoPreview(null);
+          logoFileRef.current = null;
+        }}
+        onClearBanner={() => {
+          setBannerPreview(null);
+          bannerFileRef.current = null;
+        }}
+      />
     );
   }
 

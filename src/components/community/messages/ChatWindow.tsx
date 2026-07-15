@@ -53,7 +53,9 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
 
   const isGroup = conversation?.is_group || false;
   const participants = conversation?.participants || [];
-  const otherParticipants = participants.filter((p: any) => p.id !== user?.id);
+  const otherParticipants = participants.filter(
+    (p: any) => String(p.id) !== String(user?.id),
+  );
 
   const displayName = isGroup
     ? conversation?.name || "Groupe"
@@ -121,7 +123,11 @@ export function ChatWindow({ convId, onBack }: ChatWindowProps) {
     if ((!content.trim() && !media) || sendMessage.isPending) return;
 
     try {
-      await sendMessage.mutateAsync({ content, media });
+      await sendMessage.mutateAsync({
+        content,
+        media,
+        replyToId: replyTo?.id,
+      });
       setReplyTo(null);
       setTimeout(() => {
         if (messagesContainerRef.current) {

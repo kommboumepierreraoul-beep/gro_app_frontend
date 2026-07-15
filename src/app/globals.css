@@ -13,12 +13,112 @@
   --color-text: #191c18;
   --color-muted: #72796e;
   --color-brand: #154212;
+  --color-brand-2: #2d5a27;
+  --color-brand-3: #3b6934;
   --color-brand-soft: #eaf3de;
   --color-border: #c2c9bb;
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-strong: #ffffff;
+  --shadow-soft: 0 10px 30px rgba(21, 66, 18, 0.06);
+}
+
+/* Admin workspace harmonization */
+.admin-root {
+  --admin-primary: #154212;
+  --admin-primary-strong: #0f3210;
+  --admin-primary-soft: #eaf3de;
+  --admin-accent: #8bd918;
+  --admin-surface: #fffef8;
+  --admin-border: rgba(194, 201, 187, 0.56);
+}
+
+.admin-root .rounded-3xl {
+  border-radius: 1rem;
+}
+
+.admin-root .rounded-2xl {
+  border-radius: 0.875rem;
+}
+
+.admin-root .rounded-xl {
+  border-radius: 0.75rem;
+}
+
+.admin-root .shadow-xl,
+.admin-root .shadow-2xl,
+.admin-root .shadow-lg {
+  box-shadow: 0 16px 44px rgba(24, 47, 21, 0.1);
+}
+
+.admin-root .bg-emerald-50 {
+  background-color: var(--admin-primary-soft);
+}
+
+.admin-root .bg-emerald-600,
+.admin-root .bg-emerald-700,
+.admin-root .bg-green-600,
+.admin-root .bg-green-700 {
+  background-color: var(--admin-primary);
+}
+
+.admin-root .text-emerald-600,
+.admin-root .text-emerald-700,
+.admin-root .text-green-600,
+.admin-root .text-green-700 {
+  color: var(--admin-primary);
+}
+
+.admin-root .border-emerald-100,
+.admin-root .border-emerald-200,
+.admin-root .border-green-100,
+.admin-root .border-green-200 {
+  border-color: var(--admin-border);
+}
+
+.admin-root .bg-slate-50,
+.admin-root .bg-gray-50 {
+  background-color: #f6f7f0;
+}
+
+.admin-root .bg-slate-100,
+.admin-root .bg-gray-100 {
+  background-color: #eef1e8;
+}
+
+.admin-root .text-slate-900,
+.admin-root .text-gray-900 {
+  color: #191c18;
+}
+
+.admin-root .text-slate-800,
+.admin-root .text-gray-800,
+.admin-root .text-slate-700,
+.admin-root .text-gray-700 {
+  color: #243420;
+}
+
+.admin-root .text-slate-600,
+.admin-root .text-gray-600,
+.admin-root .text-slate-500,
+.admin-root .text-gray-500 {
+  color: #5a6256;
+}
+
+.admin-root .border-slate-100,
+.admin-root .border-slate-200,
+.admin-root .border-gray-100,
+.admin-root .border-gray-200 {
+  border-color: var(--admin-border);
+}
+
+.admin-root input,
+.admin-root select,
+.admin-root textarea {
+  border-radius: 0.75rem;
 }
 
 html,
@@ -102,4 +202,153 @@ pre {
 /* Active nav */
 .active-nav-border {
   border-right: 4px solid #00342b;
+}
+
+/* Harmonisation globale AgriPulse */
+.rounded-2xl {
+  border-radius: 0.875rem !important;
+}
+
+.rounded-3xl,
+.rounded-\[2rem\],
+.rounded-\[2\.5rem\] {
+  border-radius: 1rem !important;
+}
+
+.community-surface,
+.app-surface {
+  background: var(--surface);
+  border: 1px solid rgba(194, 201, 187, 0.35);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+}
+
+.app-action {
+  border-radius: var(--radius-lg);
+  background: var(--color-brand);
+  color: white;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.app-action:hover {
+  background: var(--color-brand-2);
+  box-shadow: 0 10px 22px rgba(21, 66, 18, 0.14);
+}
+
+.app-action:active {
+  transform: translateY(1px);
+}
+
+/* Marketplace alignee sur l'espace communautaire */
+.marketplace-root {
+  --market-primary: #154212;
+  --market-primary-hover: #2d5a27;
+  --market-primary-soft: #eaf3de;
+  --market-border: rgba(194, 201, 187, 0.42);
+  --market-muted: #72796e;
+  --market-text: #191c18;
+  background:
+    linear-gradient(180deg, rgba(249, 250, 242, 0.96), rgba(246, 247, 240, 0.98));
+}
+
+.marketplace-root .bg-emerald-700,
+.marketplace-root .bg-emerald-800,
+.marketplace-root .bg-green-950 {
+  background-color: var(--market-primary) !important;
+}
+
+.marketplace-root .hover\:bg-emerald-800:hover,
+.marketplace-root .hover\:bg-emerald-700:hover,
+.marketplace-root .hover\:bg-green-900:hover {
+  background-color: var(--market-primary-hover) !important;
+}
+
+.marketplace-root .text-emerald-700,
+.marketplace-root .text-emerald-800,
+.marketplace-root .text-green-950 {
+  color: var(--market-primary) !important;
+}
+
+.marketplace-root .text-slate-800,
+.marketplace-root .text-gray-800 {
+  color: var(--market-text) !important;
+}
+
+.marketplace-root .text-slate-500,
+.marketplace-root .text-gray-500,
+.marketplace-root .text-slate-600,
+.marketplace-root .text-gray-600 {
+  color: var(--market-muted) !important;
+}
+
+.marketplace-root .border-emerald-100,
+.marketplace-root .border-emerald-200,
+.marketplace-root .border-gray-100,
+.marketplace-root .border-gray-200,
+.marketplace-root .border-slate-100,
+.marketplace-root .border-slate-200 {
+  border-color: var(--market-border) !important;
+}
+
+.marketplace-root .bg-emerald-50,
+.marketplace-root .bg-green-50,
+.marketplace-root .bg-gray-50,
+.marketplace-root .bg-slate-50 {
+  background-color: rgba(234, 243, 222, 0.62) !important;
+}
+
+.marketplace-root .bg-white,
+.marketplace-root .bg-white\/70,
+.marketplace-root .bg-white\/75,
+.marketplace-root .bg-white\/80,
+.marketplace-root .bg-white\/85,
+.marketplace-root .bg-white\/90,
+.marketplace-root .bg-white\/95 {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+  border-color: var(--market-border);
+  backdrop-filter: blur(14px);
+}
+
+.marketplace-root .shadow-md,
+.marketplace-root .shadow-lg,
+.marketplace-root .shadow-xl,
+.marketplace-root .shadow-2xl {
+  box-shadow: 0 12px 30px rgba(21, 66, 18, 0.08) !important;
+}
+
+.marketplace-root .rounded-full {
+  border-radius: 0.75rem !important;
+}
+
+.marketplace-root button,
+.marketplace-root a,
+.marketplace-root input,
+.marketplace-root select,
+.marketplace-root textarea {
+  letter-spacing: 0;
+}
+
+.marketplace-root input,
+.marketplace-root select,
+.marketplace-root textarea {
+  border-color: var(--market-border) !important;
+  background-color: rgba(249, 250, 242, 0.86) !important;
+}
+
+.marketplace-root input:focus,
+.marketplace-root select:focus,
+.marketplace-root textarea:focus {
+  border-color: rgba(21, 66, 18, 0.34) !important;
+  box-shadow: 0 0 0 3px rgba(188, 240, 174, 0.28) !important;
+}
+
+.marketplace-root .bg-gradient-to-r.from-emerald-800,
+.marketplace-root .bg-gradient-to-r.from-emerald-700,
+.marketplace-root .bg-gradient-to-br.from-emerald-600 {
+  background-image: linear-gradient(135deg, #154212, #2d5a27) !important;
+}
+
+.marketplace-root .bg-gradient-to-br.from-emerald-50,
+.marketplace-root .bg-gradient-to-r.from-emerald-50 {
+  background-image: linear-gradient(135deg, rgba(234, 243, 222, 0.95), rgba(255, 255, 255, 0.86)) !important;
 }

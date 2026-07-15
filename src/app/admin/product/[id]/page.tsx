@@ -1,435 +1,190 @@
-// src/app/edit-product/[id]/page.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, ImagePlus, Package, Sparkles, Trash2, UploadCloud } from 'lucide-react';
-import api from '@/lib/axios';
-import toast from 'react-hot-toast';
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import toast from "react-hot-toast";
+import {
+  ArrowLeft,
+  Ban,
+  Check,
+  PackageCheck,
+  Save,
+  Star,
+} from "lucide-react";
+import { adminService } from "@/services/admin.service";
 
-interface Category {
+type ProductRecord = Record<string, unknown> & {
   id: number;
-  name: string;
-  slug: string;
-}
+  name?: string;
+  description?: string;
+  price?: number | string;
+  stock_quantity?: number | string;
+  status?: string;
+  approval_status?: string;
+  rejection_reason?: string | null;
+  shop?: { name?: string; status?: string };
+  category?: { name?: string };
+};
 
-interface Shop {
-  id: number;
-  name: string;
-  logo: string | null;
-  total_sales?: number;
-  rating?: number;
-  reliability?: number;
-}
-
-export default function EditProductPage() {
-  const router = useRouter();
-  const { id } = useParams();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [shop, setShop] = useState<Shop | null>(null);
+export default function AdminProductDetailPage() {
+  const params = useParams();
+  const id = Number(params.id);
+  const [product, setProduct] = useState<ProductRecord | null>(null);
   const [form, setForm] = useState({
-    name: '',
-    category_id: '',
-    description: '',
-    price: '',
-    stock: '',
-    images: [] as string[],
+    name: "",
+    description: "",
+    price: "",
+    stock_quantity: "",
+    status: "",
+    approval_status: "",
+    rejection_reason: "",
   });
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // Charger les catégories
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await api.get('/categories');
-        const data = res.data.data || res.data;
-        setCategories(data);
-      } catch (error) {
-        console.error('Erreur chargement catégories', error);
-        toast.error('Impossible de charger les catégories');
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  // Charger les infos de la boutique (logo, nom, stats)
-  useEffect(() => {
-    const fetchShop = async () => {
-      try {
-        const res = await api.get('/my-shop/profile');
-        const shopData = res.data.data;
-        setShop({
-          id: shopData.id,
-          name: shopData.name,
-          logo: shopData.logo,
-          total_sales: shopData.total_sales || 0,
-          rating: shopData.rating || 0,
-          reliability: shopData.reliability || 98,
-        });
-      } catch (error) {
-        console.error('Erreur chargement boutique', error);
-        // Fallback
-        setShop({
-          id: 0,
-          name: 'Ma boutique',
-          logo: null,
-          total_sales: 0,
-          rating: 0,
-          reliability: 0,
-        });
-      }
-    };
-    fetchShop();
-  }, []);
-
-  // Charger le produit existant
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const res = await api.get(`/marketplace/products/${id}`);
-        const p = res.data.data;
-        setForm({
-          name: p.name || '',
-          category_id: p.category_id?.toString() || '',
-          description: p.description || '',
-          price: p.price?.toString() || '',
-          stock: p.stock?.toString() || '0',
-          images: p.images || [],
-        });
-      } catch (err) {
-        toast.error('Erreur lors du chargement du produit');
-        router.push('/my-shop');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    if (id) fetchProduct();
-  }, [id, router]);
-
-  const setField = (field: string, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    setImageFiles((prev) => [...prev, ...files]);
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setForm((prev) => ({ ...prev, images: [...prev.images, ...newPreviews] }));
-  };
-
-  const removeImage = (index: number) => {
-    const newImages = form.images.filter((_, i) => i !== index);
-    setForm((prev) => ({ ...prev, images: newImages }));
-    const newFiles = imageFiles.filter((_, i) => i !== index);
-    setImageFiles(newFiles);
-  };
-
-  // Calcul du score de qualité
-  const listingQuality = Math.min(
-    100,
-    (form.name ? 30 : 0) +
-      (form.description && form.description.length > 50 ? 30 : form.description ? 15 : 0) +
-      (form.images.length * 10) +
-      (form.price && form.stock ? 10 : 0)
-  );
-
-  const getQualityLabel = () => {
-    if (listingQuality >= 80) return { label: 'Excellent', color: '#10b981' };
-    if (listingQuality >= 50) return { label: 'Bon', color: '#f59e0b' };
-    return { label: 'À améliorer', color: '#ef4444' };
-  };
-  const quality = getQualityLabel();
-
-  const handleSubmit = async () => {
-    if (!form.name || !form.category_id || !form.price) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-    setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append('name', form.name);
-    formData.append('category_id', form.category_id);
-    formData.append('description', form.description);
-    formData.append('price', form.price);
-    formData.append('stock', form.stock);
-    for (const file of imageFiles) {
-      formData.append('images[]', file);
-    }
-    formData.append('existing_images', JSON.stringify(form.images));
-    formData.append('_method', 'PUT');
-
+  const load = useCallback(async () => {
     try {
-      await api.post(`/marketplace/products/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      setLoading(true);
+      const response = await adminService.systemGet<ProductRecord>("products", id);
+      const data = response.data;
+      setProduct(data);
+      setForm({
+        name: String(data.name || ""),
+        description: String(data.description || ""),
+        price: String(data.price || ""),
+        stock_quantity: String(data.stock_quantity || ""),
+        status: String(data.status || ""),
+        approval_status: String(data.approval_status || ""),
+        rejection_reason: String(data.rejection_reason || ""),
       });
-      toast.success('Produit mis à jour avec succès !');
-      router.push('/my-shop');
-      router.refresh();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erreur lors de la mise à jour');
+    } catch (error) {
+      console.error(error);
+      toast.error("Produit introuvable");
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(load, 0);
+    return () => window.clearTimeout(timeout);
+  }, [load]);
+
+  const save = async () => {
+    try {
+      setSaving(true);
+      await adminService.systemUpdate("products", id, {
+        ...form,
+        price: form.price ? Number(form.price) : undefined,
+        stock_quantity: form.stock_quantity ? Number(form.stock_quantity) : undefined,
+      });
+      toast.success("Produit mis a jour");
+      load();
+    } catch (error) {
+      console.error(error);
+      toast.error("Mise a jour impossible");
+    } finally {
+      setSaving(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-emerald-700 text-lg">Chargement du produit...</div>
-      </div>
-    );
+  const action = async (name: string, payload: Record<string, unknown> = {}) => {
+    try {
+      await adminService.systemAction("products", id, name, payload);
+      toast.success("Action executee");
+      load();
+    } catch (error) {
+      console.error(error);
+      toast.error("Action impossible");
+    }
+  };
+
+  if (loading && !product) {
+    return <div className="rounded-2xl bg-white p-8 font-black text-[#5a6256]">Chargement...</div>;
+  }
+
+  if (!product) {
+    return <div className="rounded-2xl bg-red-50 p-8 font-black text-red-700">Produit introuvable.</div>;
   }
 
   return (
-    <div className="min-h-screen bg-transparent pb-8">
-      <header className="sticky top-16 z-30 rounded-2xl border border-[#c2c9bb]/35 bg-white/90 shadow-sm backdrop-blur-xl">
-        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between px-3 py-3 sm:px-5 lg:px-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.back()}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#c2c9bb]/45 bg-white/70 transition hover:bg-[#eaf3de]"
-            >
-              <ArrowLeft className="h-5 w-5 text-[#154212]" />
-            </button>
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[3px] text-[#154212]">Admin Center</p>
-              <h1 className="text-xl font-black text-[#191c18]">Modifier le produit</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="h-10 rounded-xl bg-[#154212] px-6 text-sm font-medium text-white shadow-sm transition hover:bg-[#2d5a27] disabled:opacity-60"
-            >
-              {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="space-y-5">
+      <Link href="/admin/catalog" className="inline-flex items-center gap-2 text-sm font-black text-[#154212] hover:underline">
+        <ArrowLeft className="h-4 w-4" />
+        Retour catalogue
+      </Link>
 
-      <main className="mx-auto max-w-7xl px-0 py-5 sm:py-6">
-        <div className="mb-10 text-center md:text-left md:flex md:items-center md:justify-between gap-6">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-800">Modifier un produit</h2>
-            <p className="text-emerald-600 text-sm mt-1">Mettez à jour les informations ci-dessous</p>
-          </div>
-          <div className="flex items-center gap-4 mt-4 md:mt-0">
-            <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-full">
-              <Package className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm font-medium text-emerald-800">Stock: {form.stock || 0} unités</span>
-            </div>
-            <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-full">
-              <ImagePlus className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm font-medium text-emerald-800">{form.images.length} image(s)</span>
-            </div>
-          </div>
-        </div>
+      <section className="rounded-2xl bg-[#154212] p-6 text-white shadow-xl">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#d8f6c0]">Produit marketplace</p>
+        <h1 className="mt-3 text-3xl font-black">{product.name || `Produit #${product.id}`}</h1>
+        <p className="mt-2 text-sm font-semibold text-white/75">
+          {product.shop?.name || "Boutique inconnue"} - {product.category?.name || "Sans categorie"}
+        </p>
+      </section>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            {/* Carte Informations produit */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl border border-emerald-100/60 shadow-sm p-6 transition hover:shadow-md">
-              <h3 className="text-lg font-black text-gray-800 mb-1">Informations produit</h3>
-              <p className="text-sm text-gray-500 mb-6">Détails essentiels pour les acheteurs</p>
-
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom du produit *</label>
-                  <input
-                    value={form.name}
-                    onChange={(e) => setField('name', e.target.value)}
-                    placeholder="Ex: Engrais bio NPK 25kg"
-                    className="w-full h-12 rounded-xl border border-emerald-200 bg-white/80 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition"
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie *</label>
-                    <select
-                      value={form.category_id}
-                      onChange={(e) => setField('category_id', e.target.value)}
-                      className="w-full h-12 rounded-xl border border-emerald-200 bg-white/80 px-4 focus:ring-2 focus:ring-emerald-500/30"
-                    >
-                      <option value="">Sélectionner une catégorie</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Prix (FCFA) *</label>
-                    <input
-                      type="number"
-                      value={form.price}
-                      onChange={(e) => setField('price', e.target.value)}
-                      placeholder="0"
-                      className="w-full h-12 rounded-xl border border-emerald-200 bg-white/80 px-4 focus:ring-2 focus:ring-emerald-500/30"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-                  <textarea
-                    rows={4}
-                    value={form.description}
-                    onChange={(e) => setField('description', e.target.value)}
-                    placeholder="Décrivez votre produit (bénéfices, usage, qualité)..."
-                    className="w-full rounded-xl border border-emerald-200 bg-white/80 p-4 focus:ring-2 focus:ring-emerald-500/30 resize-none"
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantité en stock</label>
-                    <input
-                      type="number"
-                      value={form.stock}
-                      onChange={(e) => setField('stock', e.target.value)}
-                      placeholder="0"
-                      className="w-full h-12 rounded-xl border border-emerald-200 bg-white/80 px-4"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Poids (kg)</label>
-                    <input type="text" placeholder="Optionnel" className="w-full h-12 rounded-xl border border-emerald-200 bg-white/80 px-4" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Galerie média */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl border border-emerald-100/60 shadow-sm p-6">
-              <h3 className="text-lg font-black text-gray-800 mb-1">Médias</h3>
-              <p className="text-sm text-gray-500 mb-6">Ajoutez ou modifiez les photos du produit (max 10MB chacune)</p>
-              <div className="border-2 border-dashed border-emerald-200 rounded-2xl p-8 text-center hover:border-emerald-400 transition bg-emerald-50/30">
-                <UploadCloud className="mx-auto h-12 w-12 text-emerald-400" />
-                <p className="mt-2 text-sm text-gray-500">Glissez ou cliquez pour ajouter des images</p>
-                <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="mt-3 mx-auto block text-sm" />
-              </div>
-              {form.images.length > 0 && (
-                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {form.images.map((img, idx) => (
-                    <div key={idx} className="group relative rounded-xl overflow-hidden border border-emerald-100 shadow-sm">
-                      <img src={img} className="w-full h-36 object-cover group-hover:scale-105 transition duration-300" alt={`preview-${idx}`} />
-                      <button
-                        onClick={() => removeImage(idx)}
-                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 shadow flex items-center justify-center hover:bg-red-100 transition"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Sidebar avec infos boutique dynamiques */}
-          <div className="space-y-6">
-            {/* Bloc vendeur – données réelles */}
-            {shop && (
-              <div className="bg-gradient-to-r from-emerald-800 to-emerald-900 rounded-2xl p-5 text-white">
-                <div className="flex items-center gap-3">
-                  {shop.logo ? (
-                    <img src={shop.logo} className="w-12 h-12 rounded-full border-2 border-emerald-400 object-cover" alt="Logo boutique" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center text-white text-lg font-bold">
-                      {shop.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div>
-                    <h4 className="font-bold">{shop.name}</h4>
-                    <p className="text-emerald-200 text-xs">Vendeur vérifié</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-5 text-center">
-                  <div>
-                    <p className="text-emerald-300 text-xs">Ventes</p>
-                    <p className="font-black">{shop.total_sales?.toLocaleString() || 0}</p>
-                  </div>
-                  <div>
-                    <p className="text-emerald-300 text-xs">Note</p>
-                    <p className="font-black">{shop.rating?.toFixed(1) || '0.0'}★</p>
-                  </div>
-                  <div>
-                    <p className="text-emerald-300 text-xs">Confiance</p>
-                    <p className="font-black">{shop.reliability || 0}%</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Score de qualité */}
-            <div className="bg-white rounded-2xl border border-emerald-100 p-6 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-emerald-700" />
-                </div>
-                <h3 className="font-bold text-gray-800">Score de qualité</h3>
-              </div>
-              <div className="relative w-32 h-32 mx-auto mb-4">
-                <svg className="w-32 h-32 transform -rotate-90">
-                  <circle cx="64" cy="64" r="56" stroke="#e2e8f0" strokeWidth="12" fill="none" />
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="56"
-                    stroke={quality.color}
-                    strokeWidth="12"
-                    fill="none"
-                    strokeDasharray={2 * Math.PI * 56}
-                    strokeDashoffset={2 * Math.PI * 56 * (1 - listingQuality / 100)}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-black text-gray-800">{listingQuality}%</span>
-                  <span className="text-xs text-gray-500">Qualité</span>
-                </div>
-              </div>
-              <div className="text-center mt-2">
-                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: `${quality.color}10`, color: quality.color }}>
-                  {quality.label}
-                </span>
-              </div>
-              <div className="mt-5 space-y-3 text-sm">
-                <div className="flex justify-between"><span>Nom</span><span>{form.name ? '✅' : '❌'}</span></div>
-                <div className="flex justify-between"><span>Description</span><span>{form.description?.length > 50 ? '✅' : form.description ? '⚠️' : '❌'}</span></div>
-                <div className="flex justify-between"><span>Images</span><span>{form.images.length > 0 ? '✅' : '❌'}</span></div>
-                <div className="flex justify-between"><span>Prix / Stock</span><span>{form.price && form.stock ? '✅' : '⚠️'}</span></div>
-              </div>
-            </div>
-
-            {/* Aperçu produit */}
-            <div className="bg-white rounded-2xl border border-emerald-100 p-6 shadow-sm">
-              <h3 className="font-bold text-gray-800 mb-3">Aperçu</h3>
-              <div className="rounded-xl overflow-hidden border border-emerald-100">
-                <img
-                  src={form.images[0] || 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400'}
-                  className="w-full h-40 object-cover"
-                  alt="aperçu"
+      <section className="grid gap-4 lg:grid-cols-[1fr_340px]">
+        <div className="rounded-2xl border border-[#c2c9bb]/45 bg-white p-5 shadow-sm">
+          <h2 className="text-xl font-black text-[#191c18]">Edition admin</h2>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {[
+              ["name", "Nom"],
+              ["price", "Prix"],
+              ["stock_quantity", "Stock"],
+              ["status", "Statut"],
+              ["approval_status", "Approbation"],
+              ["rejection_reason", "Raison rejet"],
+            ].map(([key, label]) => (
+              <label key={key}>
+                <span className="text-xs font-black uppercase tracking-[0.12em] text-[#72796e]">{label}</span>
+                <input
+                  value={form[key as keyof typeof form]}
+                  onChange={(event) => setForm((prev) => ({ ...prev, [key]: event.target.value }))}
+                  className="mt-1 h-11 w-full rounded-xl border border-[#c2c9bb]/45 bg-[#fffef8] px-3 text-sm font-semibold outline-none focus:border-[#154212]"
                 />
-                <div className="p-4">
-                  <h4 className="font-bold text-gray-800">{form.name || 'Nom du produit'}</h4>
-                  <p className="text-gray-500 text-sm mt-1 line-clamp-2">{form.description || 'Description...'}</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xl font-black text-emerald-700">{form.price ? `${form.price} FCFA` : '0 FCFA'}</span>
-                    <span className="text-xs text-gray-400">Stock: {form.stock || 0}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+              </label>
+            ))}
+            <label className="md:col-span-2">
+              <span className="text-xs font-black uppercase tracking-[0.12em] text-[#72796e]">Description</span>
+              <textarea
+                value={form.description}
+                onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+                rows={5}
+                className="mt-1 w-full rounded-xl border border-[#c2c9bb]/45 bg-[#fffef8] px-3 py-2 text-sm font-semibold outline-none focus:border-[#154212]"
+              />
+            </label>
           </div>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#154212] px-4 py-2 text-sm font-black text-white disabled:opacity-60"
+          >
+            <Save className="h-4 w-4" />
+            Enregistrer
+          </button>
         </div>
-      </main>
+
+        <aside className="space-y-3">
+          <button onClick={() => action("approve")} className="flex w-full items-center gap-2 rounded-xl bg-[#eaf3de] px-4 py-3 font-black text-[#154212]">
+            <Check className="h-4 w-4" /> Approuver
+          </button>
+          <button
+            onClick={() => {
+              const reason = window.prompt("Raison du rejet :");
+              if (reason !== null) action("reject", { reason });
+            }}
+            className="flex w-full items-center gap-2 rounded-xl bg-red-50 px-4 py-3 font-black text-red-700"
+          >
+            <Ban className="h-4 w-4" /> Rejeter
+          </button>
+          <button onClick={() => action("feature")} className="flex w-full items-center gap-2 rounded-xl border border-[#c2c9bb]/45 bg-white px-4 py-3 font-black text-[#243420]">
+            <Star className="h-4 w-4" /> Mettre en avant
+          </button>
+          <button onClick={() => action("archive")} className="flex w-full items-center gap-2 rounded-xl border border-[#c2c9bb]/45 bg-white px-4 py-3 font-black text-[#243420]">
+            <PackageCheck className="h-4 w-4" /> Archiver
+          </button>
+        </aside>
+      </section>
     </div>
   );
 }

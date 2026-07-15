@@ -1,279 +1,371 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { adminService, PendingProduct, ActivityLog, AnalyticsData } from '@/services/admin.service';
-import toast from 'react-hot-toast';
-import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import toast from "react-hot-toast";
 import {
-  Activity,
+  AlertTriangle,
   ArrowRight,
+  BadgeCheck,
+  Banknote,
+  Boxes,
+  BriefcaseBusiness,
   CheckCircle2,
-  Package,
+  ClipboardList,
+  Gavel,
+  LayoutGrid,
+  PackageCheck,
   ShieldCheck,
+  ShoppingCart,
   Store,
   Users,
   WalletCards,
-} from 'lucide-react';
+} from "lucide-react";
+import {
+  ActivityLog,
+  adminService,
+  AnalyticsData,
+  PendingProduct,
+} from "@/services/admin.service";
 
-function AdminDashboardContent() {
-  const [pendingProducts, setPendingProducts] = useState<PendingProduct[]>([]);
-  const [activities, setActivities] = useState<ActivityLog[]>([]);
+const money = (value?: number | string | null) =>
+  new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "XAF",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+
+const dateLabel = (value?: string | null) =>
+  value
+    ? new Intl.DateTimeFormat("fr-FR", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(value))
+    : "Date inconnue";
+
+function KpiCard({
+  label,
+  value,
+  detail,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  icon: typeof Users;
+}) {
+  return (
+    <div className="rounded-2xl border border-[#c2c9bb]/45 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#72796e]">
+            {label}
+          </p>
+          <p className="mt-3 text-2xl font-black text-[#191c18]">{value}</p>
+        </div>
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#eaf3de] text-[#154212]">
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+      <p className="mt-4 text-sm font-semibold text-[#5a6256]">{detail}</p>
+    </div>
+  );
+}
+
+export default function AdminDashboardPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [pendingProducts, setPendingProducts] = useState<PendingProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-  const loadData = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
-      const [pendingRes, activitiesRes, analyticsRes] = await Promise.all([
+      const [analyticsRes, activitiesRes, pendingRes] = await Promise.all([
+        adminService.getAnalytics(),
+        adminService.getActivityLog(12),
         adminService.getPendingProducts(),
-        adminService.getActivityLog(15),
-        adminService.getAnalytics()
       ]);
+      setAnalytics(analyticsRes.data || null);
+      setActivities(activitiesRes.data || []);
       setPendingProducts(
         (pendingRes.data || []).filter(
           (product: PendingProduct) =>
             !product.approval_status || product.approval_status === "pending",
         ),
       );
-      setActivities(activitiesRes.data || []);
-      setAnalytics(analyticsRes.data || null);
-    } catch (err: any) {
-      console.error(err);
-      toast.error('Erreur lors du chargement des données');
+    } catch (error) {
+      console.error(error);
+      toast.error("Chargement du centre admin impossible");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
-  }, [loadData]);
+    const timeout = window.setTimeout(load, 0);
+    const interval = window.setInterval(load, 30000);
+    return () => {
+      window.clearTimeout(timeout);
+      window.clearInterval(interval);
+    };
+  }, [load]);
 
-  const handleApproveProduct = async (productId: number) => {
-    try {
-      setActionLoading(productId);
-      await adminService.approveProduct(productId);
-      toast.success('Produit approuvé !');
-      setPendingProducts(prev => prev.filter(p => p.id !== productId));
-      loadData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erreur lors de l\'approbation');
-    } finally {
-      setActionLoading(null);
-    }
-  };
+  const overview = analytics?.overview;
 
-  const handleRejectProduct = async (productId: number) => {
-    const reason = window.prompt('Raison du rejet (obligatoire) :');
-    if (reason === null) return;
-    if (!reason.trim()) {
-      toast.error('Veuillez saisir une raison pour le rejet');
-      return;
-    }
-    try {
-      setActionLoading(productId);
-      await adminService.rejectProduct(productId, reason);
-      toast.success('Produit rejeté. L\'utilisateur sera notifié.');
-      setPendingProducts(prev => prev.filter(p => p.id !== productId));
-      await loadData();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.message || 'Erreur lors du rejet');
-    } finally {
-      setActionLoading(null);
-    }
-  };
+  const kpis = useMemo(
+    () => [
+      {
+        label: "Utilisateurs",
+        value: String(overview?.users_total ?? analytics?.active_users ?? 0),
+        detail: `${overview?.active_users ?? 0} actifs, ${overview?.admins_total ?? 0} admins`,
+        icon: Users,
+      },
+      {
+        label: "Marketplace",
+        value: String(overview?.products_total ?? 0),
+        detail: `${overview?.pending_approvals ?? 0} produits a valider`,
+        icon: Boxes,
+      },
+      {
+        label: "Commandes",
+        value: String(overview?.orders_total ?? analytics?.total_purchases ?? 0),
+        detail: `${overview?.orders_active ?? 0} en cours de traitement`,
+        icon: ShoppingCart,
+      },
+      {
+        label: "Revenus",
+        value: money(overview?.total_sales ?? analytics?.total_sales),
+        detail: `${overview?.sales_growth ?? 0}% par rapport au mois precedent`,
+        icon: Banknote,
+      },
+    ],
+    [analytics, overview],
+  );
 
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case 'product_added': return '#064c36';
-      case 'product_approved': return '#1b9e4b';
-      case 'product_rejected': return '#ba1a1a';
-      case 'user_joined': return '#2c694e';
-      default: return '#5c625e';
-    }
-  };
+  const modules = [
+    {
+      title: "Utilisateurs",
+      description: "CRUD complet, roles, blocage, deblocage et suspension.",
+      href: "/admin/system?resource=users",
+      icon: Users,
+      metric: `${overview?.users_total ?? 0} comptes`,
+    },
+    {
+      title: "Marketplace",
+      description: "Produits, categories, boutiques, validations et mise en avant.",
+      href: "/admin/system?resource=products",
+      icon: Store,
+      metric: `${overview?.shops_active ?? 0} boutiques actives`,
+    },
+    {
+      title: "Missions",
+      description: "Offres, categories, candidatures, suspension et publication.",
+      href: "/admin/system?resource=missions",
+      icon: BriefcaseBusiness,
+      metric: `${overview?.missions_published ?? 0} publiees`,
+    },
+    {
+      title: "Commandes",
+      description: "Statuts, paiement a la livraison, livraison et finalisation.",
+      href: "/admin/system?resource=orders",
+      icon: ClipboardList,
+      metric: `${overview?.orders_cash_on_delivery ?? 0} COD`,
+    },
+    {
+      title: "Finance",
+      description: "Wallets, depots, retraits, transactions et rapprochement.",
+      href: "/admin/system?resource=transactions",
+      icon: WalletCards,
+      metric: `${overview?.pending_deposits ?? 0} depots en attente`,
+    },
+    {
+      title: "Litiges",
+      description: "Escalade, investigation, resolution et cloture.",
+      href: "/admin/system?resource=disputes",
+      icon: Gavel,
+      metric: `${overview?.disputes_open ?? 0} ouverts`,
+    },
+  ];
 
-  if (loading) {
+  const alerts = [
+    {
+      label: "Produits a approuver",
+      value: pendingProducts.length,
+      href: "/admin/system?resource=products&status=pending",
+      icon: PackageCheck,
+    },
+    {
+      label: "Candidatures missions",
+      value: overview?.mission_applications_pending ?? 0,
+      href: "/admin/system?resource=mission-applications&status=pending",
+      icon: BadgeCheck,
+    },
+    {
+      label: "Transactions en attente",
+      value: (overview?.pending_deposits ?? 0) + (overview?.pending_withdrawals ?? 0),
+      href: "/admin/system?resource=transactions&status=pending",
+      icon: WalletCards,
+    },
+    {
+      label: "Litiges escalades",
+      value: overview?.disputes_escalated ?? 0,
+      href: "/admin/system?resource=disputes&status=escalated",
+      icon: AlertTriangle,
+    },
+  ];
+
+  if (loading && !analytics) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8faf9' }}>
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" style={{ borderColor: '#064c36' }}></div>
-          <p className="text-on-surface-variant">Chargement des données...</p>
+      <div className="grid min-h-[60vh] place-items-center">
+        <div className="rounded-2xl border border-[#c2c9bb]/45 bg-white px-8 py-7 text-center shadow-sm">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#eaf3de] border-t-[#154212]" />
+          <p className="mt-4 text-sm font-bold text-[#5a6256]">
+            Initialisation du back-office...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <>
-      <section className="bg-primary pt-8 pb-4 px-6 md:px-12" style={{ backgroundColor: '#064c36' }}>
-        <div className="max-w-screen-2xl mx-auto">
-          <h2 className="text-2xl font-bold text-white mb-2">Tableau de bord</h2>
-          <p className="text-white/60 text-sm">Gestion de l'approbation des produits et de la plateforme</p>
+    <div className="space-y-6">
+      <section className="rounded-2xl bg-[#154212] p-6 text-white shadow-xl sm:p-7">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-[#d8f6c0]">
+              <ShieldCheck className="h-4 w-4" />
+              Administration AgriPulse
+            </div>
+            <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
+              Centre de controle complet de la plateforme
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/75">
+              Gere les comptes, roles, boutiques, produits, missions, commandes,
+              paiements, litiges, moderation et donnees operationnelles depuis
+              une console unique.
+            </p>
+          </div>
+          <Link
+            href="/admin/system"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#8bd918] px-5 py-3 text-sm font-black text-[#10220d] transition hover:bg-[#a8ee32]"
+          >
+            Ouvrir la console CRUD <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </section>
 
-      <section className="stats-hero pb-24 px-6 md:px-12 pt-6" style={{ background: 'linear-gradient(180deg, #064c36 0%, #086648 100%)' }}>
-        <div className="max-w-screen-2xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white/10 backdrop-blur-sm border border-white/15 p-6 rounded-xl text-white">
-              <div className="flex justify-between items-start mb-6"><ShieldCheck className="h-5 w-5 text-white/60" /></div>
-              <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Approbations en attente</p>
-              <h3 className="text-3xl font-bold">{analytics?.pending_approvals || 0}</h3>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {kpis.map((item) => (
+          <KpiCard key={item.label} {...item} />
+        ))}
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-2xl border border-[#c2c9bb]/45 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#72796e]">
+                Modules administrables
+              </p>
+              <h2 className="mt-1 text-xl font-black text-[#191c18]">
+                CRUD et actions metier
+              </h2>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm border border-white/15 p-6 rounded-xl text-white">
-              <div className="flex justify-between items-start mb-6"><Users className="h-5 w-5 text-white/60" /></div>
-              <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Utilisateurs actifs</p>
-              <h3 className="text-3xl font-bold">{analytics?.active_users || 0}</h3>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm border border-white/15 p-6 rounded-xl text-white">
-              <div className="flex justify-between items-start mb-6"><WalletCards className="h-5 w-5 text-white/60" /></div>
-              <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Ventes totales</p>
-              <h3 className="text-3xl font-bold">{analytics?.total_sales?.toLocaleString() || 0} XAF </h3>
-            </div>
+            <LayoutGrid className="h-6 w-6 text-[#154212]" />
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {modules.map((module) => {
+              const Icon = module.icon;
+              return (
+                <Link
+                  key={module.href}
+                  href={module.href}
+                  className="rounded-xl border border-[#c2c9bb]/45 bg-[#fffef8] p-4 transition hover:border-[#154212]/45 hover:bg-[#f2f7ea]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#eaf3de] text-[#154212]">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#154212]">
+                      {module.metric}
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-base font-black text-[#191c18]">
+                    {module.title}
+                  </h3>
+                  <p className="mt-2 text-sm font-medium leading-5 text-[#5a6256]">
+                    {module.description}
+                  </p>
+                </Link>
+              );
+            })}
           </div>
         </div>
-      </section>
 
-      <div className="max-w-screen-2xl mx-auto px-6 md:px-12 -mt-12 pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-          <Link href="/admin/users" className="glass-card premium-card p-6 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 hover:bg-surface-variant/50 transition-all group cursor-pointer" style={{ background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)' }}>
-            <div className="flex items-center gap-4">
-              <div className="bg-primary/10 p-3 rounded-lg group-hover:bg-primary transition-colors"><Users className="h-5 w-5 text-primary group-hover:text-white" /></div>
-              <div><h3 className="text-md font-bold text-on-surface">Gestion des Utilisateurs</h3><p className="text-xs text-on-surface-variant">{analytics?.active_users || 0} utilisateurs actifs</p></div>
-            </div>
-            <ArrowRight className="h-5 w-5 text-on-surface-variant transition-colors group-hover:text-primary" />
-          </Link>
-          <Link href="/admin/catalog" className="glass-card premium-card p-6 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 hover:bg-surface-variant/50 transition-all group cursor-pointer" style={{ background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)' }}>
-            <div className="flex items-center gap-4">
-              <div className="bg-primary/10 p-3 rounded-lg group-hover:bg-primary transition-colors"><Package className="h-5 w-5 text-primary group-hover:text-white" /></div>
-              <div><h3 className="text-md font-bold text-on-surface">Catalogue de Produits</h3><p className="text-xs text-on-surface-variant">Gestion des produits</p></div>
-            </div>
-            <ArrowRight className="h-5 w-5 text-on-surface-variant transition-colors group-hover:text-primary" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant" style={{ color: '#5c625e' }}>
-                Produits en attente ({pendingProducts.length})
-              </h3>
-            </div>
-            
-            {pendingProducts.length === 0 ? (
-              <div className="glass-card premium-card p-8 rounded-xl text-center">
-                <CheckCircle2 className="mx-auto mb-2 h-10 w-10 text-on-surface-variant/30" />
-                <p className="text-on-surface-variant">Aucun produit en attente d'approbation</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {pendingProducts.map((product) => (
-                  <div key={product.id} className="glass-card premium-card p-4 rounded-xl flex flex-col sm:flex-row items-center gap-5">
-                    <div className="relative w-full sm:w-32 h-24 rounded-lg overflow-hidden shadow-sm flex-shrink-0">
-                      <img
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                        src={
-                          product.images && Array.isArray(product.images) && product.images.length > 0
-                            ? product.images[0]
-                            : 'https://via.placeholder.com/128x96?text=No+Image'
-                        }
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/128x96?text=No+Image';
-                        }}
-                      />
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-[#c2c9bb]/45 bg-white p-5 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#72796e]">
+              Alertes admin
+            </p>
+            <h2 className="mt-1 text-xl font-black text-[#191c18]">
+              A traiter maintenant
+            </h2>
+            <div className="mt-5 space-y-3">
+              {alerts.map((alert) => {
+                const Icon = alert.icon;
+                return (
+                  <Link
+                    key={alert.label}
+                    href={alert.href}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-[#c2c9bb]/45 bg-[#fffef8] p-4 hover:bg-[#f2f7ea]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-5 w-5 text-[#154212]" />
+                      <span className="text-sm font-black text-[#243420]">
+                        {alert.label}
+                      </span>
                     </div>
-                    <div className="flex-grow text-center sm:text-left">
-                      <h4 className="text-md font-bold text-on-surface mb-0.5">{product.name}</h4>
-                      <p className="text-on-surface-variant text-xs font-medium mb-2 flex items-center justify-center sm:justify-start gap-1">
-                        <Store className="h-3.5 w-3.5" />
-                        {product.shop?.name}
+                    <span className="rounded-full bg-[#154212] px-3 py-1 text-xs font-black text-white">
+                      {alert.value}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#c2c9bb]/45 bg-white p-5 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#72796e]">
+              Activite systeme
+            </p>
+            <div className="mt-5 space-y-4">
+              {activities.length === 0 ? (
+                <div className="rounded-xl bg-[#f6f7f0] p-4 text-sm font-bold text-[#72796e]">
+                  Aucune activite recente.
+                </div>
+              ) : (
+                activities.slice(0, 7).map((activity) => (
+                  <div key={activity.id} className="flex gap-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#154212]" />
+                    <div>
+                      <p className="line-clamp-2 text-sm font-bold text-[#243420]">
+                        {activity.description}
                       </p>
-                      <div className="flex items-center justify-center sm:justify-start gap-2">
-                        <span className="bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
-                          {product.category?.name}
-                        </span>
-                        <span className="text-on-surface-variant/60 text-[10px] font-medium uppercase">
-                          {new Date(product.created_at).toLocaleTimeString('fr-FR')}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 w-full sm:w-auto">
-                      <Link href={`/admin/product/${product.id}`}>
-                        <button className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-outline text-on-surface text-xs font-bold hover:bg-surface-variant transition-colors">
-                          Voir
-                        </button>
-                      </Link>
-                      <button
-                        onClick={() => handleRejectProduct(product.id)}
-                        disabled={actionLoading === product.id}
-                        className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-error/20 text-error text-xs font-bold hover:bg-error/5 transition-colors disabled:opacity-50"
-                      >
-                        {actionLoading === product.id ? '...' : 'Rejeter'}
-                      </button>
-                      <button
-                        onClick={() => handleApproveProduct(product.id)}
-                        disabled={actionLoading === product.id}
-                        className="flex-1 sm:flex-none px-5 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-light transition-all shadow-md active:scale-95 disabled:opacity-50"
-                        style={{ backgroundColor: '#064c36' }}
-                      >
-                        {actionLoading === product.id ? '...' : 'Approuver'}
-                      </button>
+                      <p className="mt-1 text-xs font-semibold text-[#72796e]">
+                        {activity.category || "Systeme"} -{" "}
+                        {dateLabel(activity.created_at)}
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <aside className="lg:col-span-4">
-            <div className="sticky top-24">
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/40">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-primary" />
-                      <h3 className="text-sm font-semibold text-gray-800">Activités récentes</h3>
-                    </div>
-                    <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{activities.length}</span>
-                  </div>
-                </div>
-                <div className="max-h-80 overflow-y-auto custom-scrollbar">
-                  <div className="relative pl-6 pr-4 py-3 space-y-5">
-                    <div className="absolute left-[1.125rem] top-0 bottom-0 w-px bg-gradient-to-b from-gray-200 via-gray-300 to-transparent"></div>
-                    {activities.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400 text-sm">Aucune activité récente</div>
-                    ) : (
-                      activities.map((activity) => (
-                        <div key={activity.id} className="relative group">
-                          <div className="absolute -left-[1.625rem] top-0.5 w-3 h-3 rounded-full border-2 border-white shadow-sm transition-all group-hover:scale-125" style={{ backgroundColor: getActivityColor(activity.type) }}></div>
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium text-gray-800 leading-tight line-clamp-2">{activity.description}</p>
-                            <div className="flex items-center gap-2 text-xs text-gray-400">
-                              <span className="font-medium uppercase tracking-wide" style={{ color: getActivityColor(activity.type) }}>{activity.category}</span>
-                              <span>•</span>
-                              <span>{new Date(activity.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
+                ))
+              )}
             </div>
-          </aside>
+          </div>
         </div>
-      </div>
-    </>
+      </section>
+    </div>
   );
-}
-
-export default function AdminDashboardPage() {
-  return <AdminDashboardContent />;
 }

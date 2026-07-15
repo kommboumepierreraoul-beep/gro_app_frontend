@@ -46,6 +46,7 @@ class MessageService {
     conversationId: number,
     content: string,
     media?: File,
+    replyToId?: number | string,
   ): Promise<Message> {
     const formData = new FormData();
     if (content.trim()) {
@@ -53,6 +54,9 @@ class MessageService {
     }
     if (media) {
       formData.append("media", media);
+    }
+    if (replyToId) {
+      formData.append("reply_to_id", String(replyToId));
     }
 
     const response = await api.post(

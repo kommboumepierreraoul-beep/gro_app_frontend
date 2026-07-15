@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-import LoginPage from "./(auth)/login/page";
+import { LandingPageContent } from "@/components/landing/LandingPageContent";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -26,7 +26,8 @@ export default function Home() {
     }
 
     if (!authService.isAuthenticated()) {
-      return;
+      const timer = window.setTimeout(() => setShowSplash(false), 0);
+      return () => window.clearTimeout(timer);
     }
 
     let isMounted = true;
@@ -46,16 +47,6 @@ export default function Home() {
       isMounted = false;
     };
   }, [isHydrated, router, setUser, user]);
-
-  useEffect(() => {
-    if (!isHydrated || authService.isAuthenticated() || user) return;
-
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [isHydrated, user]);
 
   useEffect(() => {
     if (!showSplash && isHydrated && user) {
@@ -142,5 +133,5 @@ export default function Home() {
     );
   }
 
-  return <LoginPage />;
+  return <LandingPageContent />;
 }

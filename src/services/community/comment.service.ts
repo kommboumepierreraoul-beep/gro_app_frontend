@@ -20,7 +20,10 @@ class CommentService {
     try {
       const response = await api.post(
         `/community/posts/${postId}/comments`,
-        data,
+        {
+          content: data.content,
+          parent_id: data.parentId,
+        },
       ); // ✅
       return response.data;
     } catch (error) {
