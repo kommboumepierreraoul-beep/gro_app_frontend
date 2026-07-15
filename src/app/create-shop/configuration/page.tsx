@@ -41,8 +41,24 @@ export default function ConfigureShopPage() {
   useEffect(() => {
     const checkShop = async () => {
       try {
-        await api.get('/my-shop/profile');
-        router.push('/my-shop'); // ← Redirection vers la page de succès
+        const response = await api.get('/my-shop/profile');
+        const shop = response.data?.data ?? response.data;
+        if (shop?.status === 'rejected') {
+          setForm({
+            name: shop.name || '',
+            slug: shop.slug || '',
+            description: shop.description || '',
+            address: shop.address || '',
+            city: shop.city || '',
+            phone: shop.phone || '',
+          });
+          setLogoPreview(shop.logo || null);
+          setBannerPreview(shop.banner || null);
+          setLoading(false);
+          setTimeout(() => setAnimate(true), 100);
+          return;
+        }
+        router.push(shop?.status === 'active' ? '/my-shop' : '/shop-created');
       } catch (error: any) {
         if (error.response?.status === 404) {
           setLoading(false);
@@ -115,14 +131,11 @@ export default function ConfigureShopPage() {
       await api.post('/marketplace/shops', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      // Stocker les infos dans sessionStorage
-sessionStorage.setItem('newShopName', form.name);
-sessionStorage.setItem('newShopLogo', logoPreview || '');
-sessionStorage.setItem('newShopBanner', bannerPreview || '');
-router.push('/shop-created');
-
-      toast.success('Boutique créée avec succès !');
-       router.push('/shop-created'); // ← Redirection vers la page de succès
+      sessionStorage.setItem('newShopName', form.name);
+      sessionStorage.setItem('newShopLogo', logoPreview || '');
+      sessionStorage.setItem('newShopBanner', bannerPreview || '');
+      toast.success('Demande de boutique envoyée pour validation.');
+      router.push('/shop-created');
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Erreur lors de la création de la boutique.';
       setError(msg);

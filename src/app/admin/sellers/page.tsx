@@ -18,9 +18,10 @@ export default function AdminSellersPage() {
         { key: "status", label: "Statut" },
       ]}
       actions={[
+        { key: "approve", label: "Approuver", tone: "green" },
+        { key: "reject", label: "Rejeter", tone: "red" },
         { key: "activate", label: "Activer", tone: "green" },
         { key: "suspend", label: "Suspendre", tone: "red" },
-        { key: "disable", label: "Desactiver" },
       ]}
       related={[
         {

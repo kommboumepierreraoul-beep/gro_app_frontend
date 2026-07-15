@@ -138,9 +138,10 @@ const resources: ResourceConfig[] = [
       },
     ],
     actions: [
+      { key: "approve", label: "Approuver", tone: "green" },
+      { key: "reject", label: "Rejeter", tone: "red" },
       { key: "activate", label: "Activer", tone: "green" },
       { key: "suspend", label: "Suspendre", tone: "red" },
-      { key: "disable", label: "Desactiver" },
     ],
     canCreate: true,
   },

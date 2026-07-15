@@ -38,18 +38,23 @@ function SellerGuardSkeleton() {
 
 export function SellerShopGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["seller-shop-access"],
     queryFn: async () => {
       const response = await api.get("/my-shop/profile");
       const parsed = parseShopResponse(response.data) as {
-        data?: { id?: number };
+        data?: { id?: number; status?: string };
         id?: number;
+        status?: string;
       } | null;
       const shop = parsed?.data ?? parsed;
 
       if (!shop?.id) {
         throw new Error("NO_SHOP");
+      }
+
+      if (shop.status !== "active") {
+        throw new Error("SHOP_NOT_APPROVED");
       }
 
       return shop;
@@ -60,9 +65,9 @@ export function SellerShopGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isError) {
-      router.replace("/create-shop");
+      router.replace(error?.message === "SHOP_NOT_APPROVED" ? "/shop-created" : "/create-shop");
     }
-  }, [isError, router]);
+  }, [error, isError, router]);
 
   if (isLoading || isError || !data) {
     return <SellerGuardSkeleton />;

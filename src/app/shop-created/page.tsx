@@ -17,14 +17,18 @@ import {
 
 export default function ShopCreatedPage() {
   const router = useRouter();
-  const [shopName, setShopName] = useState('Votre boutique');
-  const [shopLogo, setShopLogo] = useState('');
+  const [shopName] = useState(() =>
+    typeof window === 'undefined'
+      ? 'Votre boutique'
+      : sessionStorage.getItem('newShopName') || 'Votre boutique',
+  );
+  const [shopLogo] = useState(() =>
+    typeof window === 'undefined'
+      ? ''
+      : sessionStorage.getItem('newShopLogo') || '',
+  );
 
   useEffect(() => {
-    const name = sessionStorage.getItem('newShopName');
-    const logo = sessionStorage.getItem('newShopLogo');
-    if (name) setShopName(name);
-    if (logo) setShopLogo(logo);
     // Nettoyer après utilisation
     sessionStorage.removeItem('newShopName');
     sessionStorage.removeItem('newShopLogo');
@@ -58,10 +62,10 @@ export default function ShopCreatedPage() {
           {/* Titres */}
           <div className="space-y-4">
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 tracking-tight leading-tight">
-              Félicitations ! <br /> <span className="text-emerald-700">Votre boutique est prête.</span>
+              Demande envoyée ! <br /> <span className="text-emerald-700">Validation admin en attente.</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed animate-on-load" style={{ opacity: 0, transform: 'translateY(20px)', transition: 'all 0.6s ease-out 0.1s' }}>
-              Votre exploitation agricole est désormais en ligne sur Agripulse. Vous pouvez dès maintenant commencer à vendre vos produits à travers le monde.
+              Votre demande de boutique a bien été transmise. Un administrateur AgriPulse va vérifier les informations avant activation.
             </p>
           </div>
 
@@ -79,7 +83,7 @@ export default function ShopCreatedPage() {
                 <h3 className="font-bold text-gray-800 text-lg">{shopName}</h3>
                 <p className="text-xs text-gray-500 flex items-center gap-1.5 uppercase tracking-wider">
                   <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-                  Statut : Actif
+                  Statut : En attente
                 </p>
               </div>
             </div>
@@ -94,9 +98,9 @@ export default function ShopCreatedPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
-                { Icon: PlusCircle, title: 'Ajouter un produit', desc: 'Créez votre première fiche produit avec des photos HD.' },
-                { Icon: UserRoundCheck, title: 'Compléter le profil', desc: 'Détaillez votre histoire pour rassurer vos clients.' },
-                { Icon: BarChart3, title: 'Tableau de bord', desc: 'Explorez vos futurs indicateurs de vente.' }
+                { Icon: PlusCircle, title: 'Préparer le catalogue', desc: 'Rassemblez vos photos produits pendant la validation.' },
+                { Icon: UserRoundCheck, title: 'Surveiller les notifications', desc: 'Vous serez prévenu après la décision admin.' },
+                { Icon: BarChart3, title: 'Espace vendeur', desc: 'Il sera ouvert dès que la boutique sera approuvée.' }
               ].map((step, idx) => (
                 <div key={idx} className="glass-panel p-6 rounded-xl text-left flex flex-col gap-4 hover:border-emerald-200 transition-all animate-on-load" style={{ opacity: 0, transform: 'translateY(20px)', transition: `all 0.6s ease-out ${0.3 + idx * 0.1}s` }}>
                   <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-emerald-700">
@@ -113,13 +117,13 @@ export default function ShopCreatedPage() {
 
           {/* Boutons */}
           <div className="pt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-on-load" style={{ opacity: 0, transform: 'translateY(20px)', transition: 'all 0.6s ease-out 0.6s' }}>
-            <button onClick={() => router.push('/my-shop')} className="bg-gradient-to-r from-emerald-700 to-emerald-600 text-white font-bold py-4 px-10 rounded-full shadow-lg shadow-emerald-500/20 flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all group">
-              Accéder au tableau de bord
+            <button onClick={() => router.push('/marketplace')} className="bg-gradient-to-r from-emerald-700 to-emerald-600 text-white font-bold py-4 px-10 rounded-full shadow-lg shadow-emerald-500/20 flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all group">
+              Retour marketplace
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
-            <button onClick={() => router.push('/add-product')} className="bg-gray-200 text-gray-800 font-bold py-4 px-10 rounded-full flex items-center gap-2 hover:bg-gray-300 active:scale-95 transition-all border border-gray-300">
+            <button onClick={() => router.push('/notifications')} className="bg-gray-200 text-gray-800 font-bold py-4 px-10 rounded-full flex items-center gap-2 hover:bg-gray-300 active:scale-95 transition-all border border-gray-300">
               <Package className="h-5 w-5" />
-              Ajouter un produit
+              Voir mes notifications
             </button>
           </div>
         </div>

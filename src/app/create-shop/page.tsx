@@ -18,8 +18,14 @@ export default function CreateShopHomePage() {
   useEffect(() => {
     const checkShop = async () => {
       try {
-        await api.get('/my-shop/profile');
-        router.push('/my-shop');
+        const response = await api.get('/my-shop/profile');
+        const shop = response.data?.data ?? response.data;
+        if (shop?.status === 'rejected') {
+          setLoading(false);
+          setTimeout(() => setAnimate(true), 100);
+          return;
+        }
+        router.push(shop?.status === 'active' ? '/my-shop' : '/shop-created');
       } catch (error: any) {
         if (error.response?.status === 404) {
           setLoading(false);
